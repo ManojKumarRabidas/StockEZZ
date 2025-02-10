@@ -11,7 +11,7 @@ const companySchema = new mongoose.Schema({
     gstNo: {type: 'number', required: true},
     active: {type: Boolean},
     subscription: {type: Boolean},
-    subscriptionDuration: {type: 'number', required: true},
+    subscriptionDuration: {type: 'number'},
     createdBy: {type: 'ObjectId'},
     updatedBy: {type: 'ObjectId'}
 }, { timestamps: true });

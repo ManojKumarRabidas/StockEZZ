@@ -33,7 +33,7 @@ function Create() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    const companyData = {company_type, name, phone, email, pin, address, gstNo, active: active ? 1 : 0, subscription, subscriptionDuration };
+    const companyData = {company_type, name, phone, email, pin, address, gstNo, active, subscription, subscriptionDuration };
     if (!company_type || !name || !phone || !email || !pin || !address){
       toastr.error("Please enter all the required values.");
       return;

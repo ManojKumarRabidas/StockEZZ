@@ -142,6 +142,7 @@ module.exports = {
             body.updatedBy = new ObjectId(req.user.id);
             const codeGenerator =await require("../controllers/utilController").createCode("COMPANY");
             body.code = codeGenerator.code
+            console.log("body", body)
             const doc = await companyModel.create(body);
             res.status(201).json({ status: true, msg: "Company created successfully.", doc:doc});
         } catch (err) {
@@ -198,13 +199,14 @@ module.exports = {
         try {
             const params = req.params;
             const body = req.body;
+            console.log(req.body)
             body.updatedBy = new ObjectId(req.user.id);
             if (!params || !params.id || !body){
                 res.status(400).json({ msg: "Missing Parameters!" });
                 return;
             }
-            const doc = await authModel.updateOne({user_id: params.id},{$set: body}, {new: true});
-            res.status(200).json({ message: "Support User updated successfully", doc: doc });
+            const doc = await companyModel.updateOne({_id: new ObjectId(params.id)},{$set: body}, {new: true});
+            res.status(200).json({ message: "Company activation status updated successfully", doc: doc });
         } catch (err) {
             res.status(500).json({ msg: err.message });
         }
