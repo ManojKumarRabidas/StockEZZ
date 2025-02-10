@@ -1,0 +1,386 @@
+/* Primary: Cool Gray (#E0E0E0)
+Secondary: Slate Gray (#4A4A4A)
+Accent: Royal Blue (#0057B7)
+Text: Jet Black (#121212)
+Hover/Active: Light Silver (#CFCFCF) */
+.sidebar {
+  margin-top: 56px; 
+}
+.ei-text-center-imp{
+  text-align: center !important;
+}
+.ei-col-red{
+  color: red;
+}
+.cursor-pointer{
+  cursor: pointer;
+}
+.small-btn{
+  padding: 2px 10px !important;
+  margin-left: 3px;
+  margin-right: 3px;
+}
+table tbody tr{
+  vertical-align:middle;
+}
+.max-min-300{
+  max-width: 300px;
+  min-width: 300px;
+}
+/* Hide scrollbar but keep scroll behavior */
+.scroll-hidden {
+  overflow: auto;
+  white-space: nowrap;
+}
+
+/* For Chrome, Safari, and other WebKit browsers */
+.scroll-hidden::-webkit-scrollbar {
+  display: none;
+}
+
+/* For Firefox */
+.scroll-hidden {
+  scrollbar-width: none; /* Hide scrollbar */
+}
+
+/* Optional: Ensure elements inside don't break */
+.scroll-hidden td {
+  white-space: nowrap;
+}
+/* Success Toastr Background */
+.toast-success {
+  background-color: #28a745 !important;
+  color: white !important;
+}
+
+/* Error Toastr Background */
+.toast-error {
+  background-color: #dc3545 !important;
+  color: white !important;
+}
+
+/* Warning Toastr Background */
+.toast-warning {
+  background-color: #ffc107 !important;
+  color: black !important;
+}
+
+/* Info Toastr Background */
+.toast-info {
+  background-color: #17a2b8 !important;
+  color: white !important;
+}
+
+/* General styles */
+body {
+  /* font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; */
+  font-family: Poppins, sans-serif !important;
+  /* background-color: #f8f9fa; */
+  background-color: #f2f2f2 !important;
+  color: #333333 !important;
+  margin: 0;
+  padding: 0;
+}
+a{
+  text-decoration: none !important;
+  color: rgb(255, 0, 183);
+}
+button, button a{
+  background-color: #4A4A4A !important;
+  color: white !important;
+  border-color: #4A4A4A !important;
+}
+/* Override Bootstrap switch color */
+.form-check-input:checked {
+  background-color: #4A4A4A !important; /* Background color when the switch is checked */
+  border-color: #4A4A4A !important; /* Border color when the switch is checked */
+}
+
+.form-check-input:focus {
+  box-shadow: 0 0 0 0.25rem #4A4A4A !important; /* Focus outline color */
+}
+/* Override Bootstrap dropdown blue color with #4A4A4A */
+
+/* Change the border and background color of the dropdown when focused */
+.form-control:focus {
+  border-color: #4A4A4A !important; /* Change border color on focus */
+  box-shadow: 0 0 0 0.2rem rgba(47, 79, 79, 0.25) !important; /* Shadow effect with #4A4A4A tint */
+}
+
+/* Change the color of the dropdown arrow when focused */
+.form-control:focus-visible {
+  border-color: #4A4A4A !important; /* Change border color on focus-visible */
+}
+
+/* Change the background color of the selected option in dropdown */
+.form-control option:checked {
+  background-color: #4A4A4A !important; /* Dark Slate Grey background for selected option */
+  color: white !important; /* White text for selected option */
+}
+
+/* Change the color of the placeholder text */
+.form-control::placeholder {
+  color:  #4A4A4A !important; /* Dark Slate Grey for placeholder text */
+}
+.date-field-col> div:first-child{
+  width: -webkit-fill-available;
+}
+.webkit-fill-available-class{
+  width: -webkit-fill-available;
+}
+/*  Dropdown background color */
+/* Change the hover background color for the entire dropdown */
+.select-container select {
+  -webkit-appearance: none; /* Remove default styling */
+  -moz-appearance: none;
+  appearance: none;
+  background-color: white; /* Background color of select */
+  color: black; /* Text color */
+  border: 1px solid #dcdcdc;
+  padding: 0.5rem;
+}
+
+/* Change the background color of options when the dropdown is focused */
+.select-container select:focus,
+.select-container select:hover {
+  border-color: #4A4A4A !important; /* Change border color on hover or focus */
+  outline: none;
+  box-shadow: 0 0 5px #4A4A4A !important;
+}
+
+.select-container option:checked {
+  background-color: #4A4A4A !important; /* Custom background color for option */
+  color: white !important; /* Text color for selected option */
+}
+.select-container option:hover {
+  background-color: #4A4A4A !important; /* Custom background color for option */
+  color: white !important; /* Text color for selected option */
+}
+
+/* Navbar styles */
+.navbar {
+  /* background-color: #4A4A4A !important; */
+  background-color: #4A4A4A !important;
+  border-bottom: 1px solid #e7e7e7;
+  padding: 0.2rem !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+
+.navbar-brand {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #1c0808;
+}
+
+.navbar-nav .nav-link {
+  /* color: #333; */
+  color: #000;
+  margin-right: 1rem;
+  font-weight: 500;
+}
+
+.navbar-nav .nav-link:hover {
+  /* color: #007bff; */
+  color: #181818;
+}
+
+.navbar-toggler {
+  border: none;
+  outline: none;
+}
+
+/* Dropdown Menu */
+.dropdown-menu {
+  border-radius: 0.5rem;
+  border: none;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.dropdown-item {
+  padding: 0.75rem 1.5rem;
+  font-weight: 500;
+}
+
+.dropdown-item:hover {
+  background-color: #f1f1f1;
+  /* color: #007bff; */
+  color: #4A4A4A;
+}
+
+.ei-row{
+  min-height: 100vh;
+  width: 100vw;
+}
+.ei-row-unrestricted {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background-color:  #f2f2f2;
+  height: 100vh;
+}
+/* Sidebar styles */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 242px !important;
+  /* background-color: #D1FAE5; */
+  background-color: #E0E0E0;
+  border-right: 1px solid #e7e7e7;
+  padding-top: 70px; /* Account for fixed navbar height */
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  transition: all 0.3s ease;
+  overflow-y: auto;
+}
+
+.sidebar a {
+  display: block;
+  padding: 0.5rem 1.2rem;
+  color: #333;
+  font-weight: 500;
+  text-decoration: none;
+  border-radius: 0.5rem;
+  margin: 0.5rem 0;
+  transition: all 0.2s;
+}
+
+.sidebar a:hover {
+  background-color: #cdcdcd;
+  /* color: #007bff; */
+  color: #4A4A4A;
+}
+
+.sidebar a.active {
+  /* background-color: #007bff; */
+  background-color: #4A4A4A;
+  color: #fff;
+  font-weight: 600;
+}
+
+.inner-navbar .active {
+  /* background-color: #007bff; */
+  background-color: #4A4A4A;
+  color: #fff !important;
+  font-weight: 600;
+  padding: 2px 16px 2px;
+  border-radius: 5px;;
+}
+
+.inner-nav-item {
+  font-size: 17px !important;
+  min-width: 70px !important;
+  padding: 0px 16px 2px;
+  text-align: center;
+}
+/* Content styles */
+.main-content {
+  margin-left: 240px !important; /* Account for sidebar width */
+  padding: 2rem;
+  transition: all 0.3s ease;
+}
+
+.main-section{
+  margin-top: 3.5rem !important;
+  padding: 13px 0px 0px 18px !important;
+  max-width: 81vw !important;
+  margin-right: 0 !important;
+  margin-left: 16vw !important;
+}
+.main-section-log-in {
+  /* margin-top: 8rem !important; */
+  max-width: 28rem !important;
+}
+.main-section-registration {
+  margin-top: 4rem !important;
+}
+.main-section-registration input,.main-section-registration select{
+  max-width: 25vw !important;
+  min-width: 25vw !important;
+}
+.teacher-registration-row, .teacher-registration-row select, .teacher-registration-row input{
+  max-width: 18.5vw !important;
+  min-width: 18.5vw !important;
+}
+.inner-navbar{
+  padding-left:15px !important;
+}
+
+.log-in-buttons button{
+  width: 100%;
+}
+
+.log-in-buttons button a{
+  color: white;
+}
+/* Media queries for responsiveness */
+@media (max-width: 991.98px) {
+  .sidebar {
+    width: 200px; /* Adjust width for smaller screens */
+  }
+
+  .main-content {
+    margin-left: 200px; /* Adjust content margin for sidebar width */
+  }
+}
+
+@media (max-width: 767.98px) {
+  .sidebar {
+    width: 100%;
+    height: auto;
+    position: relative;
+  }
+
+  .main-content {
+    margin-left: 0;
+  }
+
+  .navbar {
+    padding: 0.5rem 1rem;
+  }
+
+  .navbar-nav {
+    margin-top: 0.5rem;
+  }
+
+  .navbar-nav .nav-link {
+    margin-right: 0.5rem;
+  }
+}
+
+/* @keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+  }
+}
+
+.card {
+  padding: 2em;
+}
+
+.read-the-docs {
+  color: #888;
+} */
+
+
+/* home heading */
+
+/* .text-gradient{
+  color: #c02626;
+} */
+
+/* lead {
+  color: #b21b8283;
+  /* font-weight: bold; */
+
