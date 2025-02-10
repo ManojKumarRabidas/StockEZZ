@@ -7,8 +7,8 @@ const authenticationSchema = new mongoose.Schema({
   login_id: {type: String, required: true, unique: true,},
   password: {type: String, required: true},
   user_type: {type: String, default: null},
-  active: {type: Number, default: 0},
-  last_log_in: {type: String, default: null},
+  active: {type: Boolean,},
+  last_log_in: {type: Date, default: null},
   first_log_in: {type: Boolean,},
 
 });
