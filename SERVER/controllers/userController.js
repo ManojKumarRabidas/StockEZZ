@@ -104,13 +104,7 @@ module.exports = {
       if (!authUser) {
         return res.status(400).json({ msg: 'Invalid credentials' });
       }
-      if (authUser.is_verified == 0){
-        return res.status(400).json({ msg: 'Your account is still not verified. Please contact with admin for verification.' });
-      }
-      if (authUser.is_verified == -1){
-        return res.status(400).json({ msg: 'Your account creation request is rejected. Please contact with admin for more information.' });
-      }
-      if (authUser.active == 0){
+      if (!authUser.active){
         return res.status(400).json({ msg: 'Your account is deactivated. Please contact with admin for activation.' });
       }
       const isMatch = await bcrypt.compare(password, authUser.password);
@@ -120,7 +114,7 @@ module.exports = {
       authUser.last_log_in = new Date();
       await authUser.save();
 
-      const token = jwt.sign({ id: authUser.user_id, user_type: authUser.user_type, name: authUser.name }, process.env.JWT_SECRET, { expiresIn: '2h' });
+      const token = jwt.sign({ id: authUser.user_id, user_type: authUser.user_type, name: authUser.name }, process.env.JWT_SECRET, { expiresIn: '12h' });
       res.cookie('token', token, { httpOnly: true }).json({ token, userName:authUser.name, msg: 'Logged in successfully' });
     } catch (err) {
       res.status(500).json({ msg: 'Server error', error: err.message });

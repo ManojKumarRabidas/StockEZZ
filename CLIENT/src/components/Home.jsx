@@ -1,8 +1,9 @@
+
 function Home() {
   return (
     <div>
       <main className="container my-2">
-        <section className="bg-light">
+        <section className="bg-light d-flex flex-column justify-content-between" style={{minHeight: "85vh"}}>
           <div className="container p-5">
             <div className="row gx-5 justify-content-center">
               <div className="col-xxl-8">
@@ -14,7 +15,7 @@ function Home() {
                     A Stock Management System
                   </p>
                   <p className="text-muted" id="font">
-                  Description
+                  You manage your life. Let the stock managed by us.
                   <br />
                   <br />
                   
@@ -35,10 +36,10 @@ function Home() {
               </div>
             </div>
           </div>
-            <div className="text-center m-3">
-                {/* <div>Please feel free to reach us if you have any opinions or features we should include in the application to make it more usefull for you. Mail us on support@eduinsights.in</div> */}
-                <div>&copy; Copyright 2025 by stockezz.in || All Rights Reserved</div>
-            </div>
+          <div className="text-center m-3">
+              {/* <div>Please feel free to reach us if you have any opinions or features we should include in the application to make it more usefull for you. Mail us on support@eduinsights.in</div> */}
+              <div>&copy; Copyright 2025 by stockezz.in || All Rights Reserved</div>
+          </div>
         </section>
       </main>
     </div>

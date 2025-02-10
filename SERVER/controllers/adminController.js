@@ -34,6 +34,7 @@ module.exports = {
                 res.status(400).json({ msg: "Missing Parameters!" });
                 return;
             }
+            console.log("req.user", req.user)
             body.createdBy = new ObjectId(req.user.id);
             body.updatedBy = new ObjectId(req.user.id);
             body.user_type = "SUPPORTADMIN";
@@ -57,7 +58,6 @@ module.exports = {
             });
             res.status(201).json({ status: true, msg: "Support Admin created successfully.", doc:userDoc});
         } catch (err) {
-            console.log("err", err)
             if(err.code==11000){
                 res.status(500).json({ status: false, msg: "Same code already exists. Please contact to technical team." });
                 return
@@ -142,7 +142,6 @@ module.exports = {
             body.updatedBy = new ObjectId(req.user.id);
             const codeGenerator =await require("../controllers/utilController").createCode("COMPANY");
             body.code = codeGenerator.code
-            console.log("body", body)
             const doc = await companyModel.create(body);
             res.status(201).json({ status: true, msg: "Company created successfully.", doc:doc});
         } catch (err) {
@@ -160,7 +159,7 @@ module.exports = {
                 res.status(400).json({ msg: "Missing Parameters!" });
                 return;
             }
-            const doc = await userModel.findById({ _id: params.id });
+            const doc = await companyModel.findById({ _id: params.id });
             res.status(200).json({ doc: doc });
         } catch (err) {
             res.status(400).json({ msg: err.message });
@@ -175,8 +174,8 @@ module.exports = {
                 res.status(400).json({ msg: "Missing Parameters!" });
                 return;
             }
-            const doc = await userModel.findByIdAndUpdate(params.id, body, {new: true});
-            res.status(200).json({ message: "User updated successfully", doc: doc });
+            const doc = await companyModel.findByIdAndUpdate(params.id, body, {new: true});
+            res.status(200).json({ message: "Company updated successfully", doc: doc });
         } catch (err) {
             res.status(500).json({ msg: err.message });
         }
@@ -188,9 +187,8 @@ module.exports = {
                 res.status(400).json({ msg: "Missing Parameters!" });
                 return;
             }
-            await userModel.findByIdAndDelete({ _id: params.id });
-            await authModel.deleteOne({ user_id: params.id });
-            res.status(200).json({ message: "Support User deleted successfully" });
+            await companyModel.findByIdAndDelete({ _id: params.id });
+            res.status(200).json({ message: "Company deleted successfully" });
         } catch (err) {
             res.status(400).json({ msg: err.message });
         }
@@ -199,7 +197,6 @@ module.exports = {
         try {
             const params = req.params;
             const body = req.body;
-            console.log(req.body)
             body.updatedBy = new ObjectId(req.user.id);
             if (!params || !params.id || !body){
                 res.status(400).json({ msg: "Missing Parameters!" });

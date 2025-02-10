@@ -63,7 +63,6 @@ function List() {
 
   const handleActiveChange = async (id, isActive) => {
     try {
-      console.log(id, isActive)
       const response = await fetch(`${HOST}:${PORT}/server/company-update-active/${id}`, {
         method: "PUT",
         body: JSON.stringify({ active: isActive }),

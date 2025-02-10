@@ -25,7 +25,7 @@ function Create() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    const supportAdminData = {name, phone, email, pin, address, active: active ? 1 : 0 };
+    const supportAdminData = {name, phone, email, pin, address, active };
     if (!name || !phone || !email || !pin || !address){
       toastr.error("Please enter all the required values.");
       return;
@@ -91,7 +91,7 @@ function Create() {
         </div>
 
         <button type="submit" className="btn btn-primary mx-2">Create</button>
-        <button onClick={handleClear} type="button" className="btn btn-primary mx-2">Celar</button>
+        <button onClick={handleClear} type="button" className="btn btn-primary mx-2">Clear</button>
       </form>
     </div>
   );

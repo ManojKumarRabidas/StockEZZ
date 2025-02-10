@@ -65,7 +65,7 @@ function List() {
     try {
       const response = await fetch(`${HOST}:${PORT}/server/support-admin-update-active/${id}`, {
         method: "PUT",
-        body: JSON.stringify({ active: isActive ? 1 : 0 }),
+        body: JSON.stringify({ active: isActive }),
         headers: {
           'Content-Type': 'application/json',
           'authorization': `Bearer ${token}`,
@@ -129,7 +129,7 @@ function List() {
               type="checkbox"
               role="switch"
               id={`activeSwitch-${row.id}`}
-              checked={row.original.active === 1}
+              checked={row.original.active}
               onChange={(e) =>
                 handleActiveChange(row.original._id, e.target.checked)
               }

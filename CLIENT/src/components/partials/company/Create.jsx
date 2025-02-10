@@ -103,7 +103,7 @@ function Create() {
         <div className="row">  
             <div className="col mb-3">
                 <label className="form-label">GST No</label>
-                <input name="pin" type="text" maxLength={6} className="form-control" aria-describedby="emailHelp" value={gstNo} onChange={(e) => setGstNo(e.target.value)}/>
+                <input name="pin" type="text" maxLength={20} className="form-control" aria-describedby="emailHelp" value={gstNo} onChange={(e) => setGstNo(e.target.value)}/>
             </div>
         </div>
         <div className="mb-3 form-switch" style={{paddingLeft: "0"}}>

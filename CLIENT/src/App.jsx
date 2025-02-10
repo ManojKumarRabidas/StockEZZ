@@ -9,6 +9,8 @@ import SupportAdmins from './components/SupportAdmin';
 import Company from './components/Company';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min';
+// import './assets/lib/font-awesome-all-min.css'
+import '../src/assets/lib/font-awesome-all.min.css'
 import { BrowserRouter, Route, Routes, Navigate, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import toastr from 'toastr';
