@@ -13,6 +13,7 @@ function Create() {
     const [pin, setPin] = useState("");
     const [address, setAddress] = useState("");
     const [gstNo, setGstNo] = useState("");
+    const [director, setDirector] = useState("");
     const [active, setActive] = useState(false);
     const [subscription, setSubscription] = useState(false);
     const [subscriptionDuration, setSubscriptionDuration] = useState(0);
@@ -26,6 +27,7 @@ function Create() {
     setPin("");
     setAddress("");
     setGstNo("");
+    setDirector("");
     setActive(false);
     setSubscription(false);
     setSubscriptionDuration(0);
@@ -33,8 +35,8 @@ function Create() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    const companyData = {company_type, name, phone, email, pin, address, gstNo, active, subscription, subscriptionDuration };
-    if (!company_type || !name || !phone || !email || !pin || !address){
+    const companyData = {company_type, name, phone, email, pin, address, gstNo, director, active, subscription, subscriptionDuration };
+    if (!company_type || !name || !phone || !email || !pin || !address || !director){
       toastr.error("Please enter all the required values.");
       return;
     }
@@ -50,6 +52,7 @@ function Create() {
       const result = await response.json();
       if (response.ok){
         toastr.success("Company created successfully.");
+        toastr.info("Login id is the 'CODE' and password is the 'Phone Number'.");
         navigate("/companies/company-list");
       } else{
         toastr.error(result.msg);
@@ -76,7 +79,7 @@ function Create() {
         </div>
           <div className="row">
           <div className="col mb-3">
-            <label className="form-label">Name <span className="ei-col-red">*</span></label>
+            <label className="form-label">Company Name <span className="ei-col-red">*</span></label>
             <input name="name" type="text" maxLength={70} className="form-control" aria-describedby="emailHelp" value={name} onChange={(e) => setName(e.target.value)}/>
           </div>
           <div className="col mb-3">
@@ -105,35 +108,43 @@ function Create() {
                 <label className="form-label">GST No</label>
                 <input name="pin" type="text" maxLength={20} className="form-control" aria-describedby="emailHelp" value={gstNo} onChange={(e) => setGstNo(e.target.value)}/>
             </div>
+            <div className="col mb-3">
+                <label className="form-label">Director Name <span className="ei-col-red">*</span></label>
+                <input name="pin" type="text" maxLength={70} className="form-control" aria-describedby="emailHelp" value={director} onChange={(e) => setDirector(e.target.value)}/>
+            </div>
         </div>
-        <div className="mb-3 form-switch" style={{paddingLeft: "0"}}>
-          <label className="form-label">Active <span className="ei-col-red">*</span></label>
-          <div>
-            <input className="form-check-input cursor-pointer" style={{ marginLeft: "0" }} type="checkbox" role="switch" id="activeSwitch" checked={active} onChange={(e) => setActive(e.target.checked)}/>
-            <label className="form-check-label mx-3" htmlFor="activeSwitch">{active ? "On" : "Off"}</label>
-          </div>
-        </div>
-        <div className="mb-3 form-switch" style={{paddingLeft: "0"}}>
-          <label className="form-label">Subscription <span className="ei-col-red">*</span></label>
-          <div>
-            <input className="form-check-input cursor-pointer" style={{ marginLeft: "0" }} type="checkbox" role="switch" id="activeSubscription" checked={subscription} onChange={(e) => setSubscription(e.target.checked)}/>
-            <label className="form-check-label mx-3" htmlFor="activeSubscription">{subscription ? "Yes" : "No"}</label>
-          </div>
-        </div>
-        <div className="row">
+        <div className="row">  
+            <div className="col mb-3">
+              <div className="mb-3 form-switch" style={{paddingLeft: "0"}}>
+                <label className="form-label">Active <span className="ei-col-red">*</span></label>
+                <div>
+                  <input className="form-check-input cursor-pointer" style={{ marginLeft: "0" }} type="checkbox" role="switch" id="activeSwitch" checked={active} onChange={(e) => setActive(e.target.checked)}/>
+                  <label className="form-check-label mx-3" htmlFor="activeSwitch">{active ? "On" : "Off"}</label>
+                </div>
+              </div>
+            </div>
+            <div className="col mb-3">
+              <div className="mb-3 form-switch" style={{paddingLeft: "0"}}>
+                <label className="form-label">Subscription <span className="ei-col-red">*</span></label>
+                <div>
+                  <input className="form-check-input cursor-pointer" style={{ marginLeft: "0" }} type="checkbox" role="switch" id="activeSubscription" checked={subscription} onChange={(e) => setSubscription(e.target.checked)}/>
+                  <label className="form-check-label mx-3" htmlFor="activeSubscription">{subscription ? "Yes" : "No"}</label>
+                </div>
+              </div>
+            </div>
             <div className="col mb-3">
               <label className="form-label">Subscription Duration <span className="ei-col-red">*</span></label>
-              <select className="form-select" aria-label="Default select example" name="type" value={subscriptionDuration} onChange={(e) => setSubscriptionDuration(e.target.value)}>
-                  <option>--Select duration in months--</option>
-                  <option value="1">1 Month</option>
-                  <option value="6">6 Months</option>
-                  <option value="12">12 Months</option>
-                  <option value="36">36 Months</option>
-                  <option value="60">60 Months</option>
-                  <option value="120">120 Months</option>
-              </select>
+                <select className="form-select" aria-label="Default select example" name="type" value={subscriptionDuration} onChange={(e) => setSubscriptionDuration(e.target.value)}>
+                    <option>--Select duration in months--</option>
+                    <option value="1">1 Month</option>
+                    <option value="6">6 Months</option>
+                    <option value="12">12 Months</option>
+                    <option value="36">36 Months</option>
+                    <option value="60">60 Months</option>
+                    <option value="120">120 Months</option>
+                </select>
+            </div>
           </div>
-        </div>
         <button type="submit" className="btn btn-primary mx-2">Create</button>
         <button onClick={handleClear} type="button" className="btn btn-primary mx-2">Celar</button>
       </form>

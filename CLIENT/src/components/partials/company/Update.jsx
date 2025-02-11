@@ -12,6 +12,7 @@ function Update() {
     const [pin, setPin] = useState("");
     const [address, setAddress] = useState("");
     const [gstNo, setGstNo] = useState("");
+    const [director, setDirector] = useState("");
     const [active, setActive] = useState(false);
     const [subscription, setSubscription] = useState(false);
     const [subscriptionDuration, setSubscriptionDuration] = useState(0);
@@ -26,6 +27,7 @@ function Update() {
     setPin("");
     setAddress("");
     setGstNo("");
+    setDirector("");
     setActive(false);
     setSubscription(false);
     setSubscriptionDuration(0);
@@ -47,6 +49,7 @@ function Update() {
             setPin(result.doc.pin);
             setAddress(result.doc.address);
             setGstNo(result.doc.gstNo);
+            setDirector(result.doc.director);
             setActive(result.doc.active);
             setSubscription(result.doc.subscription);
             setSubscriptionDuration(result.doc.subscriptionDuration);
@@ -67,8 +70,8 @@ function Update() {
 
   const handleEdit = async (event) => {
     event.preventDefault();
-    const updateCompany = {company_type, name, phone, email, pin, address, gstNo, active: active ? 1 : 0, subscription, subscriptionDuration };
-    if (!company_type || !name || !phone || !email || !pin || !address){
+    const updateCompany = {company_type, name, phone, email, pin, address, gstNo, director, active, subscription, subscriptionDuration };
+    if (!company_type || !name || !phone || !email || !pin || !address || !director){
       toastr.error("Please enter all the required values.");
       return;
     }
@@ -144,6 +147,10 @@ function Update() {
             <div className="col mb-3">
                 <label className="form-label">GST No</label>
                 <input name="gstNo" type="text" maxLength={20} className="form-control" aria-describedby="emailHelp" value={gstNo} onChange={(e) => setGstNo(e.target.value)}/>
+            </div>
+            <div className="col mb-3">
+                <label className="form-label">Director Name <span className="ei-col-red">*</span></label>
+                <input name="pin" type="text" maxLength={70} className="form-control" aria-describedby="emailHelp" value={director} onChange={(e) => setDirector(e.target.value)}/>
             </div>
         </div>
         <div className="mb-3 form-switch" style={{paddingLeft: "0"}}>

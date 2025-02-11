@@ -1,36 +1,42 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { WithContext as ReactTags } from 'react-tag-input';
 const HOST = import.meta.env.VITE_HOST;
 const PORT = import.meta.env.VITE_PORT;
 const token = sessionStorage.getItem('token');
 import toastr from 'toastr';
 function Update() {
-    const [name, setName] = useState("");
     const [category, setCategory] = useState("");
-    const [sub_category, setSubCategory] = useState("");
+    const [sub_categories, setSubCategories] = useState("");
     const [active, setActive] = useState(false);
     const navigate = useNavigate();
     const { id } = useParams();
 
+    const handleDelete = (i) => {
+      setSubCategories(sub_categories.filter((sub_category, index) => index !== i));
+    };
+  
+    const handleAddition = (sub_category) => {
+      setSubCategories([...sub_categories, sub_category]);
+    };
+
   const handleClear = () => {
-    setName("");
     setCategory("");
-    setSubCategory("");
+    setSubCategories("");
     setActive(false);
   };
 
-  const getItemData = async () => {
+  const getCategoryData = async () => {
     try {
-      const response = await fetch(`${HOST}:${PORT}/server/item-details/${id}`, {
+      const response = await fetch(`${HOST}:${PORT}/server/category-details/${id}`, {
         method: "GET",
         headers: { 'authorization': `Bearer ${token}` },
       });
       if (response) {
         const result = await response.json();
         if (response.ok) {
-            setName(result.doc.name);
             setCategory(result.doc.category);
-            setSubCategory(result.doc.sub_category);
+            setSubCategories(result.doc.sub_categories);
             setActive(result.doc.active);
         } else {
           toastr.error(result.msg);
@@ -44,20 +50,20 @@ function Update() {
   };
 
   useEffect(() => {
-    getItemData();
+    getCategoryData();
   }, []);
 
   const handleEdit = async (event) => {
     event.preventDefault();
-    const updateItem = {name, category, sub_category, active };
-    if (!name || !category ){
+    const updateCategory = {category, sub_categories, active };
+    if (!category ){
       toastr.error("Please enter all the required values.");
       return;
     }
     try {
-      const response = await fetch(`${HOST}:${PORT}/server/item-update/${id}`, {
+      const response = await fetch(`${HOST}:${PORT}/server/category-update/${id}`, {
         method: "PATCH",
-        body: JSON.stringify(updateItem),
+        body: JSON.stringify(updateCategory),
         headers: {
           'Content-Type': 'application/json',
           'authorization': `Bearer ${token}`,
@@ -67,8 +73,8 @@ function Update() {
       if (response) {
         const result = await response.json();
         if (response.ok) {
-          toastr.success("Item details updated successfully.");
-            navigate("/items/item-list");
+          toastr.success("Category details updated successfully.");
+            navigate("/categories/category-list");
         } else {
           toastr.error(result.msg);
         }
@@ -86,32 +92,24 @@ function Update() {
         
       <div className="row">
           <div className="col mb-3">
-            <label className="form-label">Item Name <span className="ei-col-red">*</span></label>
-            <input name="name" type="text" maxLength={70} className="form-control" aria-describedby="emailHelp" value={name} onChange={(e) => setName(e.target.value)}/>
+            <label className="form-label">Category <span className="ei-col-red">*</span></label>
+            <input name="name" type="text" maxLength={70} className="form-control" aria-describedby="emailHelp" value={category} onChange={(e) => setCategory(e.target.value)}/>
           </div>
-        </div>
-        <div className="row">
-            <div className="col mb-3">
-              <label className="form-label">Category <span className="ei-col-red">*</span></label>
-              <select className="form-select" aria-label="Default select example" name="type" value={category} onChange={(e) => setCategory(e.target.value)}>
-                  <option>--Select category--</option>
-                  <option value="ELECTRONICS">ELECTRONICS</option>
-                  <option value="MOBILES">MOBILES</option>
-                  <option value="CLOTHS">CLOTHS</option>
-                  <option value="SOLAR">SOLAR</option>
-              </select>
-          </div>
-        </div>
-        <div className="row">
-            <div className="col mb-3">
-              <label className="form-label">Sub Category </label>
-              <select className="form-select" aria-label="Default select example" name="type" value={sub_category} onChange={(e) => setSubCategory(e.target.value)}>
-                  <option>--Select sub category--</option>
-                  <option value="ELECTRONICS">ELECTRONICS</option>
-                  <option value="MOBILES">MOBILES</option>
-                  <option value="CLOTHS">CLOTHS</option>
-                  <option value="SOLAR">SOLAR</option>
-              </select>
+          <div className="col mb-3">
+            <label className="form-label">Sub Categories</label>
+            {/* <input name="phone" type="text" maxLength={10} className="form-control" aria-describedby="emailHelp" value={sub_category} onChange={(e) => setSubCategory(e.target.value)}/> */}
+            <ReactTags
+              tags={sub_categories}
+              handleDelete={handleDelete}
+              handleAddition={handleAddition}
+              placeholder="Add new sub-category"
+              classNames={{
+                tags: "form-control tag-container",
+                tagInput: "tag-input",
+                tag: "badge bg-primary me-1",
+                remove: "ms-1 text-danger cursor-pointer",
+              }}
+            />
           </div>
         </div>
         <div className="mb-3 form-switch" style={{paddingLeft: "0"}}>

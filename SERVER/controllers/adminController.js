@@ -2,6 +2,8 @@ const {ObjectId} = require('mongodb')
 const userModel = require("../models/user");
 const authModel = require("../models/authentication");
 const companyModel = require("../models/companies");
+const categoryModel = require("../models/categories");
+const itemModel = require("../models/items");
 const bcrypt = require('bcryptjs');
 
 module.exports = {
@@ -34,7 +36,6 @@ module.exports = {
                 res.status(400).json({ msg: "Missing Parameters!" });
                 return;
             }
-            console.log("req.user", req.user)
             body.createdBy = new ObjectId(req.user.id);
             body.updatedBy = new ObjectId(req.user.id);
             body.user_type = "SUPPORTADMIN";
@@ -134,7 +135,7 @@ module.exports = {
     companyCreate: async(req, res)=>{
         try {
             const body = req.body;
-            if (!body.company_type || !body.name || !body.phone || !body.email || !body.pin || !body.address){
+            if (!body.company_type || !body.name || !body.phone || !body.email || !body.pin || !body.address || !body.director){
                 res.status(400).json({ msg: "Missing Parameters!" });
                 return;
             }
@@ -142,8 +143,23 @@ module.exports = {
             body.updatedBy = new ObjectId(req.user.id);
             const codeGenerator =await require("../controllers/utilController").createCode("COMPANY");
             body.code = codeGenerator.code
-            const doc = await companyModel.create(body);
-            res.status(201).json({ status: true, msg: "Company created successfully.", doc:doc});
+            const active = body.active;
+            const password = body.phone;
+            const login_id = body.code;
+            const salt = await bcrypt.genSalt(10);
+            const hashedPassword = await bcrypt.hash(password, salt);
+            const companyDoc = await companyModel.create(body);
+            await authModel.create({
+            user_id: companyDoc._id,
+            user_type: "COMPANY",
+            name: companyDoc.name,
+            login_id: login_id,
+            password: hashedPassword,
+            active: active,
+            last_log_in: null,
+            first_log_in: true,
+            });
+            res.status(201).json({ status: true, msg: "Company created successfully.", doc:companyDoc});
         } catch (err) {
             if(err.code==11000){
                 res.status(500).json({ status: false, msg: "Same code already exists. Please contact to technical team." });
@@ -188,6 +204,7 @@ module.exports = {
                 return;
             }
             await companyModel.findByIdAndDelete({ _id: params.id });
+            await authModel.deleteOne({ user_id: params.id });
             res.status(200).json({ message: "Company deleted successfully" });
         } catch (err) {
             res.status(400).json({ msg: err.message });
@@ -204,6 +221,183 @@ module.exports = {
             }
             const doc = await companyModel.updateOne({_id: new ObjectId(params.id)},{$set: body}, {new: true});
             res.status(200).json({ message: "Company activation status updated successfully", doc: doc });
+        } catch (err) {
+            res.status(500).json({ msg: err.message });
+        }
+    },
+
+    categoryList: async(req, res)=>{
+        try {
+            const docs = await categoryModel.find().lean();;
+            for(let i=0; i<docs.length; i++){
+                if(docs[i].sub_categories && ((docs[i].sub_categories).length > 0)){
+                    docs[i].sub_categories = (docs[i].sub_categories).toString();
+                }
+            }
+            res.status(200).json({ docs: docs });
+        } catch (err) {
+            res.status(400).json({ msg: err.message });
+        }
+    },
+    categoryCreate: async(req, res)=>{
+        try {
+            const body = req.body;
+            if (!body.category ){
+                res.status(400).json({ msg: "Missing Parameters!" });
+                return;
+            }
+            body.createdBy = new ObjectId(req.user.id);
+            body.updatedBy = new ObjectId(req.user.id);
+            const codeGenerator =await require("../controllers/utilController").createCode("CATEGORY");
+            body.code = codeGenerator.code
+            const doc = await categoryModel.create(body);
+            res.status(201).json({ status: true, msg: "Company created successfully.", doc:doc});
+        } catch (err) {
+            if(err.code==11000){
+                res.status(500).json({ status: false, msg: "Same Code/Category already exists. Please contact to technical team." });
+                return
+            }
+            res.status(500).json({ status: false, msg: err.message });
+        }
+    },
+    categoryDetails: async(req, res)=>{
+        try {
+            const params = req.params
+            if (!params || !params.id){
+                res.status(400).json({ msg: "Missing Parameters!" });
+                return;
+            }
+            const doc = await categoryModel.findById({ _id: params.id });
+            res.status(200).json({ doc: doc });
+        } catch (err) {
+            res.status(400).json({ msg: err.message });
+        }
+    },
+    categoryUpdate: async(req, res)=>{
+        try {
+            const params = req.params;
+            const body = req.body;
+            body.updatedBy = new ObjectId(req.user.id);
+            if (!params || !params.id || !body){
+                res.status(400).json({ msg: "Missing Parameters!" });
+                return;
+            }
+            const doc = await categoryModel.findByIdAndUpdate(params.id, body, {new: true});
+            res.status(200).json({ message: "Category updated successfully", doc: doc });
+        } catch (err) {
+            res.status(500).json({ msg: err.message });
+        }
+    },
+    categoryDelete: async(req, res)=>{
+        try {
+            const params = req.params;
+            if (!params || !params.id){
+                res.status(400).json({ msg: "Missing Parameters!" });
+                return;
+            }
+            await categoryModel.findByIdAndDelete({ _id: params.id });
+            res.status(200).json({ message: "Category deleted successfully" });
+        } catch (err) {
+            res.status(400).json({ msg: err.message });
+        }
+    },
+    categoryUpdateActive: async(req, res)=>{
+        try {
+            const params = req.params;
+            const body = req.body;
+            body.updatedBy = new ObjectId(req.user.id);
+            if (!params || !params.id || !body){
+                res.status(400).json({ msg: "Missing Parameters!" });
+                return;
+            }
+            const doc = await categoryModel.updateOne({_id: new ObjectId(params.id)},{$set: body}, {new: true});
+            res.status(200).json({ message: "Category activation status updated successfully", doc: doc });
+        } catch (err) {
+            res.status(500).json({ msg: err.message });
+        }
+    },
+
+    itemList: async(req, res)=>{
+        try {
+            const docs = await itemModel.find();
+            res.status(200).json({ docs: docs });
+        } catch (err) {
+            res.status(400).json({ msg: err.message });
+        }
+    },
+    itemCreate: async(req, res)=>{
+        try {
+            const body = req.body;
+            if (!body.name || !body.category ){
+                res.status(400).json({ msg: "Missing Parameters!" });
+                return;
+            }
+            body.createdBy = new ObjectId(req.user.id);
+            body.updatedBy = new ObjectId(req.user.id);
+            const codeGenerator =await require("../controllers/utilController").createCode("ITEM");
+            body.code = codeGenerator.code
+            const doc = await itemModel.create(body);
+            res.status(201).json({ status: true, msg: "Item created successfully.", doc:doc});
+        } catch (err) {
+            if(err.code==11000){
+                res.status(500).json({ status: false, msg: "Same Code/Item already exists. Please contact to technical team." });
+                return
+            }
+            res.status(500).json({ status: false, msg: err.message });
+        }
+    },
+    itemDetails: async(req, res)=>{
+        try {
+            const params = req.params
+            if (!params || !params.id){
+                res.status(400).json({ msg: "Missing Parameters!" });
+                return;
+            }
+            const doc = await itemModel.findById({ _id: params.id });
+            res.status(200).json({ doc: doc });
+        } catch (err) {
+            res.status(400).json({ msg: err.message });
+        }
+    },
+    itemUpdate: async(req, res)=>{
+        try {
+            const params = req.params;
+            const body = req.body;
+            body.updatedBy = new ObjectId(req.user.id);
+            if (!params || !params.id || !body){
+                res.status(400).json({ msg: "Missing Parameters!" });
+                return;
+            }
+            const doc = await itemModel.findByIdAndUpdate(params.id, body, {new: true});
+            res.status(200).json({ message: "Item updated successfully", doc: doc });
+        } catch (err) {
+            res.status(500).json({ msg: err.message });
+        }
+    },
+    itemDelete: async(req, res)=>{
+        try {
+            const params = req.params;
+            if (!params || !params.id){
+                res.status(400).json({ msg: "Missing Parameters!" });
+                return;
+            }
+            await itemModel.findByIdAndDelete({ _id: params.id });
+            res.status(200).json({ message: "Item deleted successfully" });
+        } catch (err) {
+            res.status(400).json({ msg: err.message });
+        }
+    },
+    itemUpdateActive: async(req, res)=>{
+        try {
+            const params = req.params;
+            const body = req.body;
+            body.updatedBy = new ObjectId(req.user.id);
+            if (!params || !params.id || !body){
+                res.status(400).json({ msg: "Missing Parameters!" });
+                return;
+            }
+            const doc = await itemModel.updateOne({_id: new ObjectId(params.id)},{$set: body}, {new: true});
+            res.status(200).json({ message: "Item activation status updated successfully", doc: doc });
         } catch (err) {
             res.status(500).json({ msg: err.message });
         }

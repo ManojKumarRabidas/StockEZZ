@@ -7,6 +7,10 @@ import Sidebar from './components/Sidebar';
 import Home from './components/Home';
 import SupportAdmins from './components/SupportAdmin';
 import Company from './components/Company';
+import Category from './components/Category';
+import Item from './components/Item';
+import Operator from './components/Operator';
+import CustomizeAddStock from './components/CustomizeAddStock';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min';
 // import './assets/lib/font-awesome-all-min.css'
@@ -108,6 +112,10 @@ function AppContent({ isAuthenticated, userType }) {
               <Route path='/home' element={<Home />} />
               <Route path='/support-admins/*' element={user_type === 'ADMIN' ? <SupportAdmins /> : <Unauthorized />} />
               <Route path='/companies/*' element={((user_type ==='ADMIN') || (user_type ==='SUPPORTADMIN')) ? <Company /> : <Unauthorized />} />
+              <Route path='/categories/*' element={((user_type ==='ADMIN') || (user_type ==='SUPPORTADMIN')) ? <Category /> : <Unauthorized />} />
+              <Route path='/items/*' element={((user_type ==='ADMIN') || (user_type ==='SUPPORTADMIN') || (user_type ==='COMPANY')  || (user_type ==='OPERATOR')) ? <Item /> : <Unauthorized />} />
+              <Route path='/operators/*' element={((user_type ==='ADMIN') || (user_type ==='SUPPORTADMIN') || (user_type ==='COMPANY')) ? <Operator /> : <Unauthorized />} />
+              <Route path='/customize-add-stock/*' element={(user_type ==='COMPANY') ? <CustomizeAddStock /> : <Unauthorized />} />
             </Routes>
           </main>
         </div>

@@ -22,7 +22,7 @@ function List() {
 
   async function getData() {
     try {
-      const response = await fetch(`${HOST}:${PORT}/server/item-list`, {
+      const response = await fetch(`${HOST}:${PORT}/server/operator-list`, {
         method: "GET",
         headers: { 'authorization': `Bearer ${token}` },
       });
@@ -44,14 +44,14 @@ function List() {
 
   const handleDelete = async (id) => {
     try {
-      const response = await fetch(`${HOST}:${PORT}/server/item-delete/${id}`, {
+      const response = await fetch(`${HOST}:${PORT}/server/operator-delete/${id}`, {
         method: "DELETE",
         headers: { 'authorization': `Bearer ${token}` },
       });
 
       const result = await response.json();
       if (response.ok) {
-        toastr.success("Item deleted successfully");
+        toastr.success("Operator deleted successfully");
         getData();
       } else {
         toastr.error(result.error);
@@ -63,7 +63,7 @@ function List() {
 
   const handleActiveChange = async (id, isActive) => {
     try {
-      const response = await fetch(`${HOST}:${PORT}/server/item-update-active/${id}`, {
+      const response = await fetch(`${HOST}:${PORT}/server/operator-update-active/${id}`, {
         method: "PUT",
         body: JSON.stringify({ active: isActive }),
         headers: {
@@ -75,7 +75,7 @@ function List() {
       const result = await response.json();
       
       if (response.ok) {
-        toastr.success("Item activation status updated successfully");
+        toastr.success("Operator activation status updated successfully");
         getData();
       } else {
         toastr.error(result.error);
@@ -101,20 +101,26 @@ function List() {
         enableSorting: true,
       },
       {
-        header: "Item Name",
+        header: "Company",
+        accessorKey: "company",
+        sortingFn: "alphanumeric",
+        enableSorting: true,
+      },
+      {
+        header: "Name",
         accessorKey: "name",
         sortingFn: "alphanumeric",
         enableSorting: true,
       },
       {
-        header: "Category",
-        accessorKey: "category",
+        header: "Phone",
+        accessorKey: "phone",
         sortingFn: "alphanumeric",
         enableSorting: true,
       },
       {
-        header: "Sub Category",
-        accessorKey: "sub_category",
+        header: "Email Id",
+        accessorKey: "email",
         sortingFn: "alphanumeric",
         enableSorting: true,
       },
@@ -145,7 +151,7 @@ function List() {
         cell: ({ row }) => (
           <div style={{ textAlign: "center" }}>
             <button type="button" className="btn btn-outline-light m-1" style={{ backgroundColor: "ghostwhite" }}>
-              <Link to={`/items/item-update/${row.original._id}`} className="card-link m-2" >Edit</Link>
+              <Link to={`/operators/operator-update/${row.original._id}`} className="card-link m-2" >Edit</Link>
             </button>
             <button type="button" className="btn btn-outline-light m-1" style={{ color: "blue", backgroundColor: "ghostwhite" }} onClick={() => handleDelete(row.original._id)} >Delete </button>
           </div>
@@ -161,10 +167,11 @@ function List() {
     return data.filter((row) => {
       const lowercasedFilter = globalFilter.toLowerCase();
       return (
+        row.company.toString().toLowerCase().includes(lowercasedFilter) ||
         row.code.toString().toLowerCase().includes(lowercasedFilter) ||
         row.name.toLowerCase().includes(lowercasedFilter) ||
-        row.category.toString().toLowerCase().includes(lowercasedFilter) ||
-        row.sub_category.toString().toLowerCase().includes(lowercasedFilter)
+        row.phone.toString().toLowerCase().includes(lowercasedFilter) ||
+        row.email.toLowerCase().includes(lowercasedFilter)
       );
     });
   }, [data, globalFilter]);
