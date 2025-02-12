@@ -113,9 +113,8 @@ module.exports = {
       }
       authUser.last_log_in = new Date();
       await authUser.save();
-
-      const token = jwt.sign({ id: authUser.user_id, user_type: authUser.user_type, name: authUser.name }, process.env.JWT_SECRET, { expiresIn: '12h' });
-      res.cookie('token', token, { httpOnly: true }).json({ token, userName:authUser.name, msg: 'Logged in successfully' });
+      const token = jwt.sign({ id: authUser.user_id, user_type: authUser.user_type, name: authUser.name, code: authUser.user_code }, process.env.JWT_SECRET, { expiresIn: '12h' });
+      res.cookie('token', token, { httpOnly: true }).json({ token, userName:authUser.name, code: authUser.user_code, msg: 'User Logged in successfully' });
     } catch (err) {
       res.status(500).json({ msg: 'Server error', error: err.message });
     }
@@ -180,7 +179,7 @@ module.exports = {
     } catch (err) {
         res.status(400).json({ msg: err.message });
     }
-  },
+  }, 
 
   changePassword: async (req, res) => {
     try {

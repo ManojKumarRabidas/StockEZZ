@@ -26,7 +26,7 @@ router.patch("/company-update/:id", authorizeRole(['ADMIN', 'SUPPORTADMIN']), ad
 router.delete("/company-delete/:id", authorizeRole(['ADMIN', 'SUPPORTADMIN']), adminController.companyDelete);
 router.put("/company-update-active/:id", authorizeRole(['ADMIN', 'SUPPORTADMIN']), adminController.companyUpdateActive);
 
-router.get("/category-list", authorizeRole(['ADMIN', 'SUPPORTADMIN']), adminController.categoryList);
+router.get("/category-list", authorizeRole(['ADMIN', 'SUPPORTADMIN', 'OPERATOR']), adminController.categoryList);
 router.post("/category-create", authorizeRole(['ADMIN', 'SUPPORTADMIN']), adminController.categoryCreate);
 router.get("/category-details/:id", authorizeRole(['ADMIN', 'SUPPORTADMIN']), adminController.categoryDetails);
 router.patch("/category-update/:id", authorizeRole(['ADMIN', 'SUPPORTADMIN']), adminController.categoryUpdate);
@@ -47,7 +47,7 @@ router.patch("/operator-update/:id", authorizeRole(['ADMIN', 'SUPPORTADMIN', 'CO
 router.delete("/operator-delete/:id", authorizeRole(['ADMIN', 'SUPPORTADMIN', 'COMPANY']), utilController.operatorDelete);
 router.put("/operator-update-active/:id", authorizeRole(['ADMIN', 'SUPPORTADMIN', 'COMPANY']), utilController.operatorUpdateActive);
 
-router.get("/customize-add-stock-details", authorizeRole(['COMPANY']), companyController.getCustomizeAddStockDetails);
+router.get("/customize-add-stock-details", authorizeRole(['COMPANY', 'OPERATOR']), utilController.getCustomizeAddStockDetails);
 router.post("/save-customize-add-stock-details", authorizeRole(['COMPANY']), companyController.saveCustomizeAddStockDetails);
 
 module.exports = router;

@@ -2,6 +2,7 @@
 const mongoose = require('mongoose');
 
 const authenticationSchema = new mongoose.Schema({
+  user_code: {type: String},
   user_id: {type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true},
   name: {type: String, required: true},
   login_id: {type: String, required: true, unique: true,},

@@ -11,6 +11,7 @@ import Category from './components/Category';
 import Item from './components/Item';
 import Operator from './components/Operator';
 import CustomizeAddStock from './components/CustomizeAddStock';
+import AddStock from './components/AddStock';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min';
 // import './assets/lib/font-awesome-all-min.css'
@@ -116,6 +117,7 @@ function AppContent({ isAuthenticated, userType }) {
               <Route path='/items/*' element={((user_type ==='ADMIN') || (user_type ==='SUPPORTADMIN') || (user_type ==='COMPANY')  || (user_type ==='OPERATOR')) ? <Item /> : <Unauthorized />} />
               <Route path='/operators/*' element={((user_type ==='ADMIN') || (user_type ==='SUPPORTADMIN') || (user_type ==='COMPANY')) ? <Operator /> : <Unauthorized />} />
               <Route path='/customize-add-stock/*' element={(user_type ==='COMPANY') ? <CustomizeAddStock /> : <Unauthorized />} />
+              <Route path='/add-stock/*' element={((user_type ==='OPERATOR') || (user_type ==='COMPANY'))  ? <AddStock /> : <Unauthorized />} />
             </Routes>
           </main>
         </div>

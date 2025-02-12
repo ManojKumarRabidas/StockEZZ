@@ -48,6 +48,7 @@ module.exports = {
             const hashedPassword = await bcrypt.hash(password, salt);
             const userDoc = await userModel.create(body);
             await authModel.create({
+            user_code: userDoc.code,
             user_id: userDoc._id,
             user_type: userDoc.user_type,
             name: userDoc.name,
@@ -150,6 +151,7 @@ module.exports = {
             const hashedPassword = await bcrypt.hash(password, salt);
             const companyDoc = await companyModel.create(body);
             await authModel.create({
+            user_code: companyDoc.code,
             user_id: companyDoc._id,
             user_type: "COMPANY",
             name: companyDoc.name,

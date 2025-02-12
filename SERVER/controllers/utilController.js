@@ -4,6 +4,7 @@ const codeSequenceModel = require("../models/codesequence");
 const companyModel = require("../models/companies");
 const userModel = require("../models/user");
 const authModel = require("../models/authentication");
+const stockStructureModel = require("../models/stockStructure");
 module.exports = {
     createCode: async (userType) => {
         try {
@@ -48,13 +49,34 @@ module.exports = {
             res.status(500).json({ msg: "Failed to retrieve companies" });
           }
     },
+    getCustomizeAddStockDetails: async(req, res)=>{
+        try {
+            const userId = new ObjectId(req.user.id);
+            const userType = req.user.user_type;
+            if (userType === "COMPANY") {
+                companyId = userId;
+            } else if(userType === "OPERATOR"){
+                let user = await userModel.findById(userId, {company:1});
+                companyId = new ObjectId(user.company)
+            }
+            let stockStructure = await stockStructureModel.findOne({companyId: companyId});
+            res.status(200).json({ stockStructure: stockStructure });
+          } catch (error) {
+            res.status(500).json({ msg: "Failed to retrieve stock structure" });
+          }
+    },
 
     operatorList: async(req, res)=>{
         try {
             const userId = new ObjectId(req.user.id);
+            const userType = req.user.user_type;
+            const matchStage = { user_type: { $in: ["OPERATOR"] } };
+
+            if (userType === "COMPANY") {
+                matchStage.company = { $in: [userId] };
+            }
             const docs = await userModel.aggregate([
-                {$match: {user_type: {$in: ["OPERATOR"]}}},
-                {$match:  {company: {$in: [userId]}}},
+                {$match: matchStage},
                 {$lookup: {from: "authentications",
                         localField: "_id",
                         foreignField: "user_id",
@@ -98,6 +120,7 @@ module.exports = {
             const hashedPassword = await bcrypt.hash(password, salt);
             const userDoc = await userModel.create(body);
             await authModel.create({
+            user_code: userDoc.code,
             user_id: userDoc._id,
             user_type: userDoc.user_type,
             name: userDoc.name,
