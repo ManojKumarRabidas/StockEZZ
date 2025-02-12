@@ -25,9 +25,10 @@ function Login() {
       const result = await response.json();
       if (response.ok){
         sessionStorage.setItem('token', result.token);
-        sessionStorage.setItem('eiUserName', result.userName);
+        sessionStorage.setItem('seUserName', result.userName);
+        sessionStorage.setItem('seCode', result.code);
         window.dispatchEvent(new Event('storage'));
-        navigate("/home");
+        // navigate("/home");
         location.reload()
       } else{
         setError(result.msg);

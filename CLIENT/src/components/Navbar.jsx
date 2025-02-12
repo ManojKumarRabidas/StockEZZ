@@ -32,7 +32,8 @@ function Navbar() {
   }, []);
 
   const handleLogout = async () => {
-    sessionStorage.removeItem('eiUserName');
+    sessionStorage.removeItem('seUserName');
+    sessionStorage.removeItem('seCode');
     sessionStorage.removeItem('token');
     window.dispatchEvent(new Event('storage'));
     await fetch(`${HOST}:${PORT}/server/logout`, {

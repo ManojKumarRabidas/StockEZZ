@@ -3,6 +3,10 @@ Secondary: Slate Gray (#4A4A4A)
 Accent: Royal Blue (#0057B7)
 Text: Jet Black (#121212)
 Hover/Active: Light Silver (#CFCFCF) */
+
+.vrl {
+  border-right: 1px solid  #cccccc;
+}
 .sidebar {
   margin-top: 56px; 
 }
@@ -314,6 +318,55 @@ button, button a{
 
 .log-in-buttons button a{
   color: white;
+}
+
+/* Tag Input Styling */
+.tag-container {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  padding: 0.375rem 0.75rem !important;
+  border: 1px solid #ced4da !important;
+  border-radius: 0.375rem !important;
+  background-color: #fff !important;
+  min-height: 38px !important;
+  align-items: center !important;
+  gap: 5px !important;
+}
+
+.tag-input {
+  border: none !important;
+  outline: none !important;
+  flex-grow: 1 !important;
+  min-width: 120px !important;
+  padding: 5px !important;
+  font-size: 1rem !important;
+  background: transparent !important;
+}
+
+/* Tag Style */
+.badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  padding: 0.375rem 0.5rem !important;
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+  color: #fff !important;
+  background-color: #0d6efd !important;
+  border-radius: 0.25rem !important;
+}
+
+.badge .remove {
+  margin-left: 6px !important;
+  cursor: pointer !important;
+  color: #fff !important;
+}
+
+.badge .remove:hover {
+  color: #ff4d4f !important;
+}
+
+.cursor-pointer {
+  cursor: pointer;
 }
 /* Media queries for responsiveness */
 @media (max-width: 991.98px) {

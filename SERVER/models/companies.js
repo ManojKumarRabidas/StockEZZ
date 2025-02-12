@@ -9,6 +9,7 @@ const companySchema = new mongoose.Schema({
     address: {type: String, required: true},
     pin: {type: Number, required: true},
     gstNo: {type: String},
+    director: {type: String},
     active: {type: Boolean},
     subscription: {type: Boolean},
     subscriptionDuration: {type: Number},
