@@ -6,7 +6,7 @@ const HOST = import.meta.env.VITE_HOST;
 const PORT = import.meta.env.VITE_PORT;
 import toastr from "toastr";
 const token = sessionStorage.getItem("token");
-function addStock() {
+function AddStock() {
   const [sl_no, setSlNo] = useState("");
   const [date, setDate] = useState(new Date());
   const [time, setTime] = useState(new Date());
@@ -47,7 +47,6 @@ function addStock() {
           if (response) {
             const result = await response.json();
             if (response.ok) {
-                console.log("result.stockStructure", result.stockStructure); 
                 if(result.stockStructure != null){
                     setStockStructure(result.stockStructure)
                     // setSlNo(result.stockStructure.sl_no);
@@ -82,7 +81,6 @@ function addStock() {
             toastr.error("We are unable to process now. Please try again later.");
           }
     } catch (err) {
-        console.log("err", err)
       toastr.error("Failed to load details.");
     }
   };
@@ -113,7 +111,7 @@ function addStock() {
     try {
         const response = await fetch(`${HOST}:${PORT}/server/buyer-list`, {
             method: "GET",
-            headers: { 'authorization': `Bearer ${token}` },
+            headers: { 'authorization': `Bearer ${token}`, 'active': true },
           });
           if (response) {
             const result = await response.json();
@@ -155,9 +153,9 @@ function addStock() {
   };
   useEffect(() => {
     fetchStructureDetails();
-    // fetchCategories();
-    // fetchBuyers();
-    // fetchSellers();
+    fetchCategories();
+    fetchBuyers();
+    fetchSellers();
   }, []);
 
   const handleReset = () => {
@@ -239,10 +237,6 @@ function addStock() {
             </div>}
         </div>
         <div className="row">
-            {/* {stockStructure.company_code && <div className="col mb-3">
-                <label className="form-label mx-3">Company Code <span className="ei-col-red">*</span></label>
-                <input name="company_code" type="text" maxLength={70} className="form-control" aria-describedby="emailHelp" value={company_code} onChange={(e) => setCompanyCode(e.target.value)}/>
-            </div>} */}
         </div>
         <div className="row">
             {stockStructure.seller && <div className="col mb-3">
@@ -261,26 +255,31 @@ function addStock() {
             </div>}
             {stockStructure.batch_price && <div className="col mb-3">
                 <label className="form-label mx-3">Batch Price</label>
-                <input name="batch_price" type="text" maxLength={70} className="form-control" aria-describedby="emailHelp" value={batch_price} onChange={(e) => setBatchPrice(e.target.value)}/>
+                <input name="batch_price" type="NUMBER" maxLength={70} className="form-control" aria-describedby="emailHelp" value={batch_price} onChange={(e) => setBatchPrice(e.target.value)}/>
             </div>}
             {stockStructure.quantity && <div className="col mb-3">
                 <label className="form-label mx-3">Quantity</label>
-                <input name="quantity" type="text" maxLength={70} className="form-control" aria-describedby="emailHelp" value={quantity} onChange={(e) => setQuantity(e.target.value)}/>
+                <input name="quantity" type="NUMBER" maxLength={70} className="form-control" aria-describedby="emailHelp" value={quantity} onChange={(e) => setQuantity(e.target.value)}/>
             </div>}
         </div>
         <div className="row">
-            {stockStructure.item_status && <div className="col mb-3">
-                <label className="form-label mx-3">Item Status (Received/Accepted/Returned) <span className="ei-col-red">*</span></label>
-                <input name="item_status" type="text" maxLength={70} className="form-control" aria-describedby="emailHelp" value={item_status} onChange={(e) => setItemStatus(e.target.value)}/>
+            {stockStructure.item_status && <div className="col-4 mb-3">
+              <label className="form-label">Item Status <span className="ei-col-red">*</span></label>
+              <select className="form-select" aria-label="Default select example" name="item_status" value={item_status} onChange={(e) => setItemStatus(e.target.value)}>
+                  <option>--Select item status--</option>
+                  <option value="RECEIVED">Received</option>
+                  <option value="ACCEPTED">Accepted</option>
+                  <option value="RETURNED">Returned</option>
+              </select>
             </div>}
-            {stockStructure.return_reason && <div className="col mb-3">
+            {stockStructure.return_reason && <div className="col-8 mb-3">
                 <label className="form-label mx-3">Return Reason(If Returned)</label>
                 <input name="return_reason" type="text" maxLength={70} className="form-control" aria-describedby="emailHelp" value={return_reason} onChange={(e) => setReturnReason(e.target.value)}/>
             </div>}
         </div>
         <div className="row">
             {stockStructure.remarks && <div className="col mb-3">
-                <label className="form-label mx-3">Remarks</label>
+                <label className="form-label mx-3">Remarks (If any)</label>
                 <input name="remarks" type="text" maxLength={70} className="form-control" aria-describedby="emailHelp" value={remarks} onChange={(e) => setRemarks(e.target.value)}/>
             </div>}
         </div>
@@ -325,12 +324,35 @@ function addStock() {
                 <input name="sold_to" type="text" maxLength={70} className="form-control" aria-describedby="emailHelp" value={sold_to} onChange={(e) => setSoldTo(e.target.value)}/>
             </div>}
             {stockStructure.warrantee_guarente && <div className="col mb-3">
-                <label className="form-label mx-3">Warrantee/Guarente (Applicable or not) </label>
-                <input name="warrantee_guarente" type="text" maxLength={70} className="form-control" aria-describedby="emailHelp" value={warrantee_guarente} onChange={(e) => setWarranteeGuarente(e.target.value)}/>
+              <label className="form-label">Warrantee/Guarente (Applicable or not) <span className="ei-col-red">*</span></label>
+              <select className="form-select" aria-label="Default select example" name="warrantee_guarente" value={warrantee_guarente} onChange={(e) => setWarranteeGuarente(e.target.value)}>
+                  <option>--Select--</option>
+                  <option value="WARRANTEE">Warrantee Applicable</option>
+                  <option value="GUARENTE">Guarente Applicable</option>
+                  <option value="NOTHING">Nothing Applicable</option>
+              </select>
             </div>}
             {stockStructure.warrantee_guarente_duration && <div className="col mb-3">
-                <label className="form-label mx-3">Warrantee/Guarente Duration (In months)</label>
-                <input name="warrantee_guarente_duration" type="text" maxLength={70} className="form-control" aria-describedby="emailHelp" value={warrantee_guarente_duration} onChange={(e) => setWarranteeGuarenteDuration(e.target.value)}/>
+              <label className="form-label">Warrantee/Guarente Duration</label>
+              <select className="form-select" aria-label="Default select example" name="warrantee_guarente_duration" value={warrantee_guarente_duration} onChange={(e) => setWarranteeGuarenteDuration(e.target.value)}>
+                  <option>--Select duration if applicable--</option>
+                  <option value="1">1 Month</option>
+                  <option value="3">3 Months</option>
+                  <option value="6">6 Months</option>
+                  <option value="12">1 Year</option>
+                  <option value="24">2 Years</option>
+                  <option value="36">3 Years</option>
+                  <option value="48">4 Years</option>
+                  <option value="60">5 Years</option>
+                  <option value="72">6 Years</option>
+                  <option value="84">7 Years</option>
+                  <option value="96">8 Years</option>
+                  <option value="108">9 Years</option>
+                  <option value="120">10 Years</option>
+                  <option value="180">15 Years</option>
+                  <option value="240">20 Years</option>
+                  <option value="300">25 Years</option>
+              </select>
             </div>}
         </div>
         <button type="submit" className="btn btn-primary">Save</button>
@@ -339,4 +361,4 @@ function addStock() {
     </div>
   );
 }
-export default addStock;
+export default AddStock;

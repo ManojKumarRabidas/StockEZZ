@@ -47,6 +47,20 @@ router.patch("/operator-update/:id", authorizeRole(['ADMIN', 'SUPPORTADMIN', 'CO
 router.delete("/operator-delete/:id", authorizeRole(['ADMIN', 'SUPPORTADMIN', 'COMPANY']), utilController.operatorDelete);
 router.put("/operator-update-active/:id", authorizeRole(['ADMIN', 'SUPPORTADMIN', 'COMPANY']), utilController.operatorUpdateActive);
 
+router.get("/buyer-list", authorizeRole(['OPERATOR', 'COMPANY']), utilController.buyerList);
+router.post("/buyer-create", authorizeRole(['OPERATOR', 'COMPANY']), utilController.buyerCreate);
+router.get("/buyer-details/:id", authorizeRole(['OPERATOR', 'COMPANY']), utilController.buyerDetails);
+router.patch("/buyer-update/:id", authorizeRole(['OPERATOR', 'COMPANY']), utilController.buyerUpdate);
+router.delete("/buyer-delete/:id", authorizeRole(['OPERATOR', 'COMPANY']), utilController.buyerDelete);
+router.put("/buyer-update-active/:id", authorizeRole(['OPERATOR', 'COMPANY']), utilController.buyerUpdateActive);
+
+router.get("/seller-list", authorizeRole(['OPERATOR', 'COMPANY']), utilController.sellerList);
+router.post("/seller-create", authorizeRole(['OPERATOR', 'COMPANY']), utilController.sellerCreate);
+router.get("/seller-details/:id", authorizeRole(['OPERATOR', 'COMPANY']), utilController.sellerDetails);
+router.patch("/seller-update/:id", authorizeRole(['OPERATOR', 'COMPANY']), utilController.sellerUpdate);
+router.delete("/seller-delete/:id", authorizeRole(['OPERATOR', 'COMPANY']), utilController.sellerDelete);
+router.put("/seller-update-active/:id", authorizeRole(['OPERATOR', 'COMPANY']), utilController.sellerUpdateActive);
+
 router.get("/customize-add-stock-details", authorizeRole(['COMPANY', 'OPERATOR']), utilController.getCustomizeAddStockDetails);
 router.post("/save-customize-add-stock-details", authorizeRole(['COMPANY']), companyController.saveCustomizeAddStockDetails);
 

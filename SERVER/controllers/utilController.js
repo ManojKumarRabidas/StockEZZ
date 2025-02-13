@@ -5,6 +5,8 @@ const companyModel = require("../models/companies");
 const userModel = require("../models/user");
 const authModel = require("../models/authentication");
 const stockStructureModel = require("../models/stockStructure");
+const buyerModel = require("../models/buyers");
+const sellerModel = require("../models/sellers");
 module.exports = {
     createCode: async (userType) => {
         try {
@@ -35,7 +37,11 @@ module.exports = {
                 upsert: true, returnDocument: "after", projection: {value: 1},
             });
             let code = ""+sequenceResult.value;
-            code = notation+ (code.padStart(6, "0"));
+            if(userType == "BUYER"){
+                code = notation+ (code.padStart(9, "0"));
+            }else{
+                code = notation+ (code.padStart(6, "0"));
+            }
             return {status: true, code: code};
         } catch (err) {
             return {status: false, code: null};
@@ -223,4 +229,227 @@ module.exports = {
             res.status(500).json({ msg: err.message });
         }
     },
+
+    
+    buyerList: async(req, res)=>{
+        try {
+            const userId = new ObjectId(req.user.id);
+            const userType = req.user.user_type;
+            const activeStatus = req.headers.active;
+            let matchStage = {};
+            if (userType === "COMPANY") {
+                companyId = userId;
+            } else if(userType === "OPERATOR"){
+                let user = await userModel.findById(userId, {company:1});
+                companyId = new ObjectId(user.company)
+            }
+            if(activeStatus){
+                matchStage = {companyId: companyId, active: true} 
+            } else{
+                matchStage = {companyId: companyId}
+            }
+            console.log("matchStage", matchStage)
+            const docs = await buyerModel.find(matchStage);
+            res.status(200).json({ docs: docs });
+        } catch (err) {
+            res.status(400).json({ msg: err.message });
+        }
+    },
+    buyerCreate: async(req, res)=>{
+        try {
+            const body = req.body;
+            if (!body.name || !body.phone ){
+                res.status(400).json({ msg: "Missing Parameters!" });
+                return;
+            }
+            body.createdBy = new ObjectId(req.user.id);
+            body.updatedBy = new ObjectId(req.user.id);
+            const userId = new ObjectId(req.user.id);
+            const userType = req.user.user_type;
+            if (userType === "COMPANY") {
+                companyId = userId;
+            } else if(userType === "OPERATOR"){
+                let user = await userModel.findById(userId, {company:1});
+                companyId = new ObjectId(user.company)
+            }
+            body.companyId= companyId;
+            const codeGenerator =await require("../controllers/utilController").createCode("BUYER");
+            // const codeGenerator = createCode("BUYER");
+            body.code = codeGenerator.code
+            const doc = await buyerModel.create(body);
+            res.status(201).json({ status: true, msg: "Buyer created successfully.", doc:doc});
+        } catch (err) {
+            if(err.code==11000){
+                res.status(500).json({ status: false, msg: "Same buyer already exists. Please check from buyer list." });
+                return
+            }
+            res.status(500).json({ status: false, msg: err.message });
+        }
+    },
+    buyerDetails: async(req, res)=>{
+        try {
+            const params = req.params
+            if (!params || !params.id){
+                res.status(400).json({ msg: "Missing Parameters!" });
+                return;
+            }
+            const doc = await buyerModel.findById({ _id: params.id });
+            res.status(200).json({ doc: doc });
+        } catch (err) {
+            res.status(400).json({ msg: err.message });
+        }
+    },
+    buyerUpdate: async(req, res)=>{
+        try {
+            const params = req.params;
+            const body = req.body;
+            body.updatedBy = new ObjectId(req.user.id);
+            if (!params || !params.id || !body){
+                res.status(400).json({ msg: "Missing Parameters!" });
+                return;
+            }
+            const doc = await buyerModel.findByIdAndUpdate(params.id, body, {new: true});
+            res.status(200).json({ message: "Buyer details updated successfully", doc: doc });
+        } catch (err) {
+            res.status(500).json({ msg: err.message });
+        }
+    },
+    buyerDelete: async(req, res)=>{
+        try {
+            const params = req.params;
+            if (!params || !params.id){
+                res.status(400).json({ msg: "Missing Parameters!" });
+                return;
+            }
+            await buyerModel.findByIdAndDelete({ _id: params.id });
+            res.status(200).json({ message: "Buyer deleted successfully" });
+        } catch (err) {
+            res.status(400).json({ msg: err.message });
+        }
+    },
+    buyerUpdateActive: async(req, res)=>{
+        try {
+            const params = req.params;
+            const body = req.body;
+            body.updatedBy = new ObjectId(req.user.id);
+            if (!params || !params.id || !body){
+                res.status(400).json({ msg: "Missing Parameters!" });
+                return;
+            }
+            const doc = await buyerModel.updateOne({_id: new ObjectId(params.id)},{$set: body}, {new: true});
+            res.status(200).json({ message: "Buyer's activation status updated successfully", doc: doc });
+        } catch (err) {
+            res.status(500).json({ msg: err.message });
+        }
+    },
+    
+    sellerList: async(req, res)=>{
+        try {
+            const userId = new ObjectId(req.user.id);
+            const userType = req.user.user_type;
+            const activeStatus = req.headers.active;
+            let matchStage = {};
+            if (userType === "COMPANY") {
+                companyId = userId;
+            } else if(userType === "OPERATOR"){
+                let user = await userModel.findById(userId, {company:1});
+                companyId = new ObjectId(user.company)
+            }
+            if(activeStatus){
+                matchStage = {companyId: companyId, active: true} 
+            } else{
+                matchStage = {companyId: companyId}
+            }
+            const docs = await sellerModel.find(matchStage);
+            res.status(200).json({ docs: docs });
+        } catch (err) {
+            res.status(400).json({ msg: err.message });
+        }
+    },
+    sellerCreate: async(req, res)=>{
+        try {
+            const body = req.body;
+            if (!body.name || !body.company_name ){
+                res.status(400).json({ msg: "Missing Parameters!" });
+                return;
+            }
+            body.createdBy = new ObjectId(req.user.id);
+            body.updatedBy = new ObjectId(req.user.id);
+            const userId = new ObjectId(req.user.id);
+            const userType = req.user.user_type;
+            if (userType === "COMPANY") {
+                companyId = userId;
+            } else if(userType === "OPERATOR"){
+                let user = await userModel.findById(userId, {company:1});
+                companyId = new ObjectId(user.company)
+            }
+            body.companyId= companyId;
+            const codeGenerator =await require("../controllers/utilController").createCode("SELLER");
+            body.code = codeGenerator.code
+            const doc = await sellerModel.create(body);
+            res.status(201).json({ status: true, msg: "Seller created successfully.", doc:doc});
+        } catch (err) {
+            if(err.code==11000){
+                res.status(500).json({ status: false, msg: "Seller already exists. Please check from seller list." });
+                return
+            }
+            res.status(500).json({ status: false, msg: err.message });
+        }
+    },
+    sellerDetails: async(req, res)=>{
+        try {
+            const params = req.params
+            if (!params || !params.id){
+                res.status(400).json({ msg: "Missing Parameters!" });
+                return;
+            }
+            const doc = await sellerModel.findById({ _id: params.id });
+            res.status(200).json({ doc: doc });
+        } catch (err) {
+            res.status(400).json({ msg: err.message });
+        }
+    },
+    sellerUpdate: async(req, res)=>{
+        try {
+            const params = req.params;
+            const body = req.body;
+            body.updatedBy = new ObjectId(req.user.id);
+            if (!params || !params.id || !body){
+                res.status(400).json({ msg: "Missing Parameters!" });
+                return;
+            }
+            const doc = await sellerModel.findByIdAndUpdate(params.id, body, {new: true});
+            res.status(200).json({ message: "Seller details updated successfully", doc: doc });
+        } catch (err) {
+            res.status(500).json({ msg: err.message });
+        }
+    },
+    sellerDelete: async(req, res)=>{
+        try {
+            const params = req.params;
+            if (!params || !params.id){
+                res.status(400).json({ msg: "Missing Parameters!" });
+                return;
+            }
+            await sellerModel.findByIdAndDelete({ _id: params.id });
+            res.status(200).json({ message: "Seller deleted successfully" });
+        } catch (err) {
+            res.status(400).json({ msg: err.message });
+        }
+    },
+    sellerUpdateActive: async(req, res)=>{
+        try {
+            const params = req.params;
+            const body = req.body;
+            body.updatedBy = new ObjectId(req.user.id);
+            if (!params || !params.id || !body){
+                res.status(400).json({ msg: "Missing Parameters!" });
+                return;
+            }
+            const doc = await sellerModel.updateOne({_id: new ObjectId(params.id)},{$set: body}, {new: true});
+            res.status(200).json({ message: "Seller's activation status updated successfully", doc: doc });
+        } catch (err) {
+            res.status(500).json({ msg: err.message });
+        }
+    }
 }    
