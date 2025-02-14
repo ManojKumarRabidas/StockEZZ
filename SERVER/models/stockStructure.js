@@ -23,8 +23,8 @@ const stockStructureSchema = new mongoose.Schema({
     item_sell_price: {type: Boolean},
     sold_date: {type: Boolean},
     sold_to: {type: Boolean},
-    warrantee_guarente: {type: Boolean},
-    warrantee_guarente_duration: {type: Boolean},
+    warrantee_guarantee: {type: Boolean},
+    warrantee_guarantee_duration: {type: Boolean},
     companyId: {type: mongoose.Schema.Types.ObjectId},
     updatedBy: {type: mongoose.Schema.Types.ObjectId}
 }, { timestamps: true });

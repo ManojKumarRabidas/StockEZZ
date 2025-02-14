@@ -15,7 +15,6 @@ module.exports = {
             
             res.status(201).json({ status: true, msg: "Structute saved successfully.", doc:doc});
         } catch(err){
-            console.log(err)
             res.status(500).json({ msg: "Failed to save stock structure" });
         }
     }
