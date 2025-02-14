@@ -27,8 +27,8 @@ function CustomizeAddStock() {
   const [item_sell_price, setItemSellPrice] = useState(false);
   const [sold_date, setSoldDate] = useState(false)
   const [sold_to, setSoldTo] = useState(false)
-  const [warrantee_guarente, setWarranteeGuarente] = useState(false)
-  const [warrantee_guarente_duration, setWarranteeGuarenteDuration] = useState(false)
+  const [warrantee_guarantee, setWarranteeGuarente] = useState(false)
+  const [warrantee_guarantee_duration, setWarranteeGuarenteDuration] = useState(false)
 
   const fetchDetails = async () => {
     try {
@@ -62,8 +62,8 @@ function CustomizeAddStock() {
                     setItemSellPrice(result.stockStructure.item_sell_price);
                     setSoldDate(result.stockStructure.sold_date);
                     setSoldTo(result.stockStructure.sold_to);
-                    setWarranteeGuarente(result.stockStructure.warrantee_guarente);
-                    setWarranteeGuarenteDuration(result.stockStructure.warrantee_guarente_duration);
+                    setWarranteeGuarente(result.stockStructure.warrantee_guarantee);
+                    setWarranteeGuarenteDuration(result.stockStructure.warrantee_guarantee_duration);
                 }
             } else {
               toastr.error(result.msg);
@@ -72,7 +72,6 @@ function CustomizeAddStock() {
             toastr.error("We are unable to process now. Please try again later.");
           }
     } catch (err) {
-        console.log("err", err)
       toastr.error("Failed to load details.");
     }
   };
@@ -111,7 +110,7 @@ function CustomizeAddStock() {
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    const data = {time, seller, category, sub_category, batch_no, quantity, batch_price, remarks, item_status, return_reason, model, unique_code, mfg_date, exp_date, item_buy_price, item_sell_price, sold_date, sold_to, warrantee_guarente, warrantee_guarente_duration};
+    const data = {time, seller, category, sub_category, batch_no, quantity, batch_price, remarks, item_status, return_reason, model, unique_code, mfg_date, exp_date, item_buy_price, item_sell_price, sold_date, sold_to, warrantee_guarantee, warrantee_guarantee_duration};
     const response = await fetch(`${HOST}:${PORT}/server/save-customize-add-stock-details`, {
       method: "POST",
       body: JSON.stringify(data),
@@ -363,8 +362,8 @@ function CustomizeAddStock() {
                 <div className="mb-3 form-switch d-flex justify-content-between vrl" style={{paddingLeft: "0"}}>
                     <label className="form-label mx-3">Warrantee/Guarente (Applicable or not) </label>
                     <div>
-                        <input className="form-check-input cursor-pointer" style={{ marginLeft: "0" }} type="checkbox" role="switch" id="warrantee_guarenteSwitch" checked={warrantee_guarente} onChange={(e) => setWarranteeGuarente(e.target.checked)}/>
-                        <label className="form-check-label mx-3" htmlFor="warrantee_guarenteSwitch">{warrantee_guarente ? <span style={{color: "green"}}>Enabled</span> : <span style={{color: "red"}}>Disabled</span>}</label>
+                        <input className="form-check-input cursor-pointer" style={{ marginLeft: "0" }} type="checkbox" role="switch" id="warrantee_guaranteeSwitch" checked={warrantee_guarantee} onChange={(e) => setWarranteeGuarente(e.target.checked)}/>
+                        <label className="form-check-label mx-3" htmlFor="warrantee_guaranteeSwitch">{warrantee_guarantee ? <span style={{color: "green"}}>Enabled</span> : <span style={{color: "red"}}>Disabled</span>}</label>
                     </div>
                 </div>
             </div>
@@ -372,8 +371,8 @@ function CustomizeAddStock() {
                 <div className="mb-3 form-switch d-flex justify-content-between" style={{paddingLeft: "0"}}>
                     <label className="form-label mx-3">Warrantee/Guarente Duration (In months)</label>
                     <div>
-                        <input className="form-check-input cursor-pointer" style={{ marginLeft: "0" }} type="checkbox" role="switch" id="warrantee_guarente_durationSwitch" checked={warrantee_guarente_duration} onChange={(e) => setWarranteeGuarenteDuration(e.target.checked)}/>
-                        <label className="form-check-label mx-3" htmlFor="warrantee_guarente_durationSwitch">{warrantee_guarente_duration ? <span style={{color: "green"}}>Enabled</span> : <span style={{color: "red"}}>Disabled</span>}</label>
+                        <input className="form-check-input cursor-pointer" style={{ marginLeft: "0" }} type="checkbox" role="switch" id="warrantee_guarantee_durationSwitch" checked={warrantee_guarantee_duration} onChange={(e) => setWarranteeGuarenteDuration(e.target.checked)}/>
+                        <label className="form-check-label mx-3" htmlFor="warrantee_guarantee_durationSwitch">{warrantee_guarantee_duration ? <span style={{color: "green"}}>Enabled</span> : <span style={{color: "red"}}>Disabled</span>}</label>
                     </div>
                 </div>
             </div>

@@ -248,7 +248,6 @@ module.exports = {
             } else{
                 matchStage = {companyId: companyId}
             }
-            console.log("matchStage", matchStage)
             const docs = await buyerModel.find(matchStage);
             res.status(200).json({ docs: docs });
         } catch (err) {
@@ -345,22 +344,28 @@ module.exports = {
     
     sellerList: async(req, res)=>{
         try {
+            const cmpVal = req.headers.value;
             const userId = new ObjectId(req.user.id);
             const userType = req.user.user_type;
             const activeStatus = req.headers.active;
             let matchStage = {};
+            let projectionStage = {};
             if (userType === "COMPANY") {
                 companyId = userId;
             } else if(userType === "OPERATOR"){
                 let user = await userModel.findById(userId, {company:1});
                 companyId = new ObjectId(user.company)
             }
-            if(activeStatus){
-                matchStage = {companyId: companyId, active: true} 
+            if(activeStatus && cmpVal){
+                matchStage = {companyId: companyId, active: true, name: {$regex: cmpVal, $options: "i"}} 
+                projectionStage = {name: 1}
+            } else if(activeStatus){
+                matchStage = {companyId: companyId,  active: true}
             } else{
                 matchStage = {companyId: companyId}
             }
-            const docs = await sellerModel.find(matchStage);
+            const docs = await sellerModel.find(matchStage, projectionStage);
+            console.log(docs)
             res.status(200).json({ docs: docs });
         } catch (err) {
             res.status(400).json({ msg: err.message });

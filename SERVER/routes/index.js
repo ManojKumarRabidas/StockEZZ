@@ -4,6 +4,7 @@ const userController = require("../controllers/userController");
 const adminController = require("../controllers/adminController");
 const utilController = require("../controllers/utilController");
 const companyController = require("../controllers/companyController");
+const operatorController = require("../controllers/operatorController");
 const { authorizeRole } = require('../middleware/authMiddleware');
 
 router.post('/login', userController.userLogin);
@@ -63,5 +64,6 @@ router.put("/seller-update-active/:id", authorizeRole(['OPERATOR', 'COMPANY']), 
 
 router.get("/customize-add-stock-details", authorizeRole(['COMPANY', 'OPERATOR']), utilController.getCustomizeAddStockDetails);
 router.post("/save-customize-add-stock-details", authorizeRole(['COMPANY']), companyController.saveCustomizeAddStockDetails);
+router.post("/save-stock-details", authorizeRole(['OPERATOR']), operatorController.saveStockDetails);
 
 module.exports = router;

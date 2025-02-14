@@ -230,10 +230,16 @@ module.exports = {
 
     categoryList: async(req, res)=>{
         try {
-            const docs = await categoryModel.find().lean();;
-            for(let i=0; i<docs.length; i++){
-                if(docs[i].sub_categories && ((docs[i].sub_categories).length > 0)){
-                    docs[i].sub_categories = (docs[i].sub_categories).toString();
+            const cmpVal = req.headers.value;
+            let docs;
+            if(cmpVal){
+                docs = await categoryModel.find({category: {$regex: cmpVal, $options: "i"}}, {category: 1, sub_categories: 1}).limit(10);
+            } else {
+                docs = await categoryModel.find().lean();
+                for(let i=0; i<docs.length; i++){
+                    if(docs[i].sub_categories && ((docs[i].sub_categories).length > 0)){
+                        docs[i].sub_categories = (docs[i].sub_categories).toString();
+                    }
                 }
             }
             res.status(200).json({ docs: docs });
@@ -321,7 +327,27 @@ module.exports = {
 
     itemList: async(req, res)=>{
         try {
-            const docs = await itemModel.find();
+            const cmpVal = req.headers.value;
+            const userId = new ObjectId(req.user.id);
+            const userType = req.user.user_type;
+            const activeStatus = req.headers.active;
+            let matchStage = {};
+            let projectionStage = {};
+            if (userType === "COMPANY") {
+                companyId = userId;
+            } else if(userType === "OPERATOR"){
+                let user = await userModel.findById(userId, {company:1});
+                companyId = new ObjectId(user.company)
+            }
+            if(activeStatus && cmpVal){
+                matchStage = {companyId: companyId, active: true, name: {$regex: cmpVal, $options: "i"}} 
+                projectionStage = {name: 1}
+            } else if(activeStatus){
+                matchStage = {companyId: companyId,  active: true}
+            } else{
+                matchStage = {companyId: companyId}
+            }
+            const docs = await itemModel.find(matchStage, projectionStage);
             res.status(200).json({ docs: docs });
         } catch (err) {
             res.status(400).json({ msg: err.message });

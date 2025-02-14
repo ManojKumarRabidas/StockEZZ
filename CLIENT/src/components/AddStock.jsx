@@ -21,22 +21,64 @@ function AddStock() {
   const [item_status, setItemStatus] = useState("");
   const [return_reason, setReturnReason] = useState("");
   const [remarks, setRemarks] = useState("");
-  const [model, setModel] = useState("");
-  const [unique_code, setUniqueCode] = useState("");
-  const [mfg_date, setMfgDate] = useState("");
-  const [exp_date, setExpDate] = useState("")
-  const [item_buy_price, setItemBuyPrice] = useState("")
-  const [item_sell_price, setItemSellPrice] = useState("");
-  const [sold_date, setSoldDate] = useState("")
-  const [sold_to, setSoldTo] = useState("")
-  const [warrantee_guarente, setWarranteeGuarente] = useState("")
-  const [warrantee_guarente_duration, setWarranteeGuarenteDuration] = useState("")
+  // const [model, setModel] = useState("");
+  // const [unique_code, setUniqueCode] = useState("");
+  // const [mfg_date, setMfgDate] = useState("");
+  // const [exp_date, setExpDate] = useState("")
+  // const [item_buy_price, setItemBuyPrice] = useState("")
+  // const [item_sell_price, setItemSellPrice] = useState("");
+  // const [sold_date, setSoldDate] = useState("")
+  // const [sold_to, setSoldTo] = useState("")
+  // const [warrantee_guarantee, setWarranteeGuarente] = useState("")
+  // const [warrantee_guarantee_duration, setWarranteeGuarenteDuration] = useState("")
+  const [lowerPartEntries, setLowerPartEntries] = useState([
+    {
+      model: "",
+      unique_code: "",
+      mfg_date: "",
+      exp_date: "",
+      item_buy_price: "",
+      item_sell_price: "",
+      warrantee_guarantee: "",
+      warrantee_guarantee_duration: ""
+    }
+  ]);
 
   const [stockStructure, setStockStructure] = useState({})
   const [categories, setCategories] = useState([]);
   const [sellers, setSellers] = useState([]);
-  const [buyers, setBuyers] = useState([]);
+  const [items, setItems] = useState([]);
   const [subCategories, setSubCategories] = useState([]);
+
+  const addLowerPartEntry = () => {
+    setLowerPartEntries([
+      ...lowerPartEntries,
+      {
+        model: "",
+        unique_code: "",
+        mfg_date: "",
+        exp_date: "",
+        item_buy_price: "",
+        item_sell_price: "",
+        warrantee_guarantee: "",
+        warrantee_guarantee_duration: ""
+      }
+    ]);
+  };
+
+    // Function to handle changes in lower part fields
+  const handleLowerPartChange = (index, field, value) => {
+    const updatedEntries = [...lowerPartEntries];
+    updatedEntries[index][field] = value;
+    setLowerPartEntries(updatedEntries);
+  };
+
+    // Function to remove a lower part entry
+    const removeLowerPartEntry = (index) => {
+      if (lowerPartEntries.length > 1) {
+        setLowerPartEntries(lowerPartEntries.filter((_, i) => i !== index));
+      }
+    };
 
   const fetchStructureDetails = async () => {
     try {
@@ -71,8 +113,8 @@ function AddStock() {
                     // setItemSellPrice(result.stockStructure.item_sell_price);
                     // setSoldDate(result.stockStructure.sold_date);
                     // setSoldTo(result.stockStructure.sold_to);
-                    // setWarranteeGuarente(result.stockStructure.warrantee_guarente);
-                    // setWarranteeGuarenteDuration(result.stockStructure.warrantee_guarente_duration);
+                    // setWarranteeGuarente(result.stockStructure.warrantee_guarantee);
+                    // setWarranteeGuarenteDuration(result.stockStructure.warrantee_guarantee_duration);
                 }
             } else {
               toastr.error(result.msg);
@@ -85,17 +127,21 @@ function AddStock() {
     }
   };
 
-  const fetchCategories = async () => {
+  const fetchCategories = async (value) => {
     try {
         const response = await fetch(`${HOST}:${PORT}/server/category-list`, {
             method: "GET",
-            headers: { 'authorization': `Bearer ${token}` },
+            headers: { 'authorization': `Bearer ${token}`, 'value': value, 'active': true },
           });
           if (response) {
             const result = await response.json();
             if (response.ok) {
                 if(result.docs != null){
-                    setCategories(result.docs)
+                    const tempArr = []
+                    result.docs.map((item) =>{
+                      tempArr.push(item.category)
+                    })
+                    setCategories(tempArr)
                 }
             } else {
               toastr.error(result.msg);
@@ -107,39 +153,48 @@ function AddStock() {
       toastr.error("Failed to load details.");
     }
   };
-  const fetchBuyers = async () => {
-    try {
-        const response = await fetch(`${HOST}:${PORT}/server/buyer-list`, {
-            method: "GET",
-            headers: { 'authorization': `Bearer ${token}`, 'active': true },
-          });
-          if (response) {
-            const result = await response.json();
-            if (response.ok) {
-                if(result.docs != null){
-                    setBuyers(result.docs)
-                }
-            } else {
-              toastr.error(result.msg);
-            }
-          } else {
-            toastr.error("We are unable to process now. Please try again later.");
-          }
-    } catch (err) {
-      toastr.error("Failed to load details.");
-    }
-  };
-  const fetchSellers = async () => {
+  const fetchSellers = async (value) => {
     try {
         const response = await fetch(`${HOST}:${PORT}/server/seller-list`, {
             method: "GET",
-            headers: { 'authorization': `Bearer ${token}` },
+            headers: { 'authorization': `Bearer ${token}`, 'value': value, 'active': true },
           });
           if (response) {
             const result = await response.json();
             if (response.ok) {
                 if(result.docs != null){
-                    setSellers(result.docs)
+                  console.log("result.docs", result.docs)
+                  const tempArr = []
+                    result.docs.map((item) =>{
+                      tempArr.push(item.name)
+                    })
+                    setSellers(tempArr)
+                }
+            } else {
+              toastr.error(result.msg);
+            }
+          } else {
+            toastr.error("We are unable to process now. Please try again later.");
+          }
+    } catch (err) {
+      toastr.error("Failed to load details.");
+    }
+  };
+  const fetchItems = async (value) => {
+    try {
+        const response = await fetch(`${HOST}:${PORT}/server/item-list`, {
+            method: "GET",
+            headers: { 'authorization': `Bearer ${token}`, 'value': value, 'active': true },
+          });
+          if (response) {
+            const result = await response.json();
+            if (response.ok) {
+                if(result.docs != null){
+                    const tempArr = []
+                    result.docs.map((item) =>{
+                      tempArr.push(item.name)
+                    })
+                    setItems(tempArr)
                 }
             } else {
               toastr.error(result.msg);
@@ -153,11 +208,36 @@ function AddStock() {
   };
   useEffect(() => {
     fetchStructureDetails();
-    fetchCategories();
-    fetchBuyers();
-    fetchSellers();
   }, []);
 
+
+  const handleDropValueChange = (value, type) => {
+    if (type == "CATEGORY"){
+      setCategory(value);
+      setCategories([])
+      if(value != ""){fetchCategories(value)}
+    } else if(type == "SELLER"){
+      setSeller(value);
+      setSellers([])
+      if(value != ""){fetchSellers(value)}
+    } else if(type == "ITEM"){
+      setItemName(value);
+      setItems([])
+      if(value == ""){fetchItems(value)};
+    }
+  };
+  const handleSelect = (name, type) => {
+    if(type =="CATEGORY"){
+      setCategory(name);
+      setCategories([]);
+    } else if(type == "SELLER"){
+      setSeller(name);
+      setSellers([]);
+    } else if(type == "ITEM"){
+      setItemName(name);
+      setItems([]);
+    }
+  };
   const handleReset = () => {
     setSlNo("");
     setDate(new Date());
@@ -173,23 +253,25 @@ function AddStock() {
     setItemStatus("");
     setReturnReason("");
     setRemarks("");
-    setModel("");
-    setUniqueCode("");
-    setMfgDate("");
-    setExpDate("");
-    setItemBuyPrice("");
-    setItemSellPrice("");
-    setSoldDate("");
-    setSoldTo("");
-    setWarranteeGuarente("");
-    setWarranteeGuarenteDuration("");
+    setLowerPartEntries([
+      {
+        model: "",
+        unique_code: "",
+        mfg_date: "",
+        exp_date: "",
+        item_buy_price: "",
+        item_sell_price: "",
+        warrantee_guarantee: "",
+        warrantee_guarantee_duration: ""
+      }
+    ])
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-
-    const data = {sl_no, date, time, company_code, seller, category, sub_category, batch_no, quantity, batch_price, remarks, item_status, return_reason, model, unique_code, mfg_date, exp_date, item_buy_price, item_sell_price, sold_date, sold_to, warrantee_guarente, warrantee_guarente_duration};
-    const response = await fetch(`${HOST}:${PORT}/server/save-customize-add-stock-details`, {
+    const data = {sl_no, date, time, company_code, seller, category, sub_category, batch_no, quantity, batch_price, remarks, item_status, return_reason, stock_details: lowerPartEntries};
+    
+    const response = await fetch(`${HOST}:${PORT}/server/save-stock-details`, {
       method: "POST",
       body: JSON.stringify(data),
       headers: {
@@ -202,6 +284,8 @@ function AddStock() {
       if (response.ok) {
         
         toastr.success("Stock saved successfully.");
+        // setCategory("");
+        // setCategories([]);
         // navigate("/home");
       } else {
         toastr.error(result.msg);
@@ -215,10 +299,6 @@ function AddStock() {
     <div className="container my-2">
       <form onSubmit={handleSubmit}>
         <div className="row">
-            {stockStructure.sl_no && <div className="col mb-3">
-                <label className="form-label mx-3">Sl No <span className="ei-col-red">*</span></label>
-                <input name="sl_no" type="text" maxLength={70} className="form-control" aria-describedby="emailHelp" value={sl_no} onChange={(e) => setSlNo(e.target.value)}/>
-            </div>}
             {stockStructure.date && <div className="col mb-3 d-flex flex-column">
                 <label className="form-label mx-3">Received Date <span className="ei-col-red">*</span></label>
                 <DatePicker name="date" selected={date} className="form-control" aria-describedby="emailHelp" value={date} onChange={(date) => setDate(date)}/>
@@ -227,9 +307,19 @@ function AddStock() {
                 <label className="form-label mx-3">Time </label>
                 <DatePicker name="time" selected={time} className="form-control" aria-describedby="emailHelp" value={time} onChange={(time) => setTime(time)} showTimeSelect showTimeSelectOnly timeCaption="Select Time" timeIntervals={10} dateFormat="HH:mm aa"/>
             </div>}
+            {stockStructure.sl_no && <div className="col mb-3">
+                <label className="form-label mx-3">Sl No</label>
+                <input name="sl_no" type="text" maxLength={70} className="form-control" aria-describedby="emailHelp" value={sl_no} onChange={(e) => setSlNo(e.target.value)}/>
+            </div>}
             {stockStructure.category && <div className="col mb-3">
                 <label className="form-label mx-3">Category <span className="ei-col-red">*</span></label>
-                <input name="category" type="text" maxLength={70} className="form-control" aria-describedby="emailHelp" value={category} onChange={(e) => setCategory(e.target.value)}/>
+                <input autoComplete="off" name="category" type="text" maxLength={70} className="form-control" aria-describedby="emailHelp" value={category} onChange={(e) => {handleDropValueChange(e.target.value, "CATEGORY")}} />
+                {categories.length > 0 && (
+                  <ul style={{ border: "1px solid #ccc", padding: "5px", marginTop: "2px", listStyleType: "none", maxHeight: "150px", overflowY: "auto", position: "absolute", background: "white", width: "25%" }}>
+                  {categories.map((category, index) => (
+                    <li key={index} onClick={() => handleSelect(category, "CATEGORY")} style={{ padding: "5px", cursor: "pointer", borderBottom: "1px solid #eee",}}>{category}</li>
+                  ))}
+                </ul>)}
             </div>}
             {stockStructure.sub_category && <div className="col mb-3">
                 <label className="form-label mx-3">Sub Category </label>
@@ -237,15 +327,31 @@ function AddStock() {
             </div>}
         </div>
         <div className="row">
-        </div>
-        <div className="row">
             {stockStructure.seller && <div className="col mb-3">
-                <label className="form-label mx-3">Seller </label>
-                <input name="seller" type="text" maxLength={70} className="form-control" aria-describedby="emailHelp" value={seller} onChange={(e) => setSeller(e.target.value)}/>
+                {/* <label className="form-label mx-3">Seller </label>
+                <input name="seller" type="text" maxLength={70} className="form-control" aria-describedby="emailHelp" value={seller} onChange={(e) => setSeller(e.target.value)}/> */}
+
+                <label className="form-label mx-3">Seller</label>
+                <input autoComplete="off" name="seller" type="text" maxLength={244} className="form-control" aria-describedby="emailHelp" value={seller} onChange={(e) => {handleDropValueChange(e.target.value, "SELLER")}} />
+                {sellers.length > 0 && (
+                  <ul style={{ border: "1px solid #ccc", padding: "5px", marginTop: "2px", listStyleType: "none", maxHeight: "150px", overflowY: "auto", position: "absolute", background: "white", width: "25%" }}>
+                  {sellers.map((name, index) => (
+                    <li key={index} onClick={() => handleSelect(name, "SELLER")} style={{ padding: "5px", cursor: "pointer", borderBottom: "1px solid #eee",}}>{name}</li>
+                  ))}
+                </ul>)}
             </div>}
             {stockStructure.item_name && <div className="col mb-3">
+                {/* <label className="form-label mx-3">Item Name <span className="ei-col-red">*</span></label>
+                <input name="item_name" type="text" maxLength={70} className="form-control" aria-describedby="emailHelp" value={item_name} onChange={(e) => setItemName(e.target.value)}/> */}
+            
                 <label className="form-label mx-3">Item Name <span className="ei-col-red">*</span></label>
-                <input name="item_name" type="text" maxLength={70} className="form-control" aria-describedby="emailHelp" value={item_name} onChange={(e) => setItemName(e.target.value)}/>
+                <input autoComplete="off" name="item_name" type="text" maxLength={244} className="form-control" aria-describedby="emailHelp" value={item_name} onChange={(e) => {handleDropValueChange(e.target.value, "ITEM")}} />
+                {items.length > 0 && (
+                  <ul style={{ border: "1px solid #ccc", padding: "5px", marginTop: "2px", listStyleType: "none", maxHeight: "150px", overflowY: "auto", position: "absolute", background: "white", width: "25%" }}>
+                  {items.map((name, index) => (
+                    <li key={index} onClick={() => handleSelect(name, "ITEM")} style={{ padding: "5px", cursor: "pointer", borderBottom: "1px solid #eee",}}>{name}</li>
+                  ))}
+                </ul>)}
             </div>}
         </div>
         <div className="row">  
@@ -284,77 +390,74 @@ function AddStock() {
             </div>}
         </div>
         <hr />
-        <div className="row">
-            {stockStructure.model && <div className="col mb-3">
-                <label className="form-label mx-3">Model</label>
-                <input name="model" type="text" maxLength={70} className="form-control" aria-describedby="emailHelp" value={model} onChange={(e) => setModel(e.target.value)}/>
-            </div>}
-        </div>
-        <div className="row">
-            {stockStructure.unique_code && <div className="col mb-3">
-                <label className="form-label mx-3">Unique Code</label>
-                <input name="unique_code" type="text" maxLength={70} className="form-control" aria-describedby="emailHelp" value={unique_code} onChange={(e) => setUniqueCode(e.target.value)}/>
-            </div>}
-            {stockStructure.mfg_date && <div className="col mb-3">
-                <label className="form-label mx-3">Mfg Date</label>
-                <input name="mfg_date" type="date" maxLength={70} className="form-control" aria-describedby="emailHelp" value={mfg_date} onChange={(e) => setMfgDate(e.target.value)}/>
-            </div>}
-            {stockStructure.exp_date && <div className="col mb-3">
-                <label className="form-label mx-3">Exp Date</label>
-                <input name="exp_date" type="date" maxLength={70} className="form-control" aria-describedby="emailHelp" value={exp_date} onChange={(e) => setExpDate(e.target.value)}/>
-            </div>}
-        </div>
-        <div className="row">
-            {stockStructure.item_buy_price && <div className="col mb-3">
-                <label className="form-label mx-3">Item Buy Price</label>
-                <input name="item_buy_price" type="number" maxLength={70} className="form-control" aria-describedby="emailHelp" value={item_buy_price} onChange={(e) => setItemBuyPrice(e.target.value)}/>
-            </div>}
-            {stockStructure.item_sell_price && <div className="col mb-3">
-                <label className="form-label mx-3">Item Sell Price</label>
-                <input name="item_sell_price" type="number" maxLength={70} className="form-control" aria-describedby="emailHelp" value={item_sell_price} onChange={(e) => setItemSellPrice(e.target.value)}/>
-            </div>}
-            {stockStructure.sold_date && <div className="col mb-3">
-                <label className="form-label mx-3">Sold Date</label>
-                <input name="sold_date" type="date" maxLength={70} className="form-control" aria-describedby="emailHelp" value={sold_date} onChange={(e) => setSoldDate(e.target.value)}/>
-            </div>}
-        </div>
-        <div className="row">
-            {stockStructure.sold_to && <div className="col mb-3">
-                <label className="form-label mx-3">Sold To</label>
-                <input name="sold_to" type="text" maxLength={70} className="form-control" aria-describedby="emailHelp" value={sold_to} onChange={(e) => setSoldTo(e.target.value)}/>
-            </div>}
-            {stockStructure.warrantee_guarente && <div className="col mb-3">
-              <label className="form-label">Warrantee/Guarente (Applicable or not) <span className="ei-col-red">*</span></label>
-              <select className="form-select" aria-label="Default select example" name="warrantee_guarente" value={warrantee_guarente} onChange={(e) => setWarranteeGuarente(e.target.value)}>
-                  <option>--Select--</option>
-                  <option value="WARRANTEE">Warrantee Applicable</option>
-                  <option value="GUARENTE">Guarente Applicable</option>
-                  <option value="NOTHING">Nothing Applicable</option>
-              </select>
-            </div>}
-            {stockStructure.warrantee_guarente_duration && <div className="col mb-3">
-              <label className="form-label">Warrantee/Guarente Duration</label>
-              <select className="form-select" aria-label="Default select example" name="warrantee_guarente_duration" value={warrantee_guarente_duration} onChange={(e) => setWarranteeGuarenteDuration(e.target.value)}>
-                  <option>--Select duration if applicable--</option>
-                  <option value="1">1 Month</option>
-                  <option value="3">3 Months</option>
-                  <option value="6">6 Months</option>
-                  <option value="12">1 Year</option>
-                  <option value="24">2 Years</option>
-                  <option value="36">3 Years</option>
-                  <option value="48">4 Years</option>
-                  <option value="60">5 Years</option>
-                  <option value="72">6 Years</option>
-                  <option value="84">7 Years</option>
-                  <option value="96">8 Years</option>
-                  <option value="108">9 Years</option>
-                  <option value="120">10 Years</option>
-                  <option value="180">15 Years</option>
-                  <option value="240">20 Years</option>
-                  <option value="300">25 Years</option>
-              </select>
-            </div>}
-        </div>
+        {lowerPartEntries.map((entry, index) => (
+          <div key={index} className="border p-3 mb-3">
+            <div className="row">
+                {stockStructure.model && <div className="col mb-3">
+                    <label className="form-label mx-3">Model</label>
+                    <input name="model" type="text" maxLength={70} className="form-control" aria-describedby="emailHelp" value={entry.model} onChange={(e) => handleLowerPartChange(index, "model", e.target.value)}/>
+                </div>}
+                {stockStructure.unique_code && <div className="col mb-3">
+                    <label className="form-label mx-3">Unique Code</label>
+                    <input name="unique_code" type="text" maxLength={70} className="form-control" aria-describedby="emailHelp" value={entry.unique_code} onChange={(e) => handleLowerPartChange(index, "unique_code", e.target.value)}/>
+                </div>}
+                {stockStructure.mfg_date && <div className="col mb-3">
+                    <label className="form-label mx-3">Mfg Date</label>
+                    <input name="mfg_date" type="date" maxLength={70} className="form-control" aria-describedby="emailHelp" value={entry.mfg_date} onChange={(e) => handleLowerPartChange(index, "mfg_date", e.target.value)}/>
+                </div>}
+            </div>
+            <div className="row">
+                {stockStructure.exp_date && <div className="col mb-3">
+                    <label className="form-label mx-3">Exp Date</label>
+                    <input name="exp_date" type="date" maxLength={70} className="form-control" aria-describedby="emailHelp" value={entry.exp_date} onChange={(e) => handleLowerPartChange(index, "exp_date", e.target.value)}/>
+                </div>}
+                {stockStructure.item_buy_price && <div className="col mb-3">
+                    <label className="form-label mx-3">Item Buy Price</label>
+                    <input name="item_buy_price" type="number" maxLength={70} className="form-control" aria-describedby="emailHelp" value={entry.item_buy_price} onChange={(e) => handleLowerPartChange(index, "item_buy_price", e.target.value)}/>
+                </div>}
+                {stockStructure.item_sell_price && <div className="col mb-3">
+                    <label className="form-label mx-3">Item Sell Price</label>
+                    <input name="item_sell_price" type="number" maxLength={70} className="form-control" aria-describedby="emailHelp" value={entry.item_sell_price} onChange={(e) => handleLowerPartChange(index, "item_sell_price", e.target.value)}/>
+                </div>}
+            </div>
+            <div className="row">
+                {stockStructure.warrantee_guarantee && <div className="col mb-3">
+                  <label className="form-label">Warrantee/Guarente <span className="ei-col-red">*</span></label>
+                  <select className="form-select" aria-label="Default select example" name="warrantee_guarantee" value={entry.warrantee_guarantee} onChange={(e) => handleLowerPartChange(index, "warrantee_guarantee", e.target.value)}>
+                      <option>--Select--</option>
+                      <option value="WARRANTEE">Warrantee Applicable</option>
+                      <option value="GUARENTE">Guarente Applicable</option>
+                      <option value="NOTHING">Nothing Applicable</option>
+                  </select>
+                </div>}
+                {stockStructure.warrantee_guarantee_duration && <div className="col mb-3">
+                  <label className="form-label">Warrantee/Guarente Duration</label>
+                  <select className="form-select" aria-label="Default select example" name="warrantee_guarantee_duration" value={entry.warrantee_guarantee_duration} onChange={(e) => handleLowerPartChange(index, "warrantee_guarantee_duration", e.target.value)}>
+                      <option>--Select duration if applicable--</option>
+                      <option value="1">1 Month</option>
+                      <option value="3">3 Months</option>
+                      <option value="6">6 Months</option>
+                      <option value="12">1 Year</option>
+                      <option value="24">2 Years</option>
+                      <option value="36">3 Years</option>
+                      <option value="48">4 Years</option>
+                      <option value="60">5 Years</option>
+                      <option value="72">6 Years</option>
+                      <option value="84">7 Years</option>
+                      <option value="96">8 Years</option>
+                      <option value="108">9 Years</option>
+                      <option value="120">10 Years</option>
+                      <option value="180">15 Years</option>
+                      <option value="240">20 Years</option>
+                      <option value="300">25 Years</option>
+                  </select>
+                </div>}
+            </div>
+            <div className="d-flex justify-content-end">
+              <button type="button" className="btn btn-danger mx-2" onClick={() => removeLowerPartEntry(index)}>Remove</button>
+              <button type="button" className="btn btn-primary mx-2" onClick={addLowerPartEntry}>+ Add More</button>
+            </div>
+          </div>))}
         <button type="submit" className="btn btn-primary">Save</button>
         <button type="button" className="btn btn-primary ms-4" onClick={handleReset}>Reset</button>
       </form>

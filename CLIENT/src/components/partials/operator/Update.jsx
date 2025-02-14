@@ -65,7 +65,6 @@ function Update() {
         toastr.error("We are unable to process now. Please try again later 1.");
       }
     } catch (error) {
-      console.log(error)
       toastr.error("We are unable to process now. Please try again later.");
     }
   };
