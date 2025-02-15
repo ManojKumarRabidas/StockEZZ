@@ -333,21 +333,27 @@ module.exports = {
             const activeStatus = req.headers.active;
             let matchStage = {};
             let projectionStage = {};
+            let companyIds;
             if (userType === "COMPANY") {
-                companyId = userId;
+                companyIds = [userId, new ObjectId("67a826f87c2ba5493e1d7a1f")];
             } else if(userType === "OPERATOR"){
                 let user = await userModel.findById(userId, {company:1});
-                companyId = new ObjectId(user.company)
+                companyIds = [new ObjectId(user.company), new ObjectId("67a826f87c2ba5493e1d7a1f")]
             }
             if(activeStatus && cmpVal){
-                matchStage = {companyId: companyId, active: true, name: {$regex: cmpVal, $options: "i"}} 
+                matchStage = {companyId: {$in: companyIds}, active: true, name: {$regex: cmpVal, $options: "i"}} 
                 projectionStage = {name: 1}
             } else if(activeStatus){
-                matchStage = {companyId: companyId,  active: true}
+                matchStage = {companyId: {$in: companyIds},  active: true}
             } else{
-                matchStage = {companyId: companyId}
+                if (userType != ("ADMIN" && "SUPPORTADMIN")) {
+                    matchStage = {companyId: {$in: companyIds}}
+                }
             }
+            console.log("matchStage", matchStage)
+            console.log("projectionStage", projectionStage)
             const docs = await itemModel.find(matchStage, projectionStage);
+            console.log("docs", docs)
             res.status(200).json({ docs: docs });
         } catch (err) {
             res.status(400).json({ msg: err.message });
@@ -359,6 +365,16 @@ module.exports = {
             if (!body.name || !body.category ){
                 res.status(400).json({ msg: "Missing Parameters!" });
                 return;
+            }
+            const userId = new ObjectId(req.user.id);
+            const userType = req.user.user_type;
+            if (userType === ("ADMIN" || "SUPPORTADMIN")) {
+                body.companyId = new ObjectId("67a826f87c2ba5493e1d7a1f"); // Id of Admin user
+            } else if (userType === "COMPANY") {
+                body.companyId = userId;
+            } else if(userType === "OPERATOR"){
+                let user = await userModel.findById(userId, {company:1});
+                body.companyId = new ObjectId(user.company)
             }
             body.createdBy = new ObjectId(req.user.id);
             body.updatedBy = new ObjectId(req.user.id);

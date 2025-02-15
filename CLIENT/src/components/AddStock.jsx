@@ -10,11 +10,13 @@ function AddStock() {
   const [sl_no, setSlNo] = useState("");
   const [date, setDate] = useState(new Date());
   const [time, setTime] = useState(new Date());
-  const [company_code, setCompanyCode] = useState("");
   const [seller, setSeller] = useState("");
+  const [sellerId, setSellerId] = useState("");
   const [category, setCategory] = useState("");
+  const [categoryId, setCategoryId] = useState("");
   const [sub_category, setSubCategory] = useState("")
   const [item_name, setItemName] = useState("");
+  const [itemId, setItemId] = useState("");
   const [batch_no, setBatchNo] = useState("");
   const [quantity, setQuantity] = useState("");
   const [batch_price, setBatchPrice] = useState("");
@@ -126,7 +128,6 @@ function AddStock() {
       toastr.error("Failed to load details.");
     }
   };
-
   const fetchCategories = async (value) => {
     try {
         const response = await fetch(`${HOST}:${PORT}/server/category-list`, {
@@ -137,11 +138,7 @@ function AddStock() {
             const result = await response.json();
             if (response.ok) {
                 if(result.docs != null){
-                    const tempArr = []
-                    result.docs.map((item) =>{
-                      tempArr.push(item.category)
-                    })
-                    setCategories(tempArr)
+                    setCategories(result.docs)
                 }
             } else {
               toastr.error(result.msg);
@@ -163,12 +160,7 @@ function AddStock() {
             const result = await response.json();
             if (response.ok) {
                 if(result.docs != null){
-                  console.log("result.docs", result.docs)
-                  const tempArr = []
-                    result.docs.map((item) =>{
-                      tempArr.push(item.name)
-                    })
-                    setSellers(tempArr)
+                    setSellers(result.docs)
                 }
             } else {
               toastr.error(result.msg);
@@ -190,11 +182,7 @@ function AddStock() {
             const result = await response.json();
             if (response.ok) {
                 if(result.docs != null){
-                    const tempArr = []
-                    result.docs.map((item) =>{
-                      tempArr.push(item.name)
-                    })
-                    setItems(tempArr)
+                    setItems(result.docs)
                 }
             } else {
               toastr.error(result.msg);
@@ -226,15 +214,18 @@ function AddStock() {
       if(value == ""){fetchItems(value)};
     }
   };
-  const handleSelect = (name, type) => {
+  const handleSelect = (name, type, id) => {
     if(type =="CATEGORY"){
       setCategory(name);
+      setCategoryId(id);
       setCategories([]);
     } else if(type == "SELLER"){
       setSeller(name);
+      setSellerId(id);
       setSellers([]);
     } else if(type == "ITEM"){
       setItemName(name);
+      setItemId(id);
       setItems([]);
     }
   };
@@ -242,11 +233,13 @@ function AddStock() {
     setSlNo("");
     setDate(new Date());
     setTime(new Date());
-    setCompanyCode("")
     setSeller("")
+    setSellerId("")
     setCategory("");
+    setCategoryId("");
     setSubCategory("");
     setItemName("");
+    setItemId("");
     setBatchNo("");
     setQuantity("");
     setBatchPrice("");
@@ -269,7 +262,7 @@ function AddStock() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    const data = {sl_no, date, time, company_code, seller, category, sub_category, batch_no, quantity, batch_price, remarks, item_status, return_reason, stock_details: lowerPartEntries};
+    const data = {date, time, sl_no, categoryId, sub_category, sellerId, itemId, batch_no, batch_price, quantity, item_status, return_reason, remarks, stock_details: lowerPartEntries};
     
     const response = await fetch(`${HOST}:${PORT}/server/save-stock-details`, {
       method: "POST",
@@ -283,10 +276,8 @@ function AddStock() {
       const result = await response.json();
       if (response.ok) {
         
-        toastr.success("Stock saved successfully.");
-        // setCategory("");
-        // setCategories([]);
-        // navigate("/home");
+        toastr.success(result.msg);
+        handleReset()
       } else {
         toastr.error(result.msg);
       }
@@ -314,10 +305,11 @@ function AddStock() {
             {stockStructure.category && <div className="col mb-3">
                 <label className="form-label mx-3">Category <span className="ei-col-red">*</span></label>
                 <input autoComplete="off" name="category" type="text" maxLength={70} className="form-control" aria-describedby="emailHelp" value={category} onChange={(e) => {handleDropValueChange(e.target.value, "CATEGORY")}} />
+                <input hidden name="categoryId" type="text" maxLength={70} className="form-control" aria-describedby="emailHelp" value={categoryId} />
                 {categories.length > 0 && (
                   <ul style={{ border: "1px solid #ccc", padding: "5px", marginTop: "2px", listStyleType: "none", maxHeight: "150px", overflowY: "auto", position: "absolute", background: "white", width: "25%" }}>
-                  {categories.map((category, index) => (
-                    <li key={index} onClick={() => handleSelect(category, "CATEGORY")} style={{ padding: "5px", cursor: "pointer", borderBottom: "1px solid #eee",}}>{category}</li>
+                  {categories.map((item, index) => (
+                    <li key={index} onClick={() => handleSelect(item.category, "CATEGORY", item._id)} style={{ padding: "5px", cursor: "pointer", borderBottom: "1px solid #eee",}}>{item.category}</li>
                   ))}
                 </ul>)}
             </div>}
@@ -333,10 +325,11 @@ function AddStock() {
 
                 <label className="form-label mx-3">Seller</label>
                 <input autoComplete="off" name="seller" type="text" maxLength={244} className="form-control" aria-describedby="emailHelp" value={seller} onChange={(e) => {handleDropValueChange(e.target.value, "SELLER")}} />
+                <input hidden name="sellerId" type="text" maxLength={244} className="form-control" aria-describedby="emailHelp" value={sellerId} />
                 {sellers.length > 0 && (
                   <ul style={{ border: "1px solid #ccc", padding: "5px", marginTop: "2px", listStyleType: "none", maxHeight: "150px", overflowY: "auto", position: "absolute", background: "white", width: "25%" }}>
-                  {sellers.map((name, index) => (
-                    <li key={index} onClick={() => handleSelect(name, "SELLER")} style={{ padding: "5px", cursor: "pointer", borderBottom: "1px solid #eee",}}>{name}</li>
+                  {sellers.map((item, index) => (
+                    <li key={index} onClick={() => handleSelect(item.name, "SELLER",  item._id)} style={{ padding: "5px", cursor: "pointer", borderBottom: "1px solid #eee",}}>{item.name}</li>
                   ))}
                 </ul>)}
             </div>}
@@ -346,10 +339,11 @@ function AddStock() {
             
                 <label className="form-label mx-3">Item Name <span className="ei-col-red">*</span></label>
                 <input autoComplete="off" name="item_name" type="text" maxLength={244} className="form-control" aria-describedby="emailHelp" value={item_name} onChange={(e) => {handleDropValueChange(e.target.value, "ITEM")}} />
+                <input hidden name="itemId" type="text" maxLength={244} className="form-control" aria-describedby="emailHelp" value={itemId} />
                 {items.length > 0 && (
                   <ul style={{ border: "1px solid #ccc", padding: "5px", marginTop: "2px", listStyleType: "none", maxHeight: "150px", overflowY: "auto", position: "absolute", background: "white", width: "25%" }}>
-                  {items.map((name, index) => (
-                    <li key={index} onClick={() => handleSelect(name, "ITEM")} style={{ padding: "5px", cursor: "pointer", borderBottom: "1px solid #eee",}}>{name}</li>
+                  {items.map((item, index) => (
+                    <li key={index} onClick={() => handleSelect(item.name, "ITEM", item._id)} style={{ padding: "5px", cursor: "pointer", borderBottom: "1px solid #eee",}}>{item.name}</li>
                   ))}
                 </ul>)}
             </div>}

@@ -365,7 +365,6 @@ module.exports = {
                 matchStage = {companyId: companyId}
             }
             const docs = await sellerModel.find(matchStage, projectionStage);
-            console.log(docs)
             res.status(200).json({ docs: docs });
         } catch (err) {
             res.status(400).json({ msg: err.message });
