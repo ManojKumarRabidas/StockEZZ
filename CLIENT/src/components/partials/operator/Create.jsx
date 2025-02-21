@@ -18,15 +18,22 @@ function Create() {
 
   const fetchCompanies = async () => {
     try {
-      const response = await fetch(`${HOST}:${PORT}/server/get-companies`);
-      const data = await response.json();
-      if (response.ok) {
-        setCompanies(data.companies);
+      const response = await fetch(`${HOST}:${PORT}/server/company-list`, {
+        method: "GET",
+        headers: { 'authorization': `Bearer ${token}`, 'active': true },
+      });
+      if (response) {
+        const result = await response.json();
+        if (response.ok) {
+          setCompanies(result.docs);
+        } else {
+          toastr.error(result.msg);
+        }
       } else {
-        toastr.error("Failed to load companies.");
+        toastr.error("We are unable to process now. Please try again later.");
       }
-    } catch (err) {
-      toastr.error("Failed to load companies.");
+    } catch (error) {
+      toastr.error("We are unable to process now. Please try again later.");
     }
   };
 
@@ -80,7 +87,7 @@ function Create() {
             <div className="col mb-3">
               <label className="form-label">Company Name <span className="ei-col-red">*</span></label>
               <select className="form-select" aria-label="Default select example" name="type" value={company} onChange={(e) => setCompany(e.target.value)}>
-                <option value="">Select Company</option>
+                <option value="">--Select Company--</option>
                 {companies.map((company) => (
                   <option key={company._id} value={company._id}>
                     {company.name}

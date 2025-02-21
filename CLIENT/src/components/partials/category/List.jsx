@@ -138,7 +138,7 @@ function List() {
         headerClassName: "ei-text-center-imp",
         cell: ({ row }) => (
           <div style={{ textAlign: "center" }}>
-            <button type="button" className="btn btn-outline-light m-1" style={{ backgroundColor: "ghostwhite" }}>
+            <button title="Under maintanance" disabled type="button" className="btn btn-outline-light m-1" style={{ backgroundColor: "ghostwhite" }}>
               <Link to={`/categories/category-update/${row.original._id}`} className="card-link m-2" >Edit</Link>
             </button>
             <button type="button" className="btn btn-outline-light m-1" style={{ color: "blue", backgroundColor: "ghostwhite" }} onClick={() => handleDelete(row.original._id)} >Delete </button>

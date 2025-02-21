@@ -20,7 +20,7 @@ router.patch("/support-admin-update/:id", authorizeRole(['ADMIN']), adminControl
 router.delete("/support-admin-delete/:id", authorizeRole(['ADMIN']), adminController.supportAdminDelete);
 router.put("/support-admin-update-active/:id", authorizeRole(['ADMIN']), adminController.supportAdminUpdateActive);
 
-router.get("/company-list", authorizeRole(['ADMIN', 'SUPPORTADMIN']), adminController.companyList);
+router.get("/company-list", authorizeRole(['ADMIN', 'SUPPORTADMIN', 'COMPANY']), adminController.companyList);
 router.post("/company-create", authorizeRole(['ADMIN', 'SUPPORTADMIN']), adminController.companyCreate);
 router.get("/company-details/:id", authorizeRole(['ADMIN', 'SUPPORTADMIN']), adminController.companyDetails);
 router.patch("/company-update/:id", authorizeRole(['ADMIN', 'SUPPORTADMIN']), adminController.companyUpdate);
@@ -62,8 +62,10 @@ router.patch("/seller-update/:id", authorizeRole(['OPERATOR', 'COMPANY']), utilC
 router.delete("/seller-delete/:id", authorizeRole(['OPERATOR', 'COMPANY']), utilController.sellerDelete);
 router.put("/seller-update-active/:id", authorizeRole(['OPERATOR', 'COMPANY']), utilController.sellerUpdateActive);
 
-router.get("/customize-add-stock-details", authorizeRole(['COMPANY', 'OPERATOR']), utilController.getCustomizeAddStockDetails);
+router.patch("/brand-list", authorizeRole(['COMPANY', 'OPERATOR']), utilController.brandList);
+router.patch("/customize-add-stock-details", authorizeRole(['COMPANY', 'OPERATOR']), utilController.getCustomizeAddStockDetails);
 router.post("/save-customize-add-stock-details", authorizeRole(['COMPANY']), companyController.saveCustomizeAddStockDetails);
 router.post("/save-stock-details", authorizeRole(['OPERATOR']), operatorController.saveStockDetails);
+router.get("/get-company-details", authorizeRole(['OPERATOR']), operatorController.fetchCompanyDetails);
 
 module.exports = router;

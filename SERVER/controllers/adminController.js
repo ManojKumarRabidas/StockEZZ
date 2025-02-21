@@ -127,7 +127,11 @@ module.exports = {
 
     companyList: async(req, res)=>{
         try {
-            const docs = await companyModel.find();
+            const matchFilter = {};
+            if(req.user.user_type == "COMPANY"){
+                matchFilter._id = new ObjectId(req.user.id)
+            }
+            const docs = await companyModel.find(matchFilter);
             res.status(200).json({ docs: docs });
         } catch (err) {
             res.status(400).json({ msg: err.message });
@@ -142,6 +146,7 @@ module.exports = {
             }
             body.createdBy = new ObjectId(req.user.id);
             body.updatedBy = new ObjectId(req.user.id);
+            body.company_type = new ObjectId(body.company_type);
             const codeGenerator =await require("../controllers/utilController").createCode("COMPANY");
             body.code = codeGenerator.code
             const active = body.active;
@@ -231,9 +236,12 @@ module.exports = {
     categoryList: async(req, res)=>{
         try {
             const cmpVal = req.headers.value;
+            const activeStatus = req.headers.active;
             let docs;
-            if(cmpVal){
-                docs = await categoryModel.find({category: {$regex: cmpVal, $options: "i"}}, {category: 1, sub_categories: 1}).limit(10);
+            if(cmpVal && activeStatus){
+                docs = await categoryModel.find({category: {$regex: cmpVal, $options: "i"}, active: true}, {category: 1, sub_categories: 1}).limit(10);
+            } else if(activeStatus){
+                docs = await categoryModel.find({active: true}, {category: 1, sub_categories: 1});
             } else {
                 docs = await categoryModel.find().lean();
                 for(let i=0; i<docs.length; i++){
@@ -242,6 +250,7 @@ module.exports = {
                     }
                 }
             }
+            console.log("docs", docs)
             res.status(200).json({ docs: docs });
         } catch (err) {
             res.status(400).json({ msg: err.message });

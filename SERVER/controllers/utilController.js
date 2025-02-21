@@ -7,6 +7,7 @@ const authModel = require("../models/authentication");
 const stockStructureModel = require("../models/stockStructure");
 const buyerModel = require("../models/buyers");
 const sellerModel = require("../models/sellers");
+const brandModel = require("../models/brands");
 module.exports = {
     createCode: async (userType) => {
         try {
@@ -59,15 +60,15 @@ module.exports = {
         try {
             const userId = new ObjectId(req.user.id);
             const userType = req.user.user_type;
+            const body = req.body;
             if (userType === "COMPANY") {
                 companyId = userId;
             } else if(userType === "OPERATOR"){
-                let user = await userModel.findById(userId, {company:1});
-                companyId = new ObjectId(user.company)
+                companyId = new ObjectId(body.companyId)
             }
             let stockStructure = await stockStructureModel.findOne({companyId: companyId});
             res.status(200).json({ stockStructure: stockStructure });
-          } catch (error) {
+          } catch (err) {
             res.status(500).json({ msg: "Failed to retrieve stock structure" });
           }
     },
@@ -391,6 +392,7 @@ module.exports = {
             const codeGenerator =await require("../controllers/utilController").createCode("SELLER");
             body.code = codeGenerator.code
             const doc = await sellerModel.create(body);
+            console.log("doc", doc)
             res.status(201).json({ status: true, msg: "Seller created successfully.", doc:doc});
         } catch (err) {
             if(err.code==11000){
@@ -455,5 +457,24 @@ module.exports = {
         } catch (err) {
             res.status(500).json({ msg: err.message });
         }
-    }
+    },
+
+    brandList: async(req, res)=>{
+        try {
+            const cmpVal = req.body.value;
+            const companyId = req.body.companyId;
+            let matchStage = {};
+            let projectionStage = {};
+            if(cmpVal){
+                matchStage = {companyId: companyId, name: {$regex: cmpVal, $options: "i"}} 
+                projectionStage = {name: 1}
+            } else{
+                matchStage = {companyId: companyId}
+            }
+            const docs = await brandModel.find(matchStage, projectionStage);
+            res.status(200).json({ docs: docs });
+        } catch (err) {
+            res.status(400).json({ msg: err.message });
+        }
+    },
 }    

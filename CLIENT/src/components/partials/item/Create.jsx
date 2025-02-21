@@ -8,10 +8,25 @@ const token = sessionStorage.getItem('token');
 function Create() {
     const [name, setName] = useState("");
     const [category, setCategory] = useState("");
+    const [sub_categories, setSubCategories] = useState([])
     const [sub_category, setSubCategory] = useState("");
     const [active, setActive] = useState(false);
     const navigate = useNavigate();
 
+    const categoryOption = {
+      "ELECTRONICS": ["MOBILE AND ACCESSORIES", "LAPTOP AND DESKTOP", "HOME ELECTRONICS"],
+      "HARDWARE": ["PUMP HARDWARE", "BREAK SAND IRON ROD", "PAINT"],
+      "MEDICINE": ["HOMEOPATHIC", "ALLOPATHIC", "AYURVEDIC"],
+      "SOLAR": []
+    }
+
+    const changeCategory = (value)=>{
+      setCategory(value);
+      if(value){
+        const sub_cat = categoryOption[value];
+        setSubCategories(sub_cat)
+      }
+    }
 
   const handleClear = () => {
     setitem("");
@@ -60,12 +75,12 @@ function Create() {
         <div className="row">
             <div className="col mb-3">
               <label className="form-label">Category <span className="ei-col-red">*</span></label>
-              <select className="form-select" aria-label="Default select example" name="type" value={category} onChange={(e) => setCategory(e.target.value)}>
+              <select className="form-select" aria-label="Default select example" name="type" value={category} onChange={(e) => changeCategory(e.target.value)}>
                   <option>--Select category--</option>
-                  <option value="ELECTRONICS">ELECTRONICS</option>
-                  <option value="MOBILES">MOBILES</option>
-                  <option value="CLOTHS">CLOTHS</option>
-                  <option value="SOLAR">SOLAR</option>
+                  <option value="ELECTRONICS">Electronics</option>
+                  <option value="HARDWARE">Hardware</option>
+                  <option value="MEDICINE">Medicine</option>
+                  <option value="SOLAR">Solar</option>
               </select>
           </div>
         </div>
@@ -74,10 +89,9 @@ function Create() {
               <label className="form-label">Sub Category</label>
               <select className="form-select" aria-label="Default select example" name="type" value={sub_category} onChange={(e) => setSubCategory(e.target.value)}>
                   <option>--Select sub category--</option>
-                  <option value="ELECTRONICS">ELECTRONICS</option>
-                  <option value="MOBILES">MOBILES</option>
-                  <option value="CLOTHS">CLOTHS</option>
-                  <option value="SOLAR">SOLAR</option>
+                  {sub_categories.map((item)=>{
+                    <option key={item} value={item}>{item}</option>
+                  })}
               </select>
           </div>
         </div>
