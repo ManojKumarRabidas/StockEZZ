@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 const HOST = import.meta.env.VITE_HOST
 const PORT = import.meta.env.VITE_PORT
@@ -6,7 +6,10 @@ import toastr from 'toastr';
 const token = sessionStorage.getItem('token');
 
 function Create() {
+    const [company_types, setCompanyTypes] = useState([]);
+    const [company_subtypes, setCompanySubtypes] = useState([]);
     const [company_type, setCompanyType] = useState("");
+    const [company_subtype, setCompanySubtype] = useState("");
     const [name, setName] = useState("");
     const [phone, setPhone] = useState("");
     const [email, setEmail] = useState("");
@@ -21,6 +24,7 @@ function Create() {
 
   const handleClear = () => {
     setCompanyType("");
+    setCompanySubtypes("");
     setName("");
     setPhone("");
     setEmail("");
@@ -33,9 +37,49 @@ function Create() {
     setSubscriptionDuration(0);
   };
 
+  const changeSubscription = (value) =>{
+    setSubscription(value)
+    setSubscriptionDuration("")
+  }
+
+  const getCompanyCategories = async ()=>{
+    try {
+      const response = await fetch(`${HOST}:${PORT}/server/category-list`, {
+        method: "GET",
+        headers: { 'authorization': `Bearer ${token}`, 'active': true },
+      });
+      if (response) {
+        const result = await response.json();
+        if (response.ok) {
+          setCompanyTypes(result.docs);
+        } else {
+          toastr.error(result.msg);
+        }
+      } else {
+        toastr.error("We are unable to process now. Please try again later.");
+      }
+    } catch (error) {
+      toastr.error("We are unable to process now. Please try again later.");
+    }
+  }
+
+  useEffect(() => {
+    getCompanyCategories();
+  }, []);
+
+  const changeCompanyType = (value)=>{
+    setCompanyType(value)
+    for(let i=0; i<company_types.length; i++){
+      if(value == company_types[i]._id){
+        setCompanySubtypes(company_types[i].sub_categories)
+      }
+    }
+
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
-    const companyData = {company_type, name, phone, email, pin, address, gstNo, director, active, subscription, subscriptionDuration };
+    const companyData = {company_type, company_subtype, name, phone, email, pin, address, gstNo, director, active, subscription, subscriptionDuration };
     if (!company_type || !name || !phone || !email || !pin || !address || !director){
       toastr.error("Please enter all the required values.");
       return;
@@ -68,14 +112,22 @@ function Create() {
         <div className="row">
             <div className="col mb-3">
               <label className="form-label">Company Type <span className="ei-col-red">*</span></label>
-              <select className="form-select" aria-label="Default select example" name="type" value={company_type} onChange={(e) => setCompanyType(e.target.value)}>
+              <select className="form-select" aria-label="Default select example" name="type" value={company_type} onChange={(e) => changeCompanyType(e.target.value)}>
                   <option>--Select company type--</option>
-                  <option value="ELECTRONICS">ELECTRONICS</option>
-                  <option value="MOBILES">MOBILES</option>
-                  <option value="CLOTHS">CLOTHS</option>
-                  <option value="SOLAR">SOLAR</option>
+                  {company_types.map((item)=>(
+                    <option key={item._id} value={item._id}>{item.category}</option>
+                  ))}
               </select>
           </div>
+          {company_type && <div className="col mb-3">
+              <label className="form-label">Company Sub-Type </label>
+              <select className="form-select" aria-label="Default select example" name="type" value={company_subtype} onChange={(e) => setCompanySubtype(e.target.value)}>
+                  <option>--Select company sub-type (Optional)--</option>
+                  {company_subtypes.map((item)=>(
+                    <option key={item} value={item}>{item}</option>
+                  ))}
+              </select>
+          </div>}
         </div>
           <div className="row">
           <div className="col mb-3">
@@ -127,24 +179,24 @@ function Create() {
               <div className="mb-3 form-switch" style={{paddingLeft: "0"}}>
                 <label className="form-label">Subscription <span className="ei-col-red">*</span></label>
                 <div>
-                  <input className="form-check-input cursor-pointer" style={{ marginLeft: "0" }} type="checkbox" role="switch" id="activeSubscription" checked={subscription} onChange={(e) => setSubscription(e.target.checked)}/>
+                  <input className="form-check-input cursor-pointer" style={{ marginLeft: "0" }} type="checkbox" role="switch" id="activeSubscription" checked={subscription} onChange={(e) => changeSubscription(e.target.checked)}/>
                   <label className="form-check-label mx-3" htmlFor="activeSubscription">{subscription ? "Yes" : "No"}</label>
                 </div>
               </div>
             </div>
-            <div className="col mb-3">
+            {subscription && <div className="col mb-3">
               <label className="form-label">Subscription Duration <span className="ei-col-red">*</span></label>
                 <select className="form-select" aria-label="Default select example" name="type" value={subscriptionDuration} onChange={(e) => setSubscriptionDuration(e.target.value)}>
-                    <option>--Select duration in months--</option>
+                    <option>--Select duration--</option>
                     <option value="1">1 Month</option>
                     <option value="6">6 Months</option>
-                    <option value="12">12 Months</option>
-                    <option value="36">36 Months</option>
-                    <option value="60">60 Months</option>
-                    <option value="120">120 Months</option>
+                    <option value="12">1 Year</option>
+                    <option value="36">3 Years</option>
+                    <option value="60">5 Years</option>
+                    <option value="120">10 Years</option>
                 </select>
-            </div>
-          </div>
+            </div>}
+        </div>
         <button type="submit" className="btn btn-primary mx-2">Create</button>
         <button onClick={handleClear} type="button" className="btn btn-primary mx-2">Celar</button>
       </form>

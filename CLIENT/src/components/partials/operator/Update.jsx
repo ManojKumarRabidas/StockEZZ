@@ -17,15 +17,22 @@ function Update() {
 
     const fetchCompanies = async () => {
       try {
-        const response = await fetch(`${HOST}:${PORT}/server/get-companies`);
-        const data = await response.json();
-        if (response.ok) {
-          setCompanies(data.companies);
+        const response = await fetch(`${HOST}:${PORT}/server/company-list`, {
+          method: "GET",
+          headers: { 'authorization': `Bearer ${token}`, 'active': true },
+        });
+        if (response) {
+          const result = await response.json();
+          if (response.ok) {
+            setCompanies(result.docs);
+          } else {
+            toastr.error(result.msg);
+          }
         } else {
-          toastr.error("Failed to load companies.");
+          toastr.error("We are unable to process now. Please try again later.");
         }
-      } catch (err) {
-        toastr.error("Failed to load companies.");
+      } catch (error) {
+        toastr.error("We are unable to process now. Please try again later.");
       }
     };
   

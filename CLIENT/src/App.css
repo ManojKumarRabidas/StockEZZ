@@ -4,8 +4,9 @@ Accent: Royal Blue (#0057B7)
 Text: Jet Black (#121212)
 Hover/Active: Light Silver (#CFCFCF) */
 
-.vrl {
+.vrrl {
   border-right: 1px solid  #cccccc;
+  border-left: 1px solid  #cccccc;
 }
 .sidebar {
   margin-top: 56px; 

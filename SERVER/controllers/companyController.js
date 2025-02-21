@@ -8,12 +8,12 @@ module.exports = {
             body.companyId = new ObjectId(req.user.id);
             body.sl_no = true;
             body.date = true;
-            body.company_code = true;
-            body.item_name = true;
+            body.item = true;
+            body.quantity = true;
             body.updatedBy = new ObjectId(req.user.id);
             const doc = await stockStructureModel.updateOne({companyId: body.companyId},{$set: body}, {upsert: true, new: true});
             
-            res.status(201).json({ status: true, msg: "Structute saved successfully.", doc:doc});
+            res.status(201).json({ status: true, msg: "Structure saved successfully.", doc:doc});
         } catch(err){
             res.status(500).json({ msg: "Failed to save stock structure" });
         }

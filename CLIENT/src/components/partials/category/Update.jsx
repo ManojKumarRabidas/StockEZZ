@@ -7,7 +7,7 @@ const token = sessionStorage.getItem('token');
 import toastr from 'toastr';
 function Update() {
     const [category, setCategory] = useState("");
-    const [sub_categories, setSubCategories] = useState("");
+    const [sub_categories, setSubCategories] = useState([]);
     const [active, setActive] = useState(false);
     const navigate = useNavigate();
     const { id } = useParams();
@@ -22,12 +22,13 @@ function Update() {
 
   const handleClear = () => {
     setCategory("");
-    setSubCategories("");
+    setSubCategories([]);
     setActive(false);
   };
 
   const getCategoryData = async () => {
     try {
+      console.log("abcd")
       const response = await fetch(`${HOST}:${PORT}/server/category-details/${id}`, {
         method: "GET",
         headers: { 'authorization': `Bearer ${token}` },
