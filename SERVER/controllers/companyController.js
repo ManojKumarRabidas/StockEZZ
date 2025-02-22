@@ -10,6 +10,8 @@ module.exports = {
             body.date = true;
             body.item = true;
             body.quantity = true;
+            body.per_peace_buy_price = true;
+            body.item_status = true;
             body.updatedBy = new ObjectId(req.user.id);
             const doc = await stockStructureModel.updateOne({companyId: body.companyId},{$set: body}, {upsert: true, new: true});
             

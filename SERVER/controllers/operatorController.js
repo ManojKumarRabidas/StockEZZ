@@ -1,5 +1,6 @@
 const {ObjectId} = require('mongodb');
 const { v4: uuidv4 } = require('uuid');
+var _ = require('lodash');
 const userModel = require("../models/user");
 const stockModel = require("../models/stock");
 const companyModel = require("../models/companies");
@@ -11,8 +12,8 @@ module.exports = {
     saveStockDetails: async(req, res)=>{
         try{
             const body = req.body.data;
-            console.log(req.body);
-            if(!req.body || !req.body.data || !body.date || !body.item || !body.quantity || !body.per_peace_buy_price){
+            const additionalData = req.body.additionalData;
+            if(!req.body || !req.body.data || !body.date || !body.item || !body.quantity || !req.body.additionalData || !additionalData.per_peace_buy_price){
                 res.status(400).json({ msg: "Missing Parameters!" });
                 return;
             }
@@ -27,12 +28,24 @@ module.exports = {
             body.updatedBy = new ObjectId(userId);
             body.date = new Date(body.date);
             body.time = body.time? new Date(body.time): null;
+            if(body.sub_category){
+                body.sub_category = body.sub_category.toUpperCase()
+                if(!(company.company_subtypes.includes(body.sub_category.toUpperCase()))){
+                    const doc = await categoryModel.updateOne(
+                        {_id: new ObjectId(company.company_type_id)},
+                        {$push: { sub_categories: body.sub_category }});
+                    if(doc.modifiedCount<1){
+                        res.status(400).json({ msg: "We are facing some technical error! Please try again later." });
+                        return;
+                    }
+                }
+            }
             if(body.itemId){
                 body.itemId = new ObjectId(body.itemId);
             } else if(body.item){
                 const newItem = {
                     name: body.item,
-                    category : body.company_type,
+                    category : company.company_type_id,
                     companyId : body.companyId
                 }
                 const codeGenerator = await require("../controllers/utilController").createCode("ITEM");
@@ -77,37 +90,31 @@ module.exports = {
             const itemQuantity = body.quantity ? Number(body.quantity): 0;
             delete body.quantity;
             body.batchId = uuidv4()
-            body.batch_buy_price = body.batch_buy_price ? Number(body.batch_buy_price): null;
-            body.batch_sell_price = body.batch_sell_price ? Number(body.batch_sell_price): null;
-            // body.per_peace_buy_price = body.per_peace_buy_price ? Number(body.per_peace_buy_price): null;
-            // body.per_peace_sell_price = body.per_peace_sell_price ? Number(body.per_peace_sell_price): null;
-            // body.batch_mfg_date = body.batch_mfg_date ? new Date(body.batch_mfg_date): null;
-            // body.batch_exp_date = body.batch_exp_date ? new Date(body.batch_exp_date): null;
-            // body.batch_warrantee_guarantee_duration = body.batch_warrantee_guarantee_duration ? Number(body.batch_warrantee_guarantee_duration): null;
-            
+            // additionalData.batch_buy_price = additionalData.batch_buy_price ? Number(additionalData.batch_buy_price): null;
+            // additionalData.batch_sell_price = additionalData.batch_sell_price ? Number(additionalData.batch_sell_price): null;
             if(stockDetailsBody.length > 0){
                 if(stockDetailsBody.length < itemQuantity){
                     const restIteration = itemQuantity - stockDetailsBody.length;
-                    body.mfg_date = body.batch_mfg_date ? new Date(body.batch_mfg_date): null;
-                    body.item_buy_price = body.per_peace_buy_price ? Number(body.per_peace_buy_price): null;
-                    body.item_sell_price = body.per_peace_sell_price ? Number(body.per_peace_sell_price): null;
-                    body.exp_date = body.batch_exp_date ? new Date(body.batch_exp_date): null;
-                    body.warrantee_guarantee = body.batch_warrantee_guarantee ? body.batch_warrantee_guarantee: null;
-                    body.warrantee_guarantee_duration = body.batch_warrantee_guarantee_duration ? Number(body.batch_warrantee_guarantee_duration): null;
+                    body.mfg_date = additionalData.batch_mfg_date ? new Date(additionalData.batch_mfg_date): null;
+                    body.exp_date = additionalData.batch_exp_date ? new Date(additionalData.batch_exp_date): null;
+                    body.item_buy_price = additionalData.per_peace_buy_price ? Number(additionalData.per_peace_buy_price): null;
+                    body.item_sell_price = additionalData.per_peace_sell_price ? Number(additionalData.per_peace_sell_price): null;
+                    body.warrantee_guarantee = additionalData.batch_warrantee_guarantee ? additionalData.batch_warrantee_guarantee: null;
+                    body.warrantee_guarantee_duration = additionalData.batch_warrantee_guarantee_duration ? Number(additionalData.batch_warrantee_guarantee_duration): null;
                     for(let i=0; i<restIteration; i++){
                         finalStockBody.push(body);
                     }
                 }
-                const newBody = body;
                 for(let i=0; i<stockDetailsBody.length; i++){
                     const ref = stockDetailsBody[i];
+                    const newBody = Object.assign({}, body);
                     newBody.unique_code = ref.unique_code ? ref.unique_code : "";
-                    newBody.mfg_date = ref.mfg_date ? new Date(ref.mfg_date) : (body.batch_mfg_date ? new Date(body.batch_mfg_date): null);
-                    newBody.exp_date = ref.exp_date ? new Date(ref.exp_date) : (body.batch_exp_date ? new Date(body.batch_exp_date): null);
-                    newBody.item_buy_price = ref.item_buy_price ? Number(ref.item_buy_price) : (body.batch_buy_price ? Number(body.batch_buy_price): null);
-                    newBody.item_sell_price = ref.item_sell_price ? Number(ref.item_sell_price) : (body.batch_sell_price ? Number(body.batch_sell_price): null);
-                    newBody.warrantee_guarantee = ref.warrantee_guarantee ? ref.warrantee_guarantee : ((body.batch_warrantee_guarantee ? body.batch_warrantee_guarantee: null));
-                    newBody.warrantee_guarantee_duration = ref.warrantee_guarantee_duration ? Number(ref.warrantee_guarantee_duration) : (((body.batch_warrantee_guarantee_duration ? Number(body.batch_warrantee_guarantee_duration): null)));
+                    newBody.mfg_date = ref.mfg_date ? new Date(ref.mfg_date) : (additionalData.batch_mfg_date ? new Date(additionalData.batch_mfg_date): null);
+                    newBody.exp_date = ref.exp_date ? new Date(ref.exp_date) : (additionalData.batch_exp_date ? new Date(additionalData.batch_exp_date): null);
+                    newBody.item_buy_price = ref.item_buy_price ? Number(ref.item_buy_price) : (additionalData.per_peace_buy_price ? Number(additionalData.per_peace_buy_price): null);
+                    newBody.item_sell_price = ref.item_sell_price ? Number(ref.item_sell_price) : (additionalData.per_peace_sell_price ? Number(additionalData.per_peace_sell_price): null);
+                    newBody.warrantee_guarantee = ref.warrantee_guarantee ? ref.warrantee_guarantee : ((additionalData.batch_warrantee_guarantee ? additionalData.batch_warrantee_guarantee: null));
+                    newBody.warrantee_guarantee_duration = ref.warrantee_guarantee_duration ? Number(ref.warrantee_guarantee_duration) : (((additionalData.batch_warrantee_guarantee_duration ? Number(additionalData.batch_warrantee_guarantee_duration): null)));
                     finalStockBody.push(newBody);
                 }
             }

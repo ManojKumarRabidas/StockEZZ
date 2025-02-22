@@ -392,7 +392,6 @@ module.exports = {
             const codeGenerator =await require("../controllers/utilController").createCode("SELLER");
             body.code = codeGenerator.code
             const doc = await sellerModel.create(body);
-            console.log("doc", doc)
             res.status(201).json({ status: true, msg: "Seller created successfully.", doc:doc});
         } catch (err) {
             if(err.code==11000){

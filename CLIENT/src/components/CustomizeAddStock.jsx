@@ -91,7 +91,6 @@ function CustomizeAddStock() {
             toastr.error("We are unable to process now. Please try again later.");
           }
     } catch (err) {
-        console.log(err)
       toastr.error("Failed to load details.");
     }
   };
@@ -325,10 +324,19 @@ function CustomizeAddStock() {
         </div>
         <div className="row">
             <div className="col mb-3">
+                <div className="mb-3 form-switch d-flex justify-content-between vrrl " style={{paddingLeft: "0"}}>
+                    <label className="form-label mx-2">Model</label>
+                    <div>
+                        <input className="form-check-input cursor-pointer" style={{ marginLeft: "0" }} type="checkbox" role="switch" id="modelSwitch" checked={model} onChange={(e) => setModel(e.target.checked)}/>
+                        <label className="form-check-label mx-3" htmlFor="modelSwitch">{model ? <span style={{color: "green"}}>Enabled</span> : <span style={{color: "red"}}>Disabled</span>}</label>
+                    </div>
+                </div>
+            </div>
+            <div className="col mb-3">
                 <div className="mb-3 form-switch d-flex justify-content-between vrrl" style={{paddingLeft: "0"}}>
                     <label className="form-label mx-2">Per Peace Buy Price</label>
-                    <div>
-                        <input className="form-check-input cursor-pointer" style={{ marginLeft: "0" }} type="checkbox" role="switch" id="per_peace_buy_priceSwitch" checked={per_peace_buy_price} onChange={(e) => setPerPeaceBuyPrice(e.target.checked)}/>
+                    <div title="This can't be changed">
+                        <input disabled className="form-check-input cursor-pointer" style={{ marginLeft: "0" }} type="checkbox" role="switch" id="per_peace_buy_priceSwitch" checked={per_peace_buy_price} onChange={(e) => setPerPeaceBuyPrice(e.target.checked)}/>
                         <label className="form-check-label mx-3" htmlFor="per_peace_buy_priceSwitch">{per_peace_buy_price ? <span style={{color: "green"}}>Enabled</span> : <span style={{color: "red"}}>Disabled</span>}</label>
                     </div>
                 </div>
@@ -342,6 +350,8 @@ function CustomizeAddStock() {
                     </div>
                 </div>
             </div>
+        </div>
+        <div className="row">
             <div className="col mb-3">
                 <div className="mb-3 form-switch d-flex justify-content-between vrrl" style={{paddingLeft: "0"}}>
                     <label className="form-label mx-2">Batch Mfg Date</label>
@@ -351,8 +361,6 @@ function CustomizeAddStock() {
                     </div>
                 </div>
             </div>
-        </div>
-        <div className="row">
             <div className="col mb-3">
                 <div className="mb-3 form-switch d-flex justify-content-between vrrl " style={{paddingLeft: "0"}}>
                     <label className="form-label mx-2">Batch Exp Date</label>
@@ -385,8 +393,8 @@ function CustomizeAddStock() {
             <div className="col mb-3">
                 <div className="mb-3 form-switch d-flex justify-content-between vrrl " style={{paddingLeft: "0"}}>
                     <label className="form-label mx-2">Item Status (Received/ Accepted/ Returned)</label>
-                    <div>
-                        <input className="form-check-input cursor-pointer" style={{ marginLeft: "0" }} type="checkbox" role="switch" id="itemStatusSwitch" checked={item_status} onChange={(e) => setItemStatus(e.target.checked)}/>
+                    <div title="This can't be changed">
+                        <input disabled className="form-check-input cursor-pointer" style={{ marginLeft: "0" }} type="checkbox" role="switch" id="itemStatusSwitch" checked={item_status} onChange={(e) => setItemStatus(e.target.checked)}/>
                         <label className="form-check-label mx-3" htmlFor="itemStatusSwitch">{item_status ? <span style={{color: "green"}}>Enabled</span> : <span style={{color: "red"}}>Disabled</span>}</label>
                     </div>
                 </div>
@@ -416,15 +424,6 @@ function CustomizeAddStock() {
         <h6>Multiple/Individual item fields in a batch/lot : </h6>
         <hr />
         <div className="row">
-            <div className="col mb-3">
-                <div className="mb-3 form-switch d-flex justify-content-between vrrl " style={{paddingLeft: "0"}}>
-                    <label className="form-label mx-2">Model</label>
-                    <div>
-                        <input className="form-check-input cursor-pointer" style={{ marginLeft: "0" }} type="checkbox" role="switch" id="modelSwitch" checked={model} onChange={(e) => setModel(e.target.checked)}/>
-                        <label className="form-check-label mx-3" htmlFor="modelSwitch">{model ? <span style={{color: "green"}}>Enabled</span> : <span style={{color: "red"}}>Disabled</span>}</label>
-                    </div>
-                </div>
-            </div>
             <div className="col mb-3">
                 <div className="mb-3 form-switch d-flex justify-content-between vrrl " style={{paddingLeft: "0"}}>
                     <label className="form-label mx-2">Unique Code </label>

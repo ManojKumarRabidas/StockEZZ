@@ -15,6 +15,6 @@ const sellerSchema = new mongoose.Schema({
     updatedBy: {type: mongoose.Schema.Types.ObjectId}
 }, { timestamps: true });
 
-sellerSchema.index({ companyId: 1, company_name: 1 }, { unique: true });
+sellerSchema.index({ companyId: 1, name: 1 }, { unique: true });
 const Seller = mongoose.model('sellers', sellerSchema)
 module.exports = Seller
