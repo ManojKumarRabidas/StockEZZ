@@ -17,7 +17,10 @@ module.exports = {
                 res.status(400).json({ msg: "Missing Parameters!" });
                 return;
             }
-            const stockDetailsBody = body.stock_details;
+            let stockDetailsBody = body.stock_details;
+            if(!(stockDetailsBody.unique_code || stockDetailsBody.mfg_date || stockDetailsBody.exp_date || stockDetailsBody.item_buy_price || stockDetailsBody.item_sell_price || stockDetailsBody.warrantee_guarantee || stockDetailsBody.warrantee_guarantee_duration)){
+                stockDetailsBody = []
+            }
             delete body.stock_details;
             const finalStockBody = []
             const userId = new ObjectId(req.user.id);
@@ -46,50 +49,69 @@ module.exports = {
                 const newItem = {
                     name: body.item,
                     category : company.company_type_id,
-                    companyId : body.companyId
+                    companyId : body.companyId,
+                    active: true
                 }
                 const codeGenerator = await require("../controllers/utilController").createCode("ITEM");
                 newItem.code = codeGenerator.code
-                const doc = await itemModel.create(newItem);
-                if(!doc._id){
+                // const doc = await itemModel.create(newItem);
+                const doc = await itemModel.updateOne(
+                    { name: { $regex: `^${newItem.name}$`, $options: "i" } },  // Case-insensitive match
+                    { $setOnInsert: newItem }, 
+                    { upsert: true }
+                );
+                
+                if (doc.matchedCount === 0 && doc.upsertedCount === 0) {
                     res.status(400).json({ msg: "We are facing some technical error! Please try again later." });
                     return;
                 }
-                body.itemId = doc._id;
+                body.itemId = doc.upsertedId;
             }
             if(body.brandId){
                 body.brandId = new ObjectId(body.brandId);
             } else if(body.brand){
                 const newBrand = {
                     name: body.brand,
-                    companyId : body.companyId
+                    companyId : body.companyId,
+                    active: true
                 }
-                const doc = await brandModel.create(newBrand);
-                if(!doc._id){
+                const doc = await brandModel.updateOne(
+                    { name: { $regex: `^${newBrand.name}$`, $options: "i" } },  // Case-insensitive match
+                    { $setOnInsert: newBrand }, 
+                    { upsert: true }
+                );
+                
+                if (doc.matchedCount === 0 && doc.upsertedCount === 0) {
                     res.status(400).json({ msg: "We are facing some technical error! Please try again later." });
                     return;
                 }
-                body.brandId = doc._id;
+                body.brandId = doc.upsertedId;
             }
             if(body.sellerId){
                 body.sellerId = new ObjectId(body.sellerId);
             } else if(body.seller){
                 const newSeller = {
                     name: body.seller,
-                    companyId : body.companyId
+                    companyId : body.companyId,
+                    active: true
                 }
                 const codeGenerator = await require("../controllers/utilController").createCode("SELLER");
                 newSeller.code = codeGenerator.code
-                const doc = await sellerModel.create(newSeller);
-                if(!doc._id){
+                const doc = await sellerModel.updateOne(
+                    { name: { $regex: `^${newSeller.name}$`, $options: "i" } },  // Case-insensitive match
+                    { $setOnInsert: newSeller }, 
+                    { upsert: true }
+                );
+                
+                if (doc.matchedCount === 0 && doc.upsertedCount === 0) {
                     res.status(400).json({ msg: "We are facing some technical error! Please try again later." });
                     return;
                 }
-                body.sellerId = doc._id;
+                body.sellerId = doc.upsertedId;
             }
             const itemQuantity = body.quantity ? Number(body.quantity): 0;
             delete body.quantity;
-            body.batchId = uuidv4()
+            body.batchId = uuidv4().replace(/-/g, '').substring(0, 12);
             // additionalData.batch_buy_price = additionalData.batch_buy_price ? Number(additionalData.batch_buy_price): null;
             // additionalData.batch_sell_price = additionalData.batch_sell_price ? Number(additionalData.batch_sell_price): null;
             if(stockDetailsBody.length > 0){
@@ -101,13 +123,15 @@ module.exports = {
                     body.item_sell_price = additionalData.per_peace_sell_price ? Number(additionalData.per_peace_sell_price): null;
                     body.warrantee_guarantee = additionalData.batch_warrantee_guarantee ? additionalData.batch_warrantee_guarantee: null;
                     body.warrantee_guarantee_duration = additionalData.batch_warrantee_guarantee_duration ? Number(additionalData.batch_warrantee_guarantee_duration): null;
-                    for(let i=0; i<restIteration; i++){
-                        finalStockBody.push(body);
-                    }
+                    body.quantity = itemQuantity - stockDetailsBody.length;
+                    // for(let i=0; i<restIteration; i++){
+                    finalStockBody.push(body);
+                    // }
                 }
                 for(let i=0; i<stockDetailsBody.length; i++){
                     const ref = stockDetailsBody[i];
                     const newBody = Object.assign({}, body);
+                    body.quantity = 1;
                     newBody.unique_code = ref.unique_code ? ref.unique_code : "";
                     newBody.mfg_date = ref.mfg_date ? new Date(ref.mfg_date) : (additionalData.batch_mfg_date ? new Date(additionalData.batch_mfg_date): null);
                     newBody.exp_date = ref.exp_date ? new Date(ref.exp_date) : (additionalData.batch_exp_date ? new Date(additionalData.batch_exp_date): null);

@@ -119,6 +119,7 @@ function AddStock() {
           if (response) {
             const result = await response.json();
             if (response.ok) {
+              console.log("result.stockStructure", result.stockStructure)
                 if(result.stockStructure == null){
                   setIsStockStructure(false)
                 } else{
@@ -487,7 +488,7 @@ function AddStock() {
                   <option value="NOTHING">Nothing Applicable</option>
               </select>
             </div>}
-            {stockStructure.warrantee_guarantee_duration && (batch_warrantee_guarantee == "WARRANTEE" || batch_warrantee_guarantee == "GUARENTE") && <div className="col mb-3">
+            {stockStructure.batch_warrantee_guarantee_duration && ((batch_warrantee_guarantee == "WARRANTEE") || (batch_warrantee_guarantee == "GUARENTE")) && <div className="col mb-3">
               <label className="form-label">Batch Warrantee/Guarente Duration</label>
               <select className="form-select" aria-label="Default select example" name="batch_warrantee_guarantee_duration" value={batch_warrantee_guarantee_duration} onChange={(e) => setBatchWarranteeGuarenteDuration(e.target.value)}>
                   <option>--Select duration if applicable--</option>

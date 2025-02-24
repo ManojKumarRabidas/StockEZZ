@@ -14,6 +14,7 @@ import CustomizeAddStock from './components/CustomizeAddStock';
 import AddStock from './components/AddStock';
 import Buyer from './components/Buyers';
 import Seller from './components/Sellers';
+import Stocks from './components/StockDetails';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min';
 // import './assets/lib/font-awesome-all-min.css'
@@ -118,10 +119,11 @@ function AppContent({ isAuthenticated, userType }) {
               <Route path='/categories/*' element={((user_type ==='ADMIN') || (user_type ==='SUPPORTADMIN')) ? <Category /> : <Unauthorized />} />
               <Route path='/items/*' element={((user_type ==='ADMIN') || (user_type ==='SUPPORTADMIN') || (user_type ==='COMPANY')  || (user_type ==='OPERATOR')) ? <Item /> : <Unauthorized />} />
               <Route path='/operators/*' element={((user_type ==='ADMIN') || (user_type ==='SUPPORTADMIN') || (user_type ==='COMPANY')) ? <Operator /> : <Unauthorized />} />
-              <Route path='/customize-add-stock/*' element={(user_type ==='COMPANY') ? <CustomizeAddStock /> : <Unauthorized />} />
+              <Route path='/customize-add-stock/*' element={((user_type ==='OPERATOR') || (user_type ==='COMPANY')) ? <CustomizeAddStock /> : <Unauthorized />} />
               <Route path='/add-stock/*' element={((user_type ==='OPERATOR') || (user_type ==='COMPANY'))  ? <AddStock /> : <Unauthorized />} />
               <Route path='/buyers/*' element={((user_type ==='OPERATOR') || (user_type ==='COMPANY'))  ? <Buyer /> : <Unauthorized />} />
               <Route path='/sellers/*' element={((user_type ==='OPERATOR') || (user_type ==='COMPANY'))  ? <Seller /> : <Unauthorized />} />
+              <Route path='/stocks/*' element={((user_type ==='OPERATOR') || (user_type ==='COMPANY'))  ? <Stocks /> : <Unauthorized />} />
             </Routes>
           </main>
         </div>

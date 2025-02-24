@@ -64,8 +64,9 @@ router.put("/seller-update-active/:id", authorizeRole(['OPERATOR', 'COMPANY']), 
 
 router.patch("/brand-list", authorizeRole(['COMPANY', 'OPERATOR']), utilController.brandList);
 router.patch("/customize-add-stock-details", authorizeRole(['COMPANY', 'OPERATOR']), utilController.getCustomizeAddStockDetails);
-router.post("/save-customize-add-stock-details", authorizeRole(['COMPANY']), companyController.saveCustomizeAddStockDetails);
+router.post("/save-customize-add-stock-details", authorizeRole(['COMPANY', 'OPERATOR']), utilController.saveCustomizeAddStockDetails);
 router.post("/save-stock-details", authorizeRole(['OPERATOR']), operatorController.saveStockDetails);
+router.get("/stock-list", authorizeRole(['COMPANY', 'OPERATOR']), utilController.StockList);
 router.get("/get-company-details", authorizeRole(['OPERATOR']), operatorController.fetchCompanyDetails);
 
 module.exports = router;
