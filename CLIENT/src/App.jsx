@@ -15,6 +15,7 @@ import AddStock from './components/AddStock';
 import Buyer from './components/Buyers';
 import Seller from './components/Sellers';
 import Stocks from './components/StockDetails';
+import ManageStock from './components/ManageStock';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min';
 // import './assets/lib/font-awesome-all-min.css'
@@ -124,6 +125,7 @@ function AppContent({ isAuthenticated, userType }) {
               <Route path='/buyers/*' element={((user_type ==='OPERATOR') || (user_type ==='COMPANY'))  ? <Buyer /> : <Unauthorized />} />
               <Route path='/sellers/*' element={((user_type ==='OPERATOR') || (user_type ==='COMPANY'))  ? <Seller /> : <Unauthorized />} />
               <Route path='/stocks/*' element={((user_type ==='OPERATOR') || (user_type ==='COMPANY'))  ? <Stocks /> : <Unauthorized />} />
+              <Route path='/manage-stocks/*' element={(user_type ==='OPERATOR')  ? <ManageStock /> : <Unauthorized />} />
             </Routes>
           </main>
         </div>

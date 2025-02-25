@@ -18,7 +18,7 @@ module.exports = {
                 return;
             }
             let stockDetailsBody = body.stock_details;
-            if(!(stockDetailsBody.unique_code || stockDetailsBody.mfg_date || stockDetailsBody.exp_date || stockDetailsBody.item_buy_price || stockDetailsBody.item_sell_price || stockDetailsBody.warrantee_guarantee || stockDetailsBody.warrantee_guarantee_duration)){
+            if(!(stockDetailsBody[0].unique_code || stockDetailsBody[0].mfg_date || stockDetailsBody[0].exp_date || stockDetailsBody[0].item_buy_price || stockDetailsBody[0].item_sell_price || stockDetailsBody[0].warrantee_guarantee || stockDetailsBody[0].warrantee_guarantee_duration)){
                 stockDetailsBody = []
             }
             delete body.stock_details;
@@ -49,6 +49,7 @@ module.exports = {
                 const newItem = {
                     name: body.item,
                     category : company.company_type_id,
+                    sub_category : body.sub_category,
                     companyId : body.companyId,
                     active: true
                 }
@@ -112,11 +113,8 @@ module.exports = {
             const itemQuantity = body.quantity ? Number(body.quantity): 0;
             delete body.quantity;
             body.batchId = uuidv4().replace(/-/g, '').substring(0, 12);
-            // additionalData.batch_buy_price = additionalData.batch_buy_price ? Number(additionalData.batch_buy_price): null;
-            // additionalData.batch_sell_price = additionalData.batch_sell_price ? Number(additionalData.batch_sell_price): null;
             if(stockDetailsBody.length > 0){
                 if(stockDetailsBody.length < itemQuantity){
-                    const restIteration = itemQuantity - stockDetailsBody.length;
                     body.mfg_date = additionalData.batch_mfg_date ? new Date(additionalData.batch_mfg_date): null;
                     body.exp_date = additionalData.batch_exp_date ? new Date(additionalData.batch_exp_date): null;
                     body.item_buy_price = additionalData.per_peace_buy_price ? Number(additionalData.per_peace_buy_price): null;
@@ -124,9 +122,7 @@ module.exports = {
                     body.warrantee_guarantee = additionalData.batch_warrantee_guarantee ? additionalData.batch_warrantee_guarantee: null;
                     body.warrantee_guarantee_duration = additionalData.batch_warrantee_guarantee_duration ? Number(additionalData.batch_warrantee_guarantee_duration): null;
                     body.quantity = itemQuantity - stockDetailsBody.length;
-                    // for(let i=0; i<restIteration; i++){
                     finalStockBody.push(body);
-                    // }
                 }
                 for(let i=0; i<stockDetailsBody.length; i++){
                     const ref = stockDetailsBody[i];

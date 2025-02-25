@@ -49,7 +49,6 @@ function CustomizeAddStock() {
           if (response) {
             const result = await response.json();
             if (response.ok) {
-                console.log("result.stockStructure", result.stockStructure)
                 if(result.stockStructure != null){
                     setSlNo(result.stockStructure.sl_no);
                     setDate(result.stockStructure.date);
@@ -172,7 +171,7 @@ function CustomizeAddStock() {
         <hr />
         <div className="row">
             <div className="col mb-3">
-                <div className="mb-3 form-switch d-flex justify-content-between vrrl  justify-content-between" style={{paddingLeft: "0"}}>
+                <div className="mb-3 form-switch d-flex justify-content-between vrrl " style={{paddingLeft: "0"}}>
                     <label className="form-label mx-2">Sl No </label>
                     <div title="This can't be changed" >
                         <input disabled className="form-check-input cursor-pointer" style={{ marginLeft: "0" }} type="checkbox" role="switch" id="sl_noSwitch" checked={sl_no} onChange={(e) => setSlNo(e.target.checked)}/>
@@ -181,7 +180,7 @@ function CustomizeAddStock() {
                 </div>
             </div>
             <div className="col mb-3">
-                <div className="mb-3 form-switch d-flex justify-content-between vrrl  justify-content-between" style={{paddingLeft: "0"}}>
+                <div className="mb-3 form-switch d-flex justify-content-between vrrl" style={{paddingLeft: "0"}}>
                     <label className="form-label mx-2">Date </label>
                     <div title="This can't be changed">
                         <input disabled className="form-check-input cursor-pointer" style={{ marginLeft: "0" }} type="checkbox" role="switch" id="dateSwitch" checked={date} onChange={(e) => setDate(e.target.checked)}/>
@@ -190,7 +189,7 @@ function CustomizeAddStock() {
                 </div>
             </div>
             <div className="col mb-3">
-                <div className="mb-3 form-switch d-flex justify-content-between vrrl  justify-content-between" style={{paddingLeft: "0"}}>
+                <div className="mb-3 form-switch d-flex justify-content-between vrrl" style={{paddingLeft: "0"}}>
                     <label className="form-label mx-2">Time</label>
                     <div>
                         <input className="form-check-input cursor-pointer" style={{ marginLeft: "0" }} type="checkbox" role="switch" id="timeSwitch" checked={time} onChange={(e) => setTime(e.target.checked)}/>

@@ -119,7 +119,6 @@ function AddStock() {
           if (response) {
             const result = await response.json();
             if (response.ok) {
-              console.log("result.stockStructure", result.stockStructure)
                 if(result.stockStructure == null){
                   setIsStockStructure(false)
                 } else{
@@ -192,7 +191,7 @@ function AddStock() {
       const response = await fetch(`${HOST}:${PORT}/server/brand-list`, {
             method: "PATCH",
             body: JSON.stringify({value: value, companyId: company_details._id}),
-            headers: { 'authorization': `Bearer ${token}`},
+            headers: {  'Content-Type': 'application/json','authorization': `Bearer ${token}`},
           });
           if (response) {
             const result = await response.json();

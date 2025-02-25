@@ -13,7 +13,7 @@ const token = sessionStorage.getItem('token');
 const HOST = import.meta.env.VITE_HOST;
 const PORT = import.meta.env.VITE_PORT;
 
-function List() {
+function StockDetails() {
   const [data, setData] = useState([]);
   const [globalFilter, setGlobalFilter] = useState("");
   const [pageIndex, setPageIndex] = useState(0);
@@ -204,9 +204,10 @@ function List() {
         cell: ({ row }) => (
           <div style={{ textAlign: "center" }}>
             <button type="button" className="btn btn-outline-light m-1" style={{ backgroundColor: "ghostwhite" }}>
-              <Link to={`/buyers/buyer-update/${row.original._id}`} className="card-link m-2" >Edit</Link>
+              {/* <Link to={`/buyers/buyer-update/${row.original._id}`} className="card-link m-2" >Edit</Link> */}
+              <Link to={``} className="card-link m-2" >Details</Link>
             </button>
-            <button type="button" className="btn btn-outline-light m-1" style={{ color: "blue", backgroundColor: "ghostwhite" }} onClick={() => handleAvilibilityChange(row.original._id)} >Delete </button>
+            {/* <button type="button" className="btn btn-outline-light m-1" style={{ color: "blue", backgroundColor: "ghostwhite" }} onClick={() => handleAvilibilityChange(row.original._id)} >Delete </button> */}
           </div>
         ),
       },
@@ -328,4 +329,284 @@ function List() {
   );
 }
 
-export default List;
+export default StockDetails;
+
+// import React, { useState, useEffect } from "react";
+// import { useTable, usePagination, useSortBy, useGlobalFilter } from "react-table";
+// import toastr from 'toastr';
+// const token = sessionStorage.getItem('token');
+// const HOST = import.meta.env.VITE_HOST;
+// const PORT = import.meta.env.VITE_PORT;
+
+// const EditableTable = () => {
+//   const [data, setData] = useState([]);
+//   const [isEditing, setIsEditing] = useState(false);
+//   const [editedData, setEditedData] = useState([]);
+//   const [globalFilter, setGlobalFilter] = useState("");
+
+//   async function getData() {
+//     try {
+//       const response = await fetch(`${HOST}:${PORT}/server/stock-list`, {
+//         method: "GET",
+//         headers: { 'authorization': `Bearer ${token}` },
+//       });
+
+//       const result = await response.json();
+//       if (response.ok) {
+//         setData(result.docs);
+//         setEditedData(result.docs);
+//       } else {
+//         toastr.error(result.msg);
+//       }
+//     } catch (err) {
+//       toastr.error("We are unable to process now. Please try again later.");
+//     }
+//   }
+
+//   useEffect(() => {
+//     getData();
+//   }, []);
+
+//   const columns = React.useMemo(
+//     () => [
+//       // {
+//       //   header: "Sl No",
+//       //   accessorFn: (row, i) => i + 1 + pageIndex * pageSize,
+//       //   id: "slNo",
+//       //   enableSorting: false,
+//       // },
+//       {
+//         header: "Item Name",
+//         accessorKey: "item",
+//         sortingFn: "alphanumeric",
+//         enableSorting: true,
+//       },
+//       {
+//         header: "Brand",
+//         accessorKey: "brand",
+//         sortingFn: "alphanumeric",
+//         enableSorting: true,
+//       },
+//       {
+//         header: "Model",
+//         accessorKey: "model",
+//         sortingFn: "alphanumeric",
+//         enableSorting: true,
+//       },
+//       {
+//         header: "Quantity",
+//         accessorKey: "quantity",
+//         sortingFn: "alphanumeric",
+//         enableSorting: true,
+//       },
+//       {
+//         header: "Seller",
+//         accessorKey: "seller",
+//         sortingFn: "alphanumeric",
+//         enableSorting: true,
+//       },
+//       {
+//         header: "Entry Date",
+//         accessorKey: "date",
+//         sortingFn: "alphanumeric",
+//         enableSorting: true,
+//       },
+//       {
+//         header: "Item Sl No",
+//         accessorKey: "sl_no",
+//         sortingFn: "alphanumeric",
+//         enableSorting: true,
+//       },
+//       {
+//         header: "Batch Id",
+//         accessorKey: "batchId",
+//         sortingFn: "alphanumeric",
+//         enableSorting: true,
+//       },
+//       {
+//         header: "Buy Price",
+//         accessorKey: "item_buy_price",
+//         sortingFn: "alphanumeric",
+//         enableSorting: true,
+//       },
+//       {
+//         header: "Sell Price",
+//         accessorKey: "item_sell_price",
+//         sortingFn: "alphanumeric",
+//         enableSorting: true,
+//       },
+//       {
+//         header: "Description",
+//         accessorKey: "description",
+//         sortingFn: "alphanumeric",
+//         enableSorting: true,
+//       },
+//       {
+//         header: "Item Status",
+//         accessorKey: "item_status",
+//         sortingFn: "alphanumeric",
+//         enableSorting: true,
+//       },
+//       {
+//         header: "Remarks",
+//         accessorKey: "remarks",
+//         sortingFn: "alphanumeric",
+//         enableSorting: true,
+//       },
+//       {
+//         header: "Mfg date",
+//         accessorKey: "mfg_date",
+//         sortingFn: "alphanumeric",
+//         enableSorting: true,
+//       },
+//       {
+//         header: "Exp Date",
+//         accessorKey: "exp_date",
+//         sortingFn: "alphanumeric",
+//         enableSorting: true,
+//       },
+//       {
+//         header: "Warrantee/Guarantee",
+//         accessorKey: "warrantee_guarantee",
+//         sortingFn: "alphanumeric",
+//         enableSorting: true,
+//       },
+//       {
+//         header: "Warrantee/Guarantee Duration",
+//         accessorKey: "warrantee_guarantee_duration",
+//         sortingFn: "alphanumeric",
+//         enableSorting: true,
+//       },
+      
+//     ],
+//     []
+//   );
+
+//   const {
+//     getTableProps,
+//     getTableBodyProps,
+//     headerGroups,
+//     page,
+//     prepareRow,
+//     canPreviousPage,
+//     canNextPage,
+//     pageOptions,
+//     nextPage,
+//     previousPage,
+//     state: { pageIndex },
+//     setGlobalFilter: setFilter,
+//   } = useTable(
+//     {
+//       columns,
+//       data: editedData,
+//       initialState: { pageIndex: 0 },
+//     },
+//     useGlobalFilter,
+//     useSortBy,
+//     usePagination
+//   );
+
+//   const handleEditClick = () => {
+//     setIsEditing(true);
+//   };
+
+//   const handleSaveClick = () => {
+//     fetch("https://api.example.com/update", { // Replace with actual update API URL
+//       method: "POST",
+//       headers: {
+//         "Content-Type": "application/json",
+//       },
+//       body: JSON.stringify(editedData),
+//     })
+//       .then((response) => response.json())
+//       .then(() => {
+//         setData([...editedData]);
+//         setIsEditing(false);
+//       })
+//       .catch((error) => console.error("Error updating data:", error));
+//   };
+
+//   const handleClearClick = () => {
+//     setEditedData([...data]);
+//     setIsEditing(false);
+//   };
+
+//   const handleInputChange = (rowIndex, field, value) => {
+//     const newData = editedData.map((row, index) =>
+//       index === rowIndex ? { ...row, [field]: value } : row
+//     );
+//     setEditedData(newData);
+//   };
+
+//   return (
+//     <div>
+//       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
+//         <input
+//           type="text"
+//           placeholder="Search..."
+//           value={globalFilter}
+//           onChange={(e) => {
+//             setGlobalFilter(e.target.value);
+//             setFilter(e.target.value);
+//           }}
+//         />
+//         {!isEditing ? (
+//           <button onClick={handleEditClick}>Edit Values</button>
+//         ) : (
+//           <>
+//             <button onClick={handleSaveClick}>Save</button>
+//             <button onClick={handleClearClick}>Clear</button>
+//           </>
+//         )}
+//       </div>
+//       <table {...getTableProps()}>
+//         <thead>
+//           {headerGroups.map((headerGroup) => (
+//             <tr {...headerGroup.getHeaderGroupProps()}>
+//               {headerGroup.headers.map((column) => (
+//                 <th {...column.getHeaderProps(column.getSortByToggleProps())}>
+//                   {column.render("Header")} {column.isSorted ? (column.isSortedDesc ? " 🔽" : " 🔼") : ""}
+//                 </th>
+//               ))}
+//             </tr>
+//           ))}
+//         </thead>
+//         <tbody {...getTableBodyProps()}>
+//           {page.map((row) => {
+//             prepareRow(row);
+//             return (
+//               <tr {...row.getRowProps()}>
+//                 {row.cells.map((cell) => (
+//                   <td {...cell.getCellProps()}>
+//                     {isEditing && cell.column.id === "value" ? (
+//                       <input
+//                         type="text"
+//                         value={cell.row.original[cell.column.id]}
+//                         onChange={(e) => handleInputChange(row.index, cell.column.id, e.target.value)}
+//                       />
+//                     ) : (
+//                       cell.render("Cell")
+//                     )}
+//                   </td>
+//                 ))}
+//               </tr>
+//             );
+//           })}
+//         </tbody>
+//       </table>
+//       <div>
+//         <button onClick={() => previousPage()} disabled={!canPreviousPage}>
+//           Previous
+//         </button>
+//         <span>
+//           Page {pageIndex + 1} of {pageOptions.length}
+//         </span>
+//         <button onClick={() => nextPage()} disabled={!canNextPage}>
+//           Next
+//         </button>
+//       </div>
+//     </div>
+//   );
+// };
+
+// export default EditableTable;

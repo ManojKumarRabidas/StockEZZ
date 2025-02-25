@@ -102,59 +102,103 @@ module.exports = {
         try {
             const userId = new ObjectId(req.user.id);
             const userType = req.user.user_type;
-            const matchStage ={}
+            const value = req.headers.value;
+            let cmpMatchStage ={}
+            let matchStage ={}
+            let projectionStage ={}
+            if(value){
+                cmpMatchStage = {item: {$regex: value, $options: "i"}} 
+                projectionStage = {item: "$item.name", brand: "$brand.name", model: 1,quantity: 1,item_sell_price: 1}
+            } else{
+                projectionStage = { _id: 1,
+                    sl_no: 1,
+                    date: 1,
+                    item: "$item.name",
+                    brand: "$brand.name",
+                    batchId: 1,
+                    description: 1,
+                    model: 1,
+                    seller: "$seller.name",
+                    quantity: 1,
+                    batch_no: 1,
+                    item_status: 1,
+                    remarks: 1,
+                    mfg_date: 1,
+                    exp_date: 1,
+                    item_buy_price: 1,
+                    item_sell_price: 1,
+                    warrantee_guarantee: 1,
+                    warrantee_guarantee_duration: 1,
+
+                }
+            }
             if (userType === "COMPANY") {
                 matchStage.companyId = userId;
             } else if(userType === "OPERATOR"){
                 let operator = await userModel.findOne({_id: userId}, {company: 1});
                 matchStage.companyId = new ObjectId(operator.company)
             }
+            console.log("matchStage", matchStage);
+            console.log("cmpMatchStage", cmpMatchStage);
+            console.log("projectionStage", projectionStage);
             const docs = await stockModel.aggregate([
                 {$match: matchStage},
                 {$lookup: {from: "items",
-                        localField: "itemId",
-                        foreignField: "_id",
-                        as: "item"}},
+                    localField: "itemId",
+                    foreignField: "_id",
+                    as: "item"}},
                 {$unwind: "$item"},
                 {$lookup: {from: "brands",
-                        localField: "brandId",
-                        foreignField: "_id",
-                        as: "brand"}},
+                    localField: "brandId",
+                    foreignField: "_id",
+                    as: "brand"}},
                 {$unwind: "$brand"},
                 {$lookup: {from: "sellers",
-                        localField: "sellerId",
-                        foreignField: "_id",
-                        as: "seller"}},
+                    localField: "sellerId",
+                    foreignField: "_id",
+                    as: "seller"}},
                 {$unwind: "$seller"},
-                {$project: { _id: 1,
-                        sl_no: 1,
-                        date: 1,
-                        item: "$item.name",
-                        brand: "$brand.name",
-                        batchId: 1,
-                        description: 1,
-                        model: 1,
-                        seller: "$seller.name",
-                        quantity: 1,
-                        batch_no: 1,
-                        item_status: 1,
-                        remarks: 1,
-                        mfg_date: 1,
-                        exp_date: 1,
-                        item_buy_price: 1,
-                        item_sell_price: 1,
-                        warrantee_guarantee: 1,
-                        warrantee_guarantee_duration: 1,
+                {$project: projectionStage},
+                {$match: cmpMatchStage},
+                    // { _id: 1,
+                    //     sl_no: 1,
+                    //     date: 1,
+                    //     item: "$item.name",
+                    //     brand: "$brand.name",
+                    //     batchId: 1,
+                    //     description: 1,
+                    //     model: 1,
+                    //     seller: "$seller.name",
+                    //     quantity: 1,
+                    //     batch_no: 1,
+                    //     item_status: 1,
+                    //     remarks: 1,
+                    //     mfg_date: 1,
+                    //     exp_date: 1,
+                    //     item_buy_price: 1,
+                    //     item_sell_price: 1,
+                    //     warrantee_guarantee: 1,
+                    //     warrantee_guarantee_duration: 1,
 
-                    }}
+                    // }
+                
             ]);
-            if(docs.length>0){
+            console.log("docs",docs);
+            if(!value && (docs.length>0)){
                 for(let i=0; i<docs.length; i++){
                   const ref = docs[i];
+                  ref.brand = ref.brand ? ref.brand: "N/A";
+                  ref.model = ref.model ? ref.model: "N/A";
+                  ref.seller = ref.seller ? ref.seller: "N/A";
                   ref.date = moment(ref.date).format('DD/MM/YYYY');
-                  ref.mfg_date = ref.mfg_date ? moment(ref.mfg_date).format('DD/MM/YYYY'): "Not available";
-                  ref.exp_date = ref.exp_date ? moment(ref.exp_date).format('DD/MM/YYYY'): "Not available";
-                  ref.warrantee_guarantee_duration = ref.warrantee_guarantee_duration ? `${ref.warrantee_guarantee_duration} Months`: "Not available";
+                  ref.sl_no = ref.sl_no ? ref.sl_no: "N/A";
+                  ref.item_sell_price = ref.item_sell_price ? ref.item_sell_price: "N/A";
+                  ref.description = ref.description ? ref.description: "N/A";
+                  ref.remarks = ref.remarks ? ref.remarks: "N/A";
+                  ref.mfg_date = ref.mfg_date ? moment(ref.mfg_date).format('DD/MM/YYYY'): "N/A";
+                  ref.exp_date = ref.exp_date ? moment(ref.exp_date).format('DD/MM/YYYY'): "N/A";
+                  ref.warrantee_guarantee = ref.warrantee_guarantee ? ref.warrantee_guarantee: "N/A";
+                  ref.warrantee_guarantee_duration = ref.warrantee_guarantee_duration ? `${ref.warrantee_guarantee_duration} Months`: "N/A";
                 } 
               }
             res.status(200).json({ docs: docs });
@@ -455,9 +499,7 @@ module.exports = {
             } else{
                 matchStage = {companyId: companyId}
             }
-            console.log("matchStage",matchStage)
             const docs = await sellerModel.find(matchStage, projectionStage);
-            console.log("docs", docs)
             res.status(200).json({ docs: docs });
         } catch (err) {
             res.status(400).json({ msg: err.message });
