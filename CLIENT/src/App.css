@@ -1,8 +1,13 @@
-/* Primary: Cool Gray (#E0E0E0)
-Secondary: Slate Gray (#4A4A4A)
-Accent: Royal Blue (#0057B7)
-Text: Jet Black (#121212)
-Hover/Active: Light Silver (#CFCFCF) */
+.disabled-btn {
+  cursor: not-allowed !important;
+  opacity: 0.4 !important;
+}
+.bc-green-imp{
+  background-color: #2dcc11 !important;
+}
+.bc-red-imp{
+  background-color: #ff6f6f !important;
+}
 .vrrl {
   border-right: 1px solid  #cccccc;
   border-left: 1px solid  #cccccc;
