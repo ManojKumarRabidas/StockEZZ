@@ -152,7 +152,7 @@ module.exports = {
                 res.status(400).json({ msg: "We are facing some technical error! Please try again later 1." });
                 return;
             }
-            const company = await companyModel.findById({ _id: new ObjectId(companyId.company) },{company_type: 1, company_subtype: 1});
+            const company = await companyModel.findById({ _id: new ObjectId(companyId.company) },{name: 1, phone: 1, address: 1, gstNo: 1, company_type: 1, company_subtype: 1});
             if (!(company && company.company_type)){
                 res.status(400).json({ msg: "We are facing some technical error! Please try again later 2." });
                 return;
@@ -168,6 +168,10 @@ module.exports = {
             doc.company_type = category.category;
             doc.company_subtype = company.company_subtype;
             doc.company_subtypes = category.sub_categories;
+            doc.name = company.name;
+            doc.address = company.address;
+            doc.phone = company.phone;
+            doc.gstNo = company.gstNo ? company.gstNo : "Not available";
             res.status(200).json({ doc: doc });
         } catch (err) {
             res.status(400).json({ msg: err.message });
