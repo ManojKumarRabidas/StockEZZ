@@ -191,7 +191,7 @@ function AddStock() {
       const response = await fetch(`${HOST}:${PORT}/server/brand-list`, {
             method: "PATCH",
             body: JSON.stringify({value: value, companyId: company_details._id}),
-            headers: { 'authorization': `Bearer ${token}`},
+            headers: {  'Content-Type': 'application/json','authorization': `Bearer ${token}`},
           });
           if (response) {
             const result = await response.json();
@@ -322,12 +322,13 @@ function AddStock() {
   };
   const handleSubmit = async (event) => {
     event.preventDefault();
-    const data = {sl_no, date, time, sub_category, item, itemId, brand, brandId, color, capacity, height, power, description, model, seller, sellerId, quantity, batch_no, batch_buy_price, batch_sell_price, per_peace_buy_price, per_peace_sell_price, batch_mfg_date, batch_exp_date, batch_warrantee_guarantee, batch_warrantee_guarantee_duration, item_status, return_reason, remarks, stock_details: lowerPartEntries};
-    if(!data.date || !data.item || !data.quantity || !data.per_peace_buy_price || !data.item_status){
+    const data = {sl_no, date, time, sub_category, item, itemId, brand, brandId, color, capacity, height, power, description, model, seller, sellerId, quantity, batch_no, item_status, return_reason, remarks, stock_details: lowerPartEntries};
+    const additionalData = {batch_buy_price, batch_sell_price, per_peace_buy_price, per_peace_sell_price, batch_mfg_date, batch_exp_date, batch_warrantee_guarantee, batch_warrantee_guarantee_duration}
+    if(!data.date || !data.item || !data.quantity || !additionalData.per_peace_buy_price || !data.item_status){
       toastr.error("Please enter all required field.");
       return;
     }
-    const finalData = {data: data, company: company_details};
+    const finalData = {data: data, additionalData: additionalData, company: company_details};
     const response = await fetch(`${HOST}:${PORT}/server/save-stock-details`, {
       method: "POST",
       body: JSON.stringify(finalData),
@@ -486,7 +487,7 @@ function AddStock() {
                   <option value="NOTHING">Nothing Applicable</option>
               </select>
             </div>}
-            {stockStructure.warrantee_guarantee_duration && (batch_warrantee_guarantee == "WARRANTEE" || batch_warrantee_guarantee == "GUARENTE") && <div className="col mb-3">
+            {stockStructure.batch_warrantee_guarantee_duration && ((batch_warrantee_guarantee == "WARRANTEE") || (batch_warrantee_guarantee == "GUARENTE")) && <div className="col mb-3">
               <label className="form-label">Batch Warrantee/Guarente Duration</label>
               <select className="form-select" aria-label="Default select example" name="batch_warrantee_guarantee_duration" value={batch_warrantee_guarantee_duration} onChange={(e) => setBatchWarranteeGuarenteDuration(e.target.value)}>
                   <option>--Select duration if applicable--</option>
@@ -530,7 +531,7 @@ function AddStock() {
                 <input placeholder="Enter remarks if any"  name="remarks" type="text" maxLength={70} className="form-control" aria-describedby="emailHelp" value={remarks} onChange={(e) => setRemarks(e.target.value)}/>
             </div>}
         </div>
-        {(stockStructure.model || stockStructure.unique_code || stockStructure.mfg_date || stockStructure.exp_date || stockStructure.item_buy_price || stockStructure.item_sell_price || stockStructure.warrantee_guarantee || stockStructure.warrantee_guarantee_duration) && <div>
+        {(stockStructure.unique_code || stockStructure.mfg_date || stockStructure.exp_date || stockStructure.item_buy_price || stockStructure.item_sell_price || stockStructure.warrantee_guarantee || stockStructure.warrantee_guarantee_duration) && <div>
           <hr />
           <h6>Fill the below form if any specific item has any specific properties. You can specify multiple item with "+Add More" button</h6>
           {lowerPartEntries.map((entry, index) => (

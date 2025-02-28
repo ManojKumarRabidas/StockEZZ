@@ -28,7 +28,6 @@ function Update() {
 
   const getCategoryData = async () => {
     try {
-      console.log("abcd")
       const response = await fetch(`${HOST}:${PORT}/server/category-details/${id}`, {
         method: "GET",
         headers: { 'authorization': `Bearer ${token}` },

@@ -1,4 +1,5 @@
 const {ObjectId} = require('mongodb');
+const moment = require('moment');
 const bcrypt = require('bcryptjs');
 const codeSequenceModel = require("../models/codesequence");
 const companyModel = require("../models/companies");
@@ -8,6 +9,7 @@ const stockStructureModel = require("../models/stockStructure");
 const buyerModel = require("../models/buyers");
 const sellerModel = require("../models/sellers");
 const brandModel = require("../models/brands");
+const stockModel = require("../models/stock");
 module.exports = {
     createCode: async (userType) => {
         try {
@@ -60,17 +62,149 @@ module.exports = {
         try {
             const userId = new ObjectId(req.user.id);
             const userType = req.user.user_type;
-            const body = req.body;
             if (userType === "COMPANY") {
                 companyId = userId;
             } else if(userType === "OPERATOR"){
-                companyId = new ObjectId(body.companyId)
+                let operator = await userModel.findOne({_id: userId}, {company: 1});
+                companyId = new ObjectId(operator.company)
             }
             let stockStructure = await stockStructureModel.findOne({companyId: companyId});
             res.status(200).json({ stockStructure: stockStructure });
           } catch (err) {
             res.status(500).json({ msg: "Failed to retrieve stock structure" });
           }
+    },
+    saveCustomizeAddStockDetails: async(req, res)=>{
+        try{
+            const body = req.body;
+            let companyId;
+            if (req.user.user_type === "COMPANY") {
+                companyId = new ObjectId(req.user.id);;
+            } else if(req.user.user_type === "OPERATOR"){
+                let operator = await userModel.findOne({_id: req.user.id}, {company: 1});
+                companyId = new ObjectId(operator.company)
+            }
+            body.companyId = companyId;
+            body.sl_no = true;
+            body.date = true;
+            body.item = true;
+            body.quantity = true;
+            body.per_peace_buy_price = true;
+            body.item_status = true;
+            body.updatedBy = new ObjectId(req.user.id);
+            const doc = await stockStructureModel.updateOne({companyId: body.companyId},{$set: body}, {upsert: true, new: true});
+            res.status(201).json({ status: true, msg: "Structure saved successfully.", doc:doc});
+        } catch(err){
+            res.status(500).json({ msg: "Failed to save stock structure" });
+        }
+    },
+    StockList: async(req, res)=>{
+        try {
+            const userId = new ObjectId(req.user.id);
+            const userType = req.user.user_type;
+            const value = req.headers.value;
+            let cmpMatchStage ={}
+            let matchStage ={}
+            let projectionStage ={}
+            if(value){
+                cmpMatchStage = {item: {$regex: value, $options: "i"}} 
+                projectionStage = {item: "$item.name", brand: "$brand.name", model: 1,quantity: 1,item_sell_price: 1}
+            } else{
+                projectionStage = { _id: 1,
+                    sl_no: 1,
+                    date: 1,
+                    item: "$item.name",
+                    brand: "$brand.name",
+                    batchId: 1,
+                    description: 1,
+                    model: 1,
+                    seller: "$seller.name",
+                    quantity: 1,
+                    batch_no: 1,
+                    item_status: 1,
+                    remarks: 1,
+                    mfg_date: 1,
+                    exp_date: 1,
+                    item_buy_price: 1,
+                    item_sell_price: 1,
+                    warrantee_guarantee: 1,
+                    warrantee_guarantee_duration: 1,
+
+                }
+            }
+            if (userType === "COMPANY") {
+                matchStage.companyId = userId;
+            } else if(userType === "OPERATOR"){
+                let operator = await userModel.findOne({_id: userId}, {company: 1});
+                matchStage.companyId = new ObjectId(operator.company)
+            }
+            console.log("matchStage", matchStage);
+            console.log("cmpMatchStage", cmpMatchStage);
+            console.log("projectionStage", projectionStage);
+            const docs = await stockModel.aggregate([
+                {$match: matchStage},
+                {$lookup: {from: "items",
+                    localField: "itemId",
+                    foreignField: "_id",
+                    as: "item"}},
+                {$unwind: "$item"},
+                {$lookup: {from: "brands",
+                    localField: "brandId",
+                    foreignField: "_id",
+                    as: "brand"}},
+                {$unwind: "$brand"},
+                {$lookup: {from: "sellers",
+                    localField: "sellerId",
+                    foreignField: "_id",
+                    as: "seller"}},
+                {$unwind: "$seller"},
+                {$project: projectionStage},
+                {$match: cmpMatchStage},
+                    // { _id: 1,
+                    //     sl_no: 1,
+                    //     date: 1,
+                    //     item: "$item.name",
+                    //     brand: "$brand.name",
+                    //     batchId: 1,
+                    //     description: 1,
+                    //     model: 1,
+                    //     seller: "$seller.name",
+                    //     quantity: 1,
+                    //     batch_no: 1,
+                    //     item_status: 1,
+                    //     remarks: 1,
+                    //     mfg_date: 1,
+                    //     exp_date: 1,
+                    //     item_buy_price: 1,
+                    //     item_sell_price: 1,
+                    //     warrantee_guarantee: 1,
+                    //     warrantee_guarantee_duration: 1,
+
+                    // }
+                
+            ]);
+            console.log("docs",docs);
+            if(!value && (docs.length>0)){
+                for(let i=0; i<docs.length; i++){
+                  const ref = docs[i];
+                  ref.brand = ref.brand ? ref.brand: "N/A";
+                  ref.model = ref.model ? ref.model: "N/A";
+                  ref.seller = ref.seller ? ref.seller: "N/A";
+                  ref.date = moment(ref.date).format('DD/MM/YYYY');
+                  ref.sl_no = ref.sl_no ? ref.sl_no: "N/A";
+                  ref.item_sell_price = ref.item_sell_price ? ref.item_sell_price: "N/A";
+                  ref.description = ref.description ? ref.description: "N/A";
+                  ref.remarks = ref.remarks ? ref.remarks: "N/A";
+                  ref.mfg_date = ref.mfg_date ? moment(ref.mfg_date).format('DD/MM/YYYY'): "N/A";
+                  ref.exp_date = ref.exp_date ? moment(ref.exp_date).format('DD/MM/YYYY'): "N/A";
+                  ref.warrantee_guarantee = ref.warrantee_guarantee ? ref.warrantee_guarantee: "N/A";
+                  ref.warrantee_guarantee_duration = ref.warrantee_guarantee_duration ? `${ref.warrantee_guarantee_duration} Months`: "N/A";
+                } 
+              }
+            res.status(200).json({ docs: docs });
+        } catch (err) {
+            res.status(400).json({ msg: err.message });
+        }
     },
 
     operatorList: async(req, res)=>{
@@ -392,7 +526,6 @@ module.exports = {
             const codeGenerator =await require("../controllers/utilController").createCode("SELLER");
             body.code = codeGenerator.code
             const doc = await sellerModel.create(body);
-            console.log("doc", doc)
             res.status(201).json({ status: true, msg: "Seller created successfully.", doc:doc});
         } catch (err) {
             if(err.code==11000){

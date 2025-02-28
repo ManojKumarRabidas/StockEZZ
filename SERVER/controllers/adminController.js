@@ -250,7 +250,6 @@ module.exports = {
                     }
                 }
             }
-            console.log("docs", docs)
             res.status(200).json({ docs: docs });
         } catch (err) {
             res.status(400).json({ msg: err.message });
@@ -359,10 +358,7 @@ module.exports = {
                     matchStage = {companyId: {$in: companyIds}}
                 }
             }
-            console.log("matchStage", matchStage)
-            console.log("projectionStage", projectionStage)
             const docs = await itemModel.find(matchStage, projectionStage);
-            console.log("docs", docs)
             res.status(200).json({ docs: docs });
         } catch (err) {
             res.status(400).json({ msg: err.message });
