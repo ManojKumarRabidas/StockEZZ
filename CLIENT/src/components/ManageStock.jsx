@@ -14,6 +14,7 @@ function StockDetails() {
   const [finalBillingData, setFinalBillingData] = useState({});
   const [paymentDetails, setPaymentDetails] = useState({});
   const [buyerDetails, setBuyerDetails] = useState({buyer_phone: "", buyer_name: "", buyer_address: "", buyer_pin: "", buyer_email: "", buyer_aadhar: ""});
+  const [buyers, setBuyers] = useState([]);
 
   const fetchCompanyDetails = async () => {
     try {
@@ -70,16 +71,30 @@ function StockDetails() {
     }
   }
 
-  const handleSelect = (_id) =>{
-    const matchedItem = listData.find((item)=>item._id == _id);
-    const tempArr = billingData.slice();
-    matchedItem.total_quantity = matchedItem.quantity;
-    matchedItem.total_item_sell_price = matchedItem.item_sell_price;
-    matchedItem.quantity = 1;
-    tempArr.push(matchedItem)
-    setBillingData(tempArr)
-    setListData([]);
-    setSearchElement("");
+  const handleSelect = (_id, type) =>{
+    if(type == "ITEM"){
+        const matchedItem = listData.find((item)=>item._id == _id);
+        const tempArr = billingData.slice();
+        matchedItem.total_quantity = matchedItem.quantity;
+        matchedItem.total_item_sell_price = matchedItem.item_sell_price;
+        matchedItem.quantity = 1;
+        tempArr.push(matchedItem)
+        setBillingData(tempArr)
+        setListData([]);
+        setSearchElement("");
+    } else if (type == "BUYER"){
+        const matchedItem = buyers.find((item)=>item._id == _id);
+        const tempObj = {...buyerDetails};
+            tempObj._id = matchedItem._id;
+            tempObj.buyer_phone = matchedItem.phone;
+            tempObj.buyer_name = matchedItem.name;
+            tempObj.buyer_address = matchedItem.address;
+            tempObj.buyer_pin = matchedItem.pin;
+            tempObj.buyer_email = matchedItem.email;
+            tempObj.buyer_aadhar = matchedItem.aadhar;
+        setBuyerDetails(tempObj)
+        setBuyers([])
+    }
   }
 
   const removeItem = (_id) =>{
@@ -182,6 +197,8 @@ const changePaymentDetails = (value, type) => {
         tempObj.ramaining_amount = tempObj.total_amount - value;
     } else if (type == "info"){
         tempObj.info = value;
+    }else if (type == "pending_installation"){
+        tempObj.pending_installation = value;
     }
     setPaymentDetails(tempObj)
   }
@@ -190,6 +207,7 @@ const changePaymentDetails = (value, type) => {
     const tempObj = {...buyerDetails};
     if(type == "buyer_phone"){
         tempObj.buyer_phone = value;
+        searchBuyers(value)
     } else if (type == "buyer_name"){
         tempObj.buyer_name = value;
     } else if (type == "buyer_address"){
@@ -203,10 +221,67 @@ const changePaymentDetails = (value, type) => {
     }
     setBuyerDetails(tempObj)
   }
-  const submitBill = () =>{
-    console.log("details",company_details, finalBillingData, paymentDetails, buyerDetails)
-    toastr.success("Jhingalala hu hu");
+
+  const searchBuyers = async (value) => {
+    setBuyers([]);
+    if(value){
+        try {
+            const response = await fetch(`${HOST}:${PORT}/server/buyer-list`, {
+            method: "GET",
+            headers: { 'authorization': `Bearer ${token}`, "value": value, "company_id": company_details._id, active: true },
+            });
+    
+            const result = await response.json();
+            if (response.ok) {
+                setBuyers(result.docs);
+            } else {
+            toastr.error(result.msg);
+            }
+        } catch (err) {
+            toastr.error("We are unable to process now. Please try again later.");
+        }
+    }
   }
+
+  const submitBill = async () =>{
+    const billingItemDetails = [];
+    for(let i=0; i<finalBillingData.billingData.length; i++){
+        const ref = {
+            item_id: finalBillingData.billingData[i]._id,
+            sell_price: finalBillingData.billingData[i].item_sell_price,
+            quantity: finalBillingData.billingData[i].quantity
+        }
+        billingItemDetails.push(ref);
+    }
+    const billData = {company_id: company_details._id , date: finalBillingData.date, items: billingItemDetails, total: finalBillingData.total, additional_charges: finalBillingData.additional_charges, discount: finalBillingData.discount, grandTotal: finalBillingData.grandTotal,
+        payment_type: paymentDetails.payment_type, paid_amount:paymentDetails.paid_amount, ramaining_amount: paymentDetails.ramaining_amount, pending_installation: paymentDetails.pending_installation, info: paymentDetails.info,
+        buyer_id: buyerDetails._id, buyer_phone: buyerDetails.buyer_phone, buyer_name: buyerDetails.buyer_name, buyer_email: buyerDetails.buyer_email, buyer_address: buyerDetails.buyer_address, buyer_pin: buyerDetails.buyer_pin, buyer_aadhar: buyerDetails.buyer_aadhar };
+    if (!billData || !billData.company_id || !billData.date ){
+      toastr.error("We are facing some problem in submission. Please try again with fresh entry.");
+      return;
+    }
+    console.log("billData", billData)
+    const response = await fetch(`${HOST}:${PORT}/server/bill-create`, {
+      method: "POST",
+      body: JSON.stringify(billData),
+      headers: {
+        'Content-Type': 'application/json',
+        'authorization': `Bearer ${token}`,
+      }
+    });
+    if (response){
+      const result = await response.json();
+      if (response.ok && result.status){
+        toastr.success("Bill created successfully.");
+      } else{
+        toastr.error(result.msg);
+      }
+    } else{
+      toastr.error("We are unable to process now. Please try again later.")
+    }
+  }
+
+
   return (
     <div className="container my-2">
         {billListDiv && <div>
@@ -227,7 +302,7 @@ const changePaymentDetails = (value, type) => {
             {listData.length > 0 && (
                     <ul style={{ border: "1px solid #ccc", padding: "5px", marginTop: "2px", listStyleType: "none", maxHeight: "250px", overflowY: "auto", position: "absolute", background: "white", width: "79%" }}>
                     {listData.map((item, index) => (
-                        <li key={index} onClick={() => handleSelect(item._id)} style={{ padding: "5px", cursor: "pointer", borderBottom: "1px solid #eee"}} className="d-flex justify-content-between"> <span> {item.item} [ Available: {item.quantity}, Price: {item.item_sell_price? item.item_sell_price: "N/A"}, Brand: {item.brand ? item.brand : "N/A"}, Model: {item.model ? item.model : "N/A"} ]</span> <span className="d-flex"> <button className="form-control mx-2">Sell</button> <button className="form-control mx-2 bc-green-imp">Bill</button></span></li>
+                        <li key={index} onClick={() => handleSelect(item._id, "ITEM")} style={{ padding: "5px", cursor: "pointer", borderBottom: "1px solid #eee"}} className="d-flex justify-content-between"> <span> {item.item} [ Available: {item.quantity}, Price: {item.item_sell_price? item.item_sell_price: "N/A"}, Brand: {item.brand ? item.brand : "N/A"}, Model: {item.model ? item.model : "N/A"} ]</span> <span className="d-flex"> <button className="form-control mx-2">Sell</button> <button className="form-control mx-2 bc-green-imp">Bill</button></span></li>
                     ))}
                 </ul>)}
             {(billingData.length == 0) && <div className="text-center my-5">
@@ -358,17 +433,31 @@ const changePaymentDetails = (value, type) => {
                         <label className="form-label me-2 text-nowrap">Remaining amount :</label>
                         <input disabled name="ramaining_amount" placeholder="Remaining amount"  type="text" maxLength={70} className="form-control text-end " aria-describedby="emailHelp" value={paymentDetails.ramaining_amount}/>
                     </div>
+                    <div className="col d-flex flex-row align-items-center flex-nowrap">
+                        <label className="form-label me-2 text-nowrap">Installation :</label>
+                        <select className="form-select" aria-label="Default select example" name="type" value={paymentDetails.pending_installation} onChange={(e) => changePaymentDetails(e.target.value, "pending_installation")}>
+                            <option>Not applicable</option>
+                            <option value="PENDING">Pending</option>
+                            <option value="COMPLETE">Complete</option>
+                        </select>
+                    </div>
                 </div>
                 <input name="info" placeholder="Enter any additional information releted to sell or product or installation."  type="text" maxLength={255} className="form-control mt-4 mb-4" aria-describedby="emailHelp" value={paymentDetails.info} onChange={(e) => changePaymentDetails(e.target.value, "info")}/>
                 <hr />
-                <div className="row my-4">
+                <div className="row">
                     <div className="col">
-                        <input name="buyer_phone" placeholder="Enter Buyer phone number"  type="text" maxLength={12} className="form-control" aria-describedby="emailHelp" value={buyerDetails.buyer_phone} onChange={(e) => changeBuyerDetails(e.target.value, "buyer_phone")}/>
+                        <input autoComplete="off" name="buyer_phone" placeholder="Enter Buyer phone number"  type="text" maxLength={12} className="form-control" aria-describedby="emailHelp" value={buyerDetails.buyer_phone} onChange={(e) => changeBuyerDetails(e.target.value, "buyer_phone")}/>
                     </div>
                     <div className="col">
                         <input name="buyer_name" placeholder="Enter Buyer name"  type="text" maxLength={70} className="form-control" aria-describedby="emailHelp" value={buyerDetails.buyer_name} onChange={(e) => changeBuyerDetails(e.target.value, "buyer_name")}/>
                     </div>
                 </div>
+                {buyers.length > 0 && (
+                    <ul style={{ border: "1px solid #ccc", padding: "5px", marginTop: "2px", listStyleType: "none", maxHeight: "250px", overflowY: "auto", position: "absolute", background: "white", width: "38%" }}>
+                    {buyers.map((item, index) => (
+                        <li key={index} onClick={() => handleSelect(item._id, "BUYER")} style={{ padding: "5px", cursor: "pointer", borderBottom: "1px solid #eee"}} className="d-flex justify-content-between"> {item.phone} - {item.name} - {item.aadhar} </li>
+                    ))}
+                </ul>)}
                 <div className="row my-4">
                     <div className="col">
                         <input name="buyer_address" placeholder="Enter Buyer address"  type="text" maxLength={70} className="form-control" aria-describedby="emailHelp" value={buyerDetails.buyer_address} onChange={(e) => changeBuyerDetails(e.target.value, "buyer_address")}/>
@@ -388,6 +477,7 @@ const changePaymentDetails = (value, type) => {
             </div>
             <div className="d-flex justify-content-end mt-3 mb-5">
                 <button className="form-control mx-2" style={{maxWidth: "100px"}} onClick={() => submitBill()} >Submit</button>
+                <button className="form-control mx-2" style={{maxWidth: "100px"}} onClick={() => setBillListDiv(true)} >Home</button>
                 <button className="form-control mx-2" style={{maxWidth: "100px"}} onClick={() => setBillListDiv(true)} >Print</button>
                 <button className="form-control mx-2 bc-green-imp" style={{maxWidth: "140px"}} onClick={() => setBillListDiv(true)} >Whatsapp</button>
             </div>

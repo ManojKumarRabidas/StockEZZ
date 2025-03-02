@@ -11,6 +11,7 @@ function Create() {
     const [email, setEmail] = useState("");
     const [address, setAddress] = useState("");
     const [pin, setPin] = useState("");
+    const [aadhar, setAadhar] = useState("");
     const [active, setActive] = useState(false);
     const navigate = useNavigate();
 
@@ -21,12 +22,13 @@ function Create() {
     setEmail("");
     setAddress("");
     setPin("");
+    setAadhar("");
     setActive(false);
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    const buyerData = {name, phone, email, address, pin, active };
+    const buyerData = {name, phone, email, address, pin, aadhar, active };
     if (!name || !phone ){
       toastr.error("Please enter name and phone.");
       return;
@@ -73,12 +75,18 @@ function Create() {
         </div>
         <div className="row">
           <div className="col mb-3">
-            <label className="form-label">Address </label>
-            <input name="address" type="text" maxLength={70} className="form-control" aria-describedby="emailHelp" value={address} onChange={(e) => setAddress(e.target.value)}/>
+            <label className="form-label">Aadhar Number </label>
+            <input name="aadhar" type="text" maxLength={12} className="form-control" aria-describedby="emailHelp" value={aadhar} onChange={(e) => setAadhar(e.target.value)}/>
           </div>
           <div className="col mb-3">
             <label className="form-label">PIN Code </label>
             <input name="pin" type="text" maxLength={6} className="form-control" aria-describedby="emailHelp" value={pin} onChange={(e) => setPin(e.target.value)}/>
+          </div>
+        </div>
+        <div className="row">
+          <div className="col mb-3">
+            <label className="form-label">Address </label>
+            <input name="address" type="text" maxLength={70} className="form-control" aria-describedby="emailHelp" value={address} onChange={(e) => setAddress(e.target.value)}/>
           </div>
         </div>
         <div className="mb-3 form-switch" style={{paddingLeft: "0"}}>

@@ -19,12 +19,37 @@ function List() {
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(6);
   const [sorting, setSorting] = useState([]); // State to manage sorting
+  const [company_details, setCompanyDetails] = useState({})
 
-  async function getData() {
+  const fetchCompanyDetails = async () => {
     try {
+        const response = await fetch(`${HOST}:${PORT}/server/get-company-details`, {
+            method: "GET",
+            headers: { 'authorization': `Bearer ${token}` },
+          });
+          if (response) {
+            const result = await response.json();
+            if (response.ok) {
+                console.log("result.doc", result.doc)
+                setCompanyDetails(result.doc)
+                getData(result.doc._id)
+            } else {
+              toastr.error(result.msg);
+            }
+          } else {
+            toastr.error("We are unable to process now. Please try again later.");
+          }
+    } catch (err) {
+      toastr.error("Failed to load details. Please try again later.");
+    }
+  };
+
+  const getData = async (_id) => {
+    try {
+      console.log("company_details", company_details)
       const response = await fetch(`${HOST}:${PORT}/server/buyer-list`, {
         method: "GET",
-        headers: { 'authorization': `Bearer ${token}` },
+        headers: { 'authorization': `Bearer ${token}`,"company_id": _id, },
       });
 
       const result = await response.json();
@@ -39,7 +64,8 @@ function List() {
   }
 
   useEffect(() => {
-    getData();
+    fetchCompanyDetails()
+    // getData();
   }, []);
 
   const handleDelete = async (id) => {

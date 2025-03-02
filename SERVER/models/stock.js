@@ -36,7 +36,18 @@ const stockSchema = new mongoose.Schema({
     item_buy_price: {type: Number},
     item_sell_price: {type: Number},
     warrantee_guarantee: {type: String},
-    warrantee_guarantee_duration: {type: Number},
+    warrantee_guarantee_duration: {type: Number},  
+    sell_details: {
+        type: [
+          {
+            buyer_id: mongoose.Schema.Types.ObjectId,
+            sell_price: Number,
+            quantity: Number,
+            sold_at: { type: Date, default: Date.now },
+          },
+        ],
+        default: [],
+      },
     createdBy: {type: mongoose.Schema.Types.ObjectId},
     updatedBy: {type: mongoose.Schema.Types.ObjectId}
 }, { timestamps: true });

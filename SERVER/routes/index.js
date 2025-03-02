@@ -69,4 +69,6 @@ router.post("/save-stock-details", authorizeRole(['OPERATOR']), operatorControll
 router.get("/stock-list", authorizeRole(['COMPANY', 'OPERATOR']), utilController.StockList);
 router.get("/get-company-details", authorizeRole(['OPERATOR']), operatorController.fetchCompanyDetails);
 
+router.post("/bill-create", authorizeRole(['OPERATOR']), operatorController.createBill);
+
 module.exports = router;

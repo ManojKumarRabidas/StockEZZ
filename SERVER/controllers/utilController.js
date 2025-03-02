@@ -138,9 +138,6 @@ module.exports = {
                 let operator = await userModel.findOne({_id: userId}, {company: 1});
                 matchStage.companyId = new ObjectId(operator.company)
             }
-            console.log("matchStage", matchStage);
-            console.log("cmpMatchStage", cmpMatchStage);
-            console.log("projectionStage", projectionStage);
             const docs = await stockModel.aggregate([
                 {$match: matchStage},
                 {$lookup: {from: "items",
@@ -160,30 +157,8 @@ module.exports = {
                 {$unwind: "$seller"},
                 {$project: projectionStage},
                 {$match: cmpMatchStage},
-                    // { _id: 1,
-                    //     sl_no: 1,
-                    //     date: 1,
-                    //     item: "$item.name",
-                    //     brand: "$brand.name",
-                    //     batchId: 1,
-                    //     description: 1,
-                    //     model: 1,
-                    //     seller: "$seller.name",
-                    //     quantity: 1,
-                    //     batch_no: 1,
-                    //     item_status: 1,
-                    //     remarks: 1,
-                    //     mfg_date: 1,
-                    //     exp_date: 1,
-                    //     item_buy_price: 1,
-                    //     item_sell_price: 1,
-                    //     warrantee_guarantee: 1,
-                    //     warrantee_guarantee_duration: 1,
-
-                    // }
                 
             ]);
-            console.log("docs",docs);
             if(!value && (docs.length>0)){
                 for(let i=0; i<docs.length; i++){
                   const ref = docs[i];
@@ -368,22 +343,28 @@ module.exports = {
     
     buyerList: async(req, res)=>{
         try {
+            const cmpVal = req.headers.value;
             const userId = new ObjectId(req.user.id);
             const userType = req.user.user_type;
             const activeStatus = req.headers.active;
             let matchStage = {};
+            let projectionStage = {};
             if (userType === "COMPANY") {
                 companyId = userId;
             } else if(userType === "OPERATOR"){
-                let user = await userModel.findById(userId, {company:1});
-                companyId = new ObjectId(user.company)
+                if(!req.headers.company_id){
+                    res.status(400).json({ msg: "Unable to find company details! Please try again later." });
+                    return;
+                }
+                companyId = new ObjectId(req.headers.company_id)
             }
-            if(activeStatus){
-                matchStage = {companyId: companyId, active: true} 
+            if(activeStatus && cmpVal){
+                matchStage = {companyId: companyId, active: true, phone: {$regex: cmpVal, $options: "i"}} 
+                projectionStage = {name: 1, phone: 1, email: 1, address: 1, pin: 1, aadhar: 1}
             } else{
                 matchStage = {companyId: companyId}
             }
-            const docs = await buyerModel.find(matchStage);
+            const docs = await buyerModel.find(matchStage, projectionStage);
             res.status(200).json({ docs: docs });
         } catch (err) {
             res.status(400).json({ msg: err.message });

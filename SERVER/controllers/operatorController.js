@@ -8,6 +8,8 @@ const categoryModel = require("../models/categories");
 const sellerModel = require("../models/sellers");
 const brandModel = require("../models/brands");
 const itemModel = require("../models/items");
+const buyerModel = require("../models/buyers");
+const billModel = require("../models/bills");
 module.exports = {
     saveStockDetails: async(req, res)=>{
         try{
@@ -55,7 +57,6 @@ module.exports = {
                 }
                 const codeGenerator = await require("../controllers/utilController").createCode("ITEM");
                 newItem.code = codeGenerator.code
-                // const doc = await itemModel.create(newItem);
                 const doc = await itemModel.updateOne(
                     { name: { $regex: `^${newItem.name}$`, $options: "i" } },  // Case-insensitive match
                     { $setOnInsert: newItem }, 
@@ -175,6 +176,83 @@ module.exports = {
             res.status(200).json({ doc: doc });
         } catch (err) {
             res.status(400).json({ msg: err.message });
+        }
+    },
+    createBill: async(req, res)=>{
+        try{
+            const body = req.body
+            const user = req.user
+            console.log(body)
+            if(!body || !body.company_id || !body.date){
+                res.status(400).json({status: false, msg: "Missing Parameters!" });
+                return;
+            }
+            body.buyer_id = null;
+            if(body.buyer_name || body.buyer_phone){
+                const matchString = {}
+                if(body.buyer_name){matchString.name = body.buyer_name}
+                if(body.buyer_phone){matchString.phone = body.buyer_phone}
+                const buyerBody = {
+                    name: body.buyer_name,
+                    phone: body.buyer_phone,
+                    email: body.buyer_email,
+                    address: body.buyer_address,
+                    pin: body.buyer_pin,
+                    aadhar: body.buyer_aadhar,
+                    active: true,
+                    createdBy: new ObjectId(user.id),
+                    updatedBy: new ObjectId(user.id)
+                }
+                const codeGenerator = await require("../controllers/utilController").createCode("BUYER");
+                buyerBody.code = codeGenerator.code
+                const buyerDoc = await buyerModel.updateOne(matchString, {$set: buyerBody}, {upsert: true, new: true});
+                console.log("buyerDoc", buyerDoc)
+                if (buyerDoc.matchedCount === 0 && buyerDoc.upsertedCount === 0) {
+                    res.status(400).json({ msg: "We are facing some technical error! Please try again later." });
+                    return;
+                }
+                body.buyer_id = buyerDoc.upsertedId;
+            }
+            for(let i=0; i<body.items.length; i++){
+                body.items[i].item_id = new ObjectId(body.items[i].item_id)
+                const ref = body.items[i];
+                const stock = await stockModel.findOne({_id: ref.item_id});
+                if (!stock) {
+                  console.log("Stock not found");
+                  return;
+                }
+            
+                if (stock.quantity < ref.quantity) {
+                  console.log("Not enough stock available");
+                  return;
+                }
+                stock.quantity -= ref.quantity;
+                if (!Array.isArray(stock.sell_details)) {
+                    stock.sell_details = [];
+                  }
+                stock.sell_details.push({ buyer_id: body.buyer_id, sell_price: Number(ref.sell_price), quantity: Number(ref.quantity) });
+                await stock.save();
+            
+                console.log("Stock updated successfully");
+            }
+            delete body.buyer_name
+            delete body.buyer_phone
+            delete body.buyer_email
+            delete body.buyer_address
+            delete body.buyer_aadhar
+            delete body.buyer_pin
+            body.company_id = new ObjectId(body.company_id);
+            body.date = new Date(body.date);
+            body.total = Number(body.total);
+            body.additional_charges = body.additional_charges ? Number(body.additional_charges): 0;
+            body.discount = body.discount ? Number(body.discount): 0;
+            body.grandTotal = Number(body.grandTotal);
+            body.paid_amount = body.paid_amount ? Number(body.paid_amount): 0;
+            body.ramaining_amount = body.ramaining_amount ? Number(body.ramaining_amount): 0;
+            const doc = await billModel.create(body)
+            res.status(201).json({ status: true, msg: "Bill created successfully.", doc:doc});
+        } catch(err){
+            res.status(500).json({ status: false, msg: err.message });
         }
     },
 }
