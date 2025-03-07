@@ -66,9 +66,14 @@ router.patch("/brand-list", authorizeRole(['COMPANY', 'OPERATOR']), utilControll
 router.patch("/customize-add-stock-details", authorizeRole(['COMPANY', 'OPERATOR']), utilController.getCustomizeAddStockDetails);
 router.post("/save-customize-add-stock-details", authorizeRole(['COMPANY', 'OPERATOR']), utilController.saveCustomizeAddStockDetails);
 router.post("/save-stock-details", authorizeRole(['OPERATOR']), operatorController.saveStockDetails);
-router.get("/stock-list", authorizeRole(['COMPANY', 'OPERATOR']), utilController.StockList);
-router.get("/get-company-details", authorizeRole(['OPERATOR']), operatorController.fetchCompanyDetails);
+router.patch("/stock-bulk-update", authorizeRole(['OPERATOR']), operatorController.stockBulkUpdate);
+router.get("/stock-list", authorizeRole(['COMPANY', 'OPERATOR']), utilController.stockList);
+router.get("/get-company-details", authorizeRole(['COMPANY','OPERATOR']), utilController.fetchCompanyDetails);
 
-router.post("/bill-create", authorizeRole(['OPERATOR']), operatorController.createBill);
+router.post("/bill-create", authorizeRole(['OPERATOR']), operatorController.billCreate);
+router.get("/bill-list", authorizeRole(['COMPANY','OPERATOR']), utilController.billList);
+router.get("/bill-details/:id", authorizeRole(['COMPANY','OPERATOR']), utilController.billDetails);
+router.patch("/bill-update/:id", authorizeRole(['OPERATOR']), operatorController.billUpdate);
+router.post("/bill-print/:id", authorizeRole(['OPERATOR']), operatorController.billPrint);
 
 module.exports = router;

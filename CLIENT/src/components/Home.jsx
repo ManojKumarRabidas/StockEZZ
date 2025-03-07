@@ -15,7 +15,7 @@ function Home() {
                     A Stock Management System
                   </p>
                   <p className="text-muted" id="font">
-                  You manage your life. Let the stock managed by us.
+                  You focus on managing your life. <br />Let us manage your stock. 😊
                   <br />
                   <br />
                   

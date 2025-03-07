@@ -237,6 +237,7 @@ module.exports = {
         try {
             const cmpVal = req.headers.value;
             const activeStatus = req.headers.active;
+            const isItem = req.headers.item;
             let docs;
             if(cmpVal && activeStatus){
                 docs = await categoryModel.find({category: {$regex: cmpVal, $options: "i"}, active: true}, {category: 1, sub_categories: 1}).limit(10);
@@ -353,12 +354,24 @@ module.exports = {
                 projectionStage = {name: 1}
             } else if(activeStatus){
                 matchStage = {companyId: {$in: companyIds},  active: true}
+                projectionStage = {code: 1, name: 1, category: "$category.category", sub_category: 1, active: 1}
             } else{
+                projectionStage = {code: 1,name: 1, category: "$category.category", sub_category: 1, active: 1}
                 if (userType != ("ADMIN" && "SUPPORTADMIN")) {
                     matchStage = {companyId: {$in: companyIds}}
                 }
             }
-            const docs = await itemModel.find(matchStage, projectionStage);
+            // const docs = await itemModel.find(matchStage, projectionStage);
+            const docs = await itemModel.aggregate([
+                {$match: matchStage},
+                {$lookup: {from: "categories",
+                    localField: "category",
+                    foreignField: "_id",
+                    as: "category"}},
+                {$unwind: "$category"},
+                {$project: projectionStage},
+                
+            ]);
             res.status(200).json({ docs: docs });
         } catch (err) {
             res.status(400).json({ msg: err.message });

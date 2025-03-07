@@ -15,16 +15,19 @@ const PORT = import.meta.env.VITE_PORT;
 
 function StockDetails() {
   const [data, setData] = useState([]);
+  const [editableTable, setEditableTable] = useState(false);
+  const [filters, setFilters] = useState({sold_status: "UNSOLD"});
   const [globalFilter, setGlobalFilter] = useState("");
   const [pageIndex, setPageIndex] = useState(0);
-  const [pageSize, setPageSize] = useState(6);
+  const [pageSize, setPageSize] = useState(10);
   const [sorting, setSorting] = useState([]); // State to manage sorting
 
-  async function getData() {
+   const getData = async()=>{
     try {
+      console.log("filters", filters)
       const response = await fetch(`${HOST}:${PORT}/server/stock-list`, {
         method: "GET",
-        headers: { 'authorization': `Bearer ${token}` },
+        headers: { 'authorization': `Bearer ${token}`, "sold_status": filters.sold_status},
       });
 
       const result = await response.json();
@@ -39,51 +42,77 @@ function StockDetails() {
   }
 
   useEffect(() => {
-    getData();
+    changeFilter("UNSOLD", "sold_status")
   }, []);
 
-//   const handleDelete = async (id) => {
-//     try {
-//       const response = await fetch(`${HOST}:${PORT}/server/stock-remove/${id}`, {
-//         method: "DELETE",
-//         headers: { 'authorization': `Bearer ${token}` },
-//       });
 
-//       const result = await response.json();
-//       if (response.ok) {
-//         toastr.success("Buyer deleted successfully");
-//         getData();
-//       } else {
-//         toastr.error(result.error);
-//       }
-//     } catch (err) {
-//       toastr.error("We are unable to process now. Please try again later.");
-//     }
-//   };
-
-  const handleAvilibilityChange = async (id, isActive) => {
-    try {
-      const response = await fetch(`${HOST}:${PORT}/server/stock-update-avilibility/${id}`, {
-        method: "PUT",
-        body: JSON.stringify({ active: isActive }),
-        headers: {
-          'Content-Type': 'application/json',
-          'authorization': `Bearer ${token}`,
+  const changeTableValue = (_id, value, type) => {
+    for(let i=0; i<data.length; i++){
+      const ref = data[i];
+      if(ref._id == _id){
+        data[i].edited = true;
+        if(type == "SELLPRICE"){
+          data[i].item_sell_price = value;
+        } else if(type == "DESCRIPTION"){
+          data[i].description = value;
         }
-      });
-
-      const result = await response.json();
-      
-      if (response.ok) {
-        toastr.success("Stock status updated successfully");
-        getData();
-      } else {
-        toastr.error(result.error);
       }
-    } catch (err) {
-      toastr.error("We are unable to process now. Please try again later.");
     }
-  };
+  }
+
+  const editableStatus = async (status)=>{
+    setEditableTable(status)
+    if(!status){
+      console.log(data)
+      const newBody = []
+      for(let i=0; i<data.length; i++){
+        if(data[i].edited){
+          const ref = {
+            _id: data[i]._id,
+            item_sell_price: data[i].item_sell_price,
+            description: data[i].description,
+          }
+          newBody.push(ref);
+        }
+      }
+      if(newBody.length == 0){
+        toastr.info("No stock details has updated.");
+        return;
+      }
+      try {
+        const response = await fetch(`${HOST}:${PORT}/server/stock-bulk-update`, {
+          method: "PATCH",
+          body: JSON.stringify(newBody),
+          headers: {
+            'Content-Type': 'application/json',
+            'authorization': `Bearer ${token}`,
+          },
+        });
+  
+        if (response) {
+          const result = await response.json();
+          if (response.ok) {
+            toastr.success("Stock details updated successfully.");
+          } else {
+            toastr.error(result.msg);
+          }
+        } else {
+          toastr.error("We are unable to process now. Please try again later.");
+        }
+      } catch (error) {
+        toastr.error("We are unable to process now. Please try again later.");
+      }
+    }
+  }
+
+  const changeFilter = (value, type) => {
+    console.log("value", value)
+    console.log("type", type)
+    if(type == "sold_status"){
+      filters.sold_status = value;
+      getData();
+    }
+  }
 
   // Define table columns with proper accessorKeys
   const columns = useMemo(
@@ -113,8 +142,90 @@ function StockDetails() {
         enableSorting: true,
       },
       {
+        header: "Color",
+        accessorKey: "color",
+        sortingFn: "alphanumeric",
+        enableSorting: true,
+      },
+      {
+        header: "Capacity",
+        accessorKey: "capacity",
+        sortingFn: "alphanumeric",
+        enableSorting: true,
+      },
+      {
+        header: "Height",
+        accessorKey: "height",
+        sortingFn: "alphanumeric",
+        enableSorting: true,
+      },
+      {
+        header: "Power",
+        accessorKey: "power",
+        sortingFn: "alphanumeric",
+        enableSorting: true,
+      },
+      {
         header: "Quantity",
         accessorKey: "quantity",
+        sortingFn: "alphanumeric",
+        enableSorting: true,
+      },
+      {
+        header: "Buy Price",
+        accessorKey: "item_buy_price",
+        sortingFn: "alphanumeric",
+        enableSorting: true,
+      },
+      {
+        header: "Sell Price",
+        id: "sell_price_key",
+        accessorKey: "sell_price_key",
+        sortingFn: "alphanumeric",
+        enableSorting: true,
+        headerClassName: "ei-text-center-imp",
+        cell: ({ row }) => {
+          const [value, setValue] = useState(row.original.item_sell_price);
+          const handleChange = (e) => {
+            const newValue = e.target.value;
+            setValue(newValue);
+            changeTableValue(row.original._id, newValue, "SELLPRICE");
+          };
+      
+          return (
+            <div style={{ textAlign: "center" }}>
+              {!editableTable && <label>{value}</label>}
+              {editableTable && <div> <input name="sell_price" value={value} onChange={handleChange} /></div>}
+            </div>
+          );
+        },
+      },
+      {
+        header: "Description",
+        id: "description",
+        accessorKey: "description",
+        sortingFn: "alphanumeric",
+        enableSorting: true,
+        headerClassName: "ei-text-center-imp",
+        cell: ({ row }) => {
+          const [value, setValue] = useState(row.original.description);
+          const handleChange = (e) => {
+            const newValue = e.target.value;
+            setValue(newValue);
+            changeTableValue(row.original._id, newValue, "DESCRIPTION");
+          };
+      
+          return (
+            <div style={{ textAlign: "center" }}>
+              {!editableTable && <label>{value}</label>}
+              {editableTable && <div> <input name="description" value={value} onChange={handleChange} /></div>}
+            </div>
+          );
+        },
+      },
+      {
+        header: "Item Status",
+        accessorKey: "item_status",
         sortingFn: "alphanumeric",
         enableSorting: true,
       },
@@ -139,30 +250,6 @@ function StockDetails() {
       {
         header: "Batch Id",
         accessorKey: "batchId",
-        sortingFn: "alphanumeric",
-        enableSorting: true,
-      },
-      {
-        header: "Buy Price",
-        accessorKey: "item_buy_price",
-        sortingFn: "alphanumeric",
-        enableSorting: true,
-      },
-      {
-        header: "Sell Price",
-        accessorKey: "item_sell_price",
-        sortingFn: "alphanumeric",
-        enableSorting: true,
-      },
-      {
-        header: "Description",
-        accessorKey: "description",
-        sortingFn: "alphanumeric",
-        enableSorting: true,
-      },
-      {
-        header: "Item Status",
-        accessorKey: "item_status",
         sortingFn: "alphanumeric",
         enableSorting: true,
       },
@@ -196,23 +283,8 @@ function StockDetails() {
         sortingFn: "alphanumeric",
         enableSorting: true,
       },
-      {
-        header: "Action",
-        id: "action",
-        enableSorting: false,
-        headerClassName: "ei-text-center-imp",
-        cell: ({ row }) => (
-          <div style={{ textAlign: "center" }}>
-            <button type="button" className="btn btn-outline-light m-1" style={{ backgroundColor: "ghostwhite" }}>
-              {/* <Link to={`/buyers/buyer-update/${row.original._id}`} className="card-link m-2" >Edit</Link> */}
-              <Link to={``} className="card-link m-2" >Details</Link>
-            </button>
-            {/* <button type="button" className="btn btn-outline-light m-1" style={{ color: "blue", backgroundColor: "ghostwhite" }} onClick={() => handleAvilibilityChange(row.original._id)} >Delete </button> */}
-          </div>
-        ),
-      },
     ],
-    [ pageIndex, pageSize] // Include pageIndex and pageSize as dependencies
+    [ pageIndex, pageSize, editableTable] 
   );
 
   // Apply global filtering before pagination
@@ -221,10 +293,12 @@ function StockDetails() {
     return data.filter((row) => {
       const lowercasedFilter = globalFilter.toLowerCase();
       return (
-        row.code.toString().toLowerCase().includes(lowercasedFilter) ||
-        row.name.toLowerCase().includes(lowercasedFilter) ||
-        row.phone.toString().toLowerCase().includes(lowercasedFilter) ||
-        row.pin.toString().toLowerCase().includes(lowercasedFilter)
+        row.item.toString().toLowerCase().includes(lowercasedFilter) ||
+        row.brand.toLowerCase().includes(lowercasedFilter) ||
+        row.model.toString().toLowerCase().includes(lowercasedFilter) ||
+        row.remarks.toString().toLowerCase().includes(lowercasedFilter) ||
+        row.batchId.toString().toLowerCase().includes(lowercasedFilter) ||
+        row.description.toString().toLowerCase().includes(lowercasedFilter)
       );
     });
   }, [data, globalFilter]);
@@ -280,7 +354,23 @@ function StockDetails() {
 
   return (
     <div className="container my-2">
-      <input value={globalFilter || ""} onChange={(e) => setGlobalFilter(e.target.value)} placeholder="Search by any field of table..." className="form-control my-3"/>
+      <div className="row">
+        <div className="col-7">
+          <input value={globalFilter || ""} onChange={(e) => setGlobalFilter(e.target.value)} placeholder="Search by any field of table..." className="form-control my-3"/>
+        </div>
+        <div className="col-3 d-flex align-items-center">
+          <label className="form-label me-2 text-nowrap">Sold Status :</label>
+          <select className="form-select" aria-label="Default select example" name="sold_status" value={filters.sold_status} onChange={(e) => changeFilter(e.target.value, "sold_status")}>
+              <option value="UNSOLD">Unsold</option>
+              <option value="SOLD">Sold</option>
+              <option value="ALL">All</option>
+          </select> 
+        </div>
+        <div className="col-2 d-flex align-items-center justify-content-end">
+          {!editableTable && <button className="btn btn-secondary" onClick={() => editableStatus(true)}>Bulk Edit</button>}
+          {editableTable && <button className="btn btn-secondary" onClick={() => editableStatus(false)}>Save</button>}
+        </div>
+      </div>
       <div className="scroll-hidden">
         <table className="table table-striped shadow-sm p-3 bg-body-tertiary rounded" style={{ fontSize: "smaller", margin: "0" }}>
           <thead style={{textWrap: "nowrap"}}>
@@ -298,7 +388,7 @@ function StockDetails() {
             {table.getRowModel().rows.map((row) => (
               <tr key={row.id} className="text-center">
                 {row.getVisibleCells().map((cell) => (
-                  <td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>
+                  <td className="p-3" key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>
                 ))}
               </tr>
             ))}
@@ -310,7 +400,7 @@ function StockDetails() {
           </tbody>
         </table>
       </div>
-      <div className="d-flex justify-content-between mb-3">
+      <div className="d-flex justify-content-between my-3">
         <select className="form-select mx-2" style={{maxWidth: "fit-content"}}  value={pageSize} onChange={(e) => setPageSize(Number(e.target.value))} >
           {[5, 10, 15 , 20, 25].map((size) => (
             <option key={size} value={size}> Show {size} </option>
@@ -330,283 +420,3 @@ function StockDetails() {
 }
 
 export default StockDetails;
-
-// import React, { useState, useEffect } from "react";
-// import { useTable, usePagination, useSortBy, useGlobalFilter } from "react-table";
-// import toastr from 'toastr';
-// const token = sessionStorage.getItem('token');
-// const HOST = import.meta.env.VITE_HOST;
-// const PORT = import.meta.env.VITE_PORT;
-
-// const EditableTable = () => {
-//   const [data, setData] = useState([]);
-//   const [isEditing, setIsEditing] = useState(false);
-//   const [editedData, setEditedData] = useState([]);
-//   const [globalFilter, setGlobalFilter] = useState("");
-
-//   async function getData() {
-//     try {
-//       const response = await fetch(`${HOST}:${PORT}/server/stock-list`, {
-//         method: "GET",
-//         headers: { 'authorization': `Bearer ${token}` },
-//       });
-
-//       const result = await response.json();
-//       if (response.ok) {
-//         setData(result.docs);
-//         setEditedData(result.docs);
-//       } else {
-//         toastr.error(result.msg);
-//       }
-//     } catch (err) {
-//       toastr.error("We are unable to process now. Please try again later.");
-//     }
-//   }
-
-//   useEffect(() => {
-//     getData();
-//   }, []);
-
-//   const columns = React.useMemo(
-//     () => [
-//       // {
-//       //   header: "Sl No",
-//       //   accessorFn: (row, i) => i + 1 + pageIndex * pageSize,
-//       //   id: "slNo",
-//       //   enableSorting: false,
-//       // },
-//       {
-//         header: "Item Name",
-//         accessorKey: "item",
-//         sortingFn: "alphanumeric",
-//         enableSorting: true,
-//       },
-//       {
-//         header: "Brand",
-//         accessorKey: "brand",
-//         sortingFn: "alphanumeric",
-//         enableSorting: true,
-//       },
-//       {
-//         header: "Model",
-//         accessorKey: "model",
-//         sortingFn: "alphanumeric",
-//         enableSorting: true,
-//       },
-//       {
-//         header: "Quantity",
-//         accessorKey: "quantity",
-//         sortingFn: "alphanumeric",
-//         enableSorting: true,
-//       },
-//       {
-//         header: "Seller",
-//         accessorKey: "seller",
-//         sortingFn: "alphanumeric",
-//         enableSorting: true,
-//       },
-//       {
-//         header: "Entry Date",
-//         accessorKey: "date",
-//         sortingFn: "alphanumeric",
-//         enableSorting: true,
-//       },
-//       {
-//         header: "Item Sl No",
-//         accessorKey: "sl_no",
-//         sortingFn: "alphanumeric",
-//         enableSorting: true,
-//       },
-//       {
-//         header: "Batch Id",
-//         accessorKey: "batchId",
-//         sortingFn: "alphanumeric",
-//         enableSorting: true,
-//       },
-//       {
-//         header: "Buy Price",
-//         accessorKey: "item_buy_price",
-//         sortingFn: "alphanumeric",
-//         enableSorting: true,
-//       },
-//       {
-//         header: "Sell Price",
-//         accessorKey: "item_sell_price",
-//         sortingFn: "alphanumeric",
-//         enableSorting: true,
-//       },
-//       {
-//         header: "Description",
-//         accessorKey: "description",
-//         sortingFn: "alphanumeric",
-//         enableSorting: true,
-//       },
-//       {
-//         header: "Item Status",
-//         accessorKey: "item_status",
-//         sortingFn: "alphanumeric",
-//         enableSorting: true,
-//       },
-//       {
-//         header: "Remarks",
-//         accessorKey: "remarks",
-//         sortingFn: "alphanumeric",
-//         enableSorting: true,
-//       },
-//       {
-//         header: "Mfg date",
-//         accessorKey: "mfg_date",
-//         sortingFn: "alphanumeric",
-//         enableSorting: true,
-//       },
-//       {
-//         header: "Exp Date",
-//         accessorKey: "exp_date",
-//         sortingFn: "alphanumeric",
-//         enableSorting: true,
-//       },
-//       {
-//         header: "Warrantee/Guarantee",
-//         accessorKey: "warrantee_guarantee",
-//         sortingFn: "alphanumeric",
-//         enableSorting: true,
-//       },
-//       {
-//         header: "Warrantee/Guarantee Duration",
-//         accessorKey: "warrantee_guarantee_duration",
-//         sortingFn: "alphanumeric",
-//         enableSorting: true,
-//       },
-      
-//     ],
-//     []
-//   );
-
-//   const {
-//     getTableProps,
-//     getTableBodyProps,
-//     headerGroups,
-//     page,
-//     prepareRow,
-//     canPreviousPage,
-//     canNextPage,
-//     pageOptions,
-//     nextPage,
-//     previousPage,
-//     state: { pageIndex },
-//     setGlobalFilter: setFilter,
-//   } = useTable(
-//     {
-//       columns,
-//       data: editedData,
-//       initialState: { pageIndex: 0 },
-//     },
-//     useGlobalFilter,
-//     useSortBy,
-//     usePagination
-//   );
-
-//   const handleEditClick = () => {
-//     setIsEditing(true);
-//   };
-
-//   const handleSaveClick = () => {
-//     fetch("https://api.example.com/update", { // Replace with actual update API URL
-//       method: "POST",
-//       headers: {
-//         "Content-Type": "application/json",
-//       },
-//       body: JSON.stringify(editedData),
-//     })
-//       .then((response) => response.json())
-//       .then(() => {
-//         setData([...editedData]);
-//         setIsEditing(false);
-//       })
-//       .catch((error) => console.error("Error updating data:", error));
-//   };
-
-//   const handleClearClick = () => {
-//     setEditedData([...data]);
-//     setIsEditing(false);
-//   };
-
-//   const handleInputChange = (rowIndex, field, value) => {
-//     const newData = editedData.map((row, index) =>
-//       index === rowIndex ? { ...row, [field]: value } : row
-//     );
-//     setEditedData(newData);
-//   };
-
-//   return (
-//     <div>
-//       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
-//         <input
-//           type="text"
-//           placeholder="Search..."
-//           value={globalFilter}
-//           onChange={(e) => {
-//             setGlobalFilter(e.target.value);
-//             setFilter(e.target.value);
-//           }}
-//         />
-//         {!isEditing ? (
-//           <button onClick={handleEditClick}>Edit Values</button>
-//         ) : (
-//           <>
-//             <button onClick={handleSaveClick}>Save</button>
-//             <button onClick={handleClearClick}>Clear</button>
-//           </>
-//         )}
-//       </div>
-//       <table {...getTableProps()}>
-//         <thead>
-//           {headerGroups.map((headerGroup) => (
-//             <tr {...headerGroup.getHeaderGroupProps()}>
-//               {headerGroup.headers.map((column) => (
-//                 <th {...column.getHeaderProps(column.getSortByToggleProps())}>
-//                   {column.render("Header")} {column.isSorted ? (column.isSortedDesc ? " 🔽" : " 🔼") : ""}
-//                 </th>
-//               ))}
-//             </tr>
-//           ))}
-//         </thead>
-//         <tbody {...getTableBodyProps()}>
-//           {page.map((row) => {
-//             prepareRow(row);
-//             return (
-//               <tr {...row.getRowProps()}>
-//                 {row.cells.map((cell) => (
-//                   <td {...cell.getCellProps()}>
-//                     {isEditing && cell.column.id === "value" ? (
-//                       <input
-//                         type="text"
-//                         value={cell.row.original[cell.column.id]}
-//                         onChange={(e) => handleInputChange(row.index, cell.column.id, e.target.value)}
-//                       />
-//                     ) : (
-//                       cell.render("Cell")
-//                     )}
-//                   </td>
-//                 ))}
-//               </tr>
-//             );
-//           })}
-//         </tbody>
-//       </table>
-//       <div>
-//         <button onClick={() => previousPage()} disabled={!canPreviousPage}>
-//           Previous
-//         </button>
-//         <span>
-//           Page {pageIndex + 1} of {pageOptions.length}
-//         </span>
-//         <button onClick={() => nextPage()} disabled={!canNextPage}>
-//           Next
-//         </button>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default EditableTable;

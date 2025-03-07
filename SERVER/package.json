@@ -28,6 +28,7 @@
         "mongodb": "^5.9.2",
         "mongoose": "^7.2.1",
         "nodemailer": "^6.9.15",
+        "pdfmake": "^0.2.18",
         "uuid": "^11.1.0"
     },
     "devDependencies": {

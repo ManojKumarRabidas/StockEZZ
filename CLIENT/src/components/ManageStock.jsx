@@ -7,6 +7,7 @@ const PORT = import.meta.env.VITE_PORT;
 
 function StockDetails() {
   const [billListDiv, setBillListDiv] = useState(true);
+  const [billCreationStatus, setBillCreationStatus] = useState(false);
   const [company_details, setCompanyDetails] = useState({})
   const [searchElement, setSearchElement] = useState("");
   const [listData, setListData] = useState([]);
@@ -48,7 +49,7 @@ function StockDetails() {
         try {
             const response = await fetch(`${HOST}:${PORT}/server/stock-list`, {
             method: "GET",
-            headers: { 'authorization': `Bearer ${token}`, "value": value },
+            headers: { 'authorization': `Bearer ${token}`, "value": value, "available": true },
             });
     
             const result = await response.json();
@@ -253,14 +254,13 @@ const changePaymentDetails = (value, type) => {
         }
         billingItemDetails.push(ref);
     }
-    const billData = {company_id: company_details._id , date: finalBillingData.date, items: billingItemDetails, total: finalBillingData.total, additional_charges: finalBillingData.additional_charges, discount: finalBillingData.discount, grandTotal: finalBillingData.grandTotal,
+    const billData = {company_id: company_details._id , items: billingItemDetails, total: finalBillingData.total, additional_charges: finalBillingData.additional_charges, discount: finalBillingData.discount, grandTotal: finalBillingData.grandTotal,
         payment_type: paymentDetails.payment_type, paid_amount:paymentDetails.paid_amount, ramaining_amount: paymentDetails.ramaining_amount, pending_installation: paymentDetails.pending_installation, info: paymentDetails.info,
         buyer_id: buyerDetails._id, buyer_phone: buyerDetails.buyer_phone, buyer_name: buyerDetails.buyer_name, buyer_email: buyerDetails.buyer_email, buyer_address: buyerDetails.buyer_address, buyer_pin: buyerDetails.buyer_pin, buyer_aadhar: buyerDetails.buyer_aadhar };
-    if (!billData || !billData.company_id || !billData.date ){
+    if (!billData || !billData.company_id ){
       toastr.error("We are facing some problem in submission. Please try again with fresh entry.");
       return;
     }
-    console.log("billData", billData)
     const response = await fetch(`${HOST}:${PORT}/server/bill-create`, {
       method: "POST",
       body: JSON.stringify(billData),
@@ -272,6 +272,7 @@ const changePaymentDetails = (value, type) => {
     if (response){
       const result = await response.json();
       if (response.ok && result.status){
+        setBillCreationStatus(true)
         toastr.success("Bill created successfully.");
       } else{
         toastr.error(result.msg);
@@ -281,7 +282,15 @@ const changePaymentDetails = (value, type) => {
     }
   }
 
-
+  const home = () => {
+    setBillListDiv(true)
+    setListData([])
+    setBillingData([])
+    setFinalBillingData({})
+    setPaymentDetails({})
+    setBuyerDetails({buyer_phone: "", buyer_name: "", buyer_address: "", buyer_pin: "", buyer_email: "", buyer_aadhar: ""})
+    setBillCreationStatus(false)
+  };
   return (
     <div className="container my-2">
         {billListDiv && <div>
@@ -302,7 +311,7 @@ const changePaymentDetails = (value, type) => {
             {listData.length > 0 && (
                     <ul style={{ border: "1px solid #ccc", padding: "5px", marginTop: "2px", listStyleType: "none", maxHeight: "250px", overflowY: "auto", position: "absolute", background: "white", width: "79%" }}>
                     {listData.map((item, index) => (
-                        <li key={index} onClick={() => handleSelect(item._id, "ITEM")} style={{ padding: "5px", cursor: "pointer", borderBottom: "1px solid #eee"}} className="d-flex justify-content-between"> <span> {item.item} [ Available: {item.quantity}, Price: {item.item_sell_price? item.item_sell_price: "N/A"}, Brand: {item.brand ? item.brand : "N/A"}, Model: {item.model ? item.model : "N/A"} ]</span> <span className="d-flex"> <button className="form-control mx-2">Sell</button> <button className="form-control mx-2 bc-green-imp">Bill</button></span></li>
+                        <li key={index} onClick={() => handleSelect(item._id, "ITEM")} style={{ padding: "5px", cursor: "pointer", borderBottom: "1px solid #eee"}} className="d-flex justify-content-between"> <span> {item.item} [ Available: {item.quantity}, Price: {item.item_sell_price}, Brand: {item.brand}, Model: {item.model}, Colour: {item.color}, Capacity: {item.capacity}, Height: {item.height}, Power: {item.power} ]</span> <span className="d-flex"> <button className="form-control mx-2">Sell</button> <button className="form-control mx-2 bc-green-imp">Bill</button></span></li>
                     ))}
                 </ul>)}
             {(billingData.length == 0) && <div className="text-center my-5">
@@ -314,6 +323,10 @@ const changePaymentDetails = (value, type) => {
                             <th className="p-2">Name</th>
                             <th className="p-2">Brand</th>
                             <th className="p-2">Model</th>
+                            <th className="p-2">Color</th>
+                            <th className="p-2">Capacity</th>
+                            <th className="p-2">Height</th>
+                            <th className="p-2">Power</th>
                             <th className="p-2">Quantity</th>
                             <th className="p-2">Price</th>
                             <th className="p-2">Total Price</th>
@@ -322,10 +335,14 @@ const changePaymentDetails = (value, type) => {
                         {billingData.map((item, index) => (
                         <tr className="text-center">
                             <td className="p-2">{item.item}</td>
-                            <td className="p-2">{item.brand ? item.brand : "N/A"}</td> 
-                            <td className="p-2">{item.model ? item.model : "N/A"}</td> 
+                            <td className="p-2">{item.brand}</td> 
+                            <td className="p-2">{item.model}</td> 
+                            <td className="p-2">{item.color}</td> 
+                            <td className="p-2">{item.capacity}</td> 
+                            <td className="p-2">{item.height}</td> 
+                            <td className="p-2">{item.power}</td> 
                             <td className="p-2 d-flex justify-content-center align-items-center">
-                                <div style={{maxWidth: "100px"}} className="d-flex justify-content-between">
+                                <div style={{maxWidth: "100px"}} className="d-flex align-items-center justify-content-between">
                                     <div className="px-2 cursor-pointer" style={{backgroundColor: "#f2f2f2"}} onClick={() => changeQuantity(item._id, 0)}>-</div>
                                     <div className="px-2">
                                         {item.quantity}
@@ -342,9 +359,9 @@ const changePaymentDetails = (value, type) => {
             </div>}
         </div>}
         {!billListDiv &&<div>
-            <div className="d-flex justify-content-end">
+            {!billCreationStatus &&  <div className="d-flex justify-content-end">
                 <button className="form-control mb-3" style={{maxWidth: "100px"}} onClick={() => setBillListDiv(true)} >Back</button>
-            </div>
+            </div> }
             <div className="text-center bg-body-tertiary p-3">
                 <h3>{company_details.name}</h3>
                 <h6>GST No: {company_details.gstNo}</h6>
@@ -357,6 +374,10 @@ const changePaymentDetails = (value, type) => {
                                 <th className="p-2 text-start">Product Name</th>
                                 <th className="p-2 text-start">Brand</th>
                                 <th className="p-2 text-start">Model</th>
+                                <th className="p-2 text-start">Color</th>
+                                <th className="p-2 text-start">Capacity</th>
+                                <th className="p-2 text-start">Height</th>
+                                <th className="p-2 text-start">Power</th>
                                 <th className="p-2">Quantity</th>
                                 <th className="p-2 text-end">Price</th>
                                 <th className="p-2 text-end">Total Price</th>
@@ -364,8 +385,12 @@ const changePaymentDetails = (value, type) => {
                             {finalBillingData.billingData.map((item, index) => (
                             <tr className="text-center">
                                 <td className="p-2 text-start">{item.item}</td>
-                                <td className="p-2 text-start">{item.brand ? item.brand : "N/A"}</td> 
-                                <td className="p-2 text-start">{item.model ? item.model : "N/A"}</td> 
+                                <td className="p-2 text-start">{item.brand}</td> 
+                                <td className="p-2 text-start">{item.model}</td> 
+                                <td className="p-2 text-start">{item.color}</td> 
+                                <td className="p-2 text-start">{item.capacity}</td> 
+                                <td className="p-2 text-start">{item.height}</td> 
+                                <td className="p-2 text-start">{item.power}</td> 
                                 <td className="p-2">{item.quantity}</td>
                                 <td className="p-2 text-end"> {item.item_sell_price}</td>
                                 <td className="p-2 text-end"> {item.total_item_sell_price}</td>
@@ -373,6 +398,10 @@ const changePaymentDetails = (value, type) => {
                             ))}
                             <tr></tr>
                             <tr >
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
                                 <td></td>
                                 <td></td>
                                 <td></td>
@@ -385,6 +414,10 @@ const changePaymentDetails = (value, type) => {
                                 <td></td>
                                 <td></td>
                                 <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
                                 <th className="p-2 text-end"> GST : </th>
                                 <td className="text-end p-2">00</td>
                             </tr>
@@ -393,18 +426,30 @@ const changePaymentDetails = (value, type) => {
                                 <td></td>
                                 <td></td>
                                 <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
                                 <th className="p-2 text-end">Additional Charges : </th>
-                                <td className="p-2"> <div style={{background: "unset"}} className="d-flex align-items-center justify-content-end p-0"> <input style={{maxWidth: "150px"}} placeholder="00" className="form-control text-end" type="text" value={finalBillingData.additional_charges} onChange={(e) => changeCharges(e.target.value, "additional_charges")}/></div></td>
+                                <td className="p-2"> <div style={{background: "unset"}} className="d-flex align-items-center justify-content-end p-0"> <input disabled={billCreationStatus} style={{maxWidth: "150px"}} placeholder="00" className="form-control text-end" type="text" value={finalBillingData.additional_charges} onChange={(e) => changeCharges(e.target.value, "additional_charges")}/></div></td>
                             </tr>
                             <tr>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
                                 <td></td>
                                 <td></td>
                                 <td></td>
                                 <td></td>
                                 <th className="p-2 text-end">Discount : </th>
-                                <td className="p-2"> <div style={{background: "unset"}} className="d-flex align-items-center justify-content-end p-0"> <input style={{maxWidth: "150px"}} placeholder="00" className="form-control text-end" type="text" value={finalBillingData.discount} onChange={(e) => changeCharges(e.target.value, "discount")}/></div></td>
+                                <td className="p-2"> <div style={{background: "unset"}} className="d-flex align-items-center justify-content-end p-0"> <input disabled={billCreationStatus} style={{maxWidth: "150px"}} placeholder="00" className="form-control text-end" type="text" value={finalBillingData.discount} onChange={(e) => changeCharges(e.target.value, "discount")}/></div></td>
                             </tr>
                             <tr>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
                                 <td></td>
                                 <td></td>
                                 <td></td>
@@ -417,7 +462,7 @@ const changePaymentDetails = (value, type) => {
                 <div className="row">
                     <div className="col d-flex flex-row align-items-center flex-nowrap">
                         <label className="form-label me-2 text-nowrap">Payment type :</label>
-                        <select className="form-select" aria-label="Default select example" name="type" value={paymentDetails.payment_type} onChange={(e) => changePaymentDetails(e.target.value, "payment_type")}>
+                        <select disabled={billCreationStatus} className="form-select" aria-label="Default select example" name="type" value={paymentDetails.payment_type} onChange={(e) => changePaymentDetails(e.target.value, "payment_type")}>
                             <option>-- Payment type --</option>
                             <option defaultValue value="CASH">Cash</option>
                             <option value="UPI">UPI</option>
@@ -427,7 +472,7 @@ const changePaymentDetails = (value, type) => {
                     </div>
                     <div className="col d-flex flex-row align-items-center flex-nowrap">
                         <label className="form-label me-2 text-nowrap">Paid amount :</label>
-                        <input name="paid_amount" placeholder="Paid amount"  type="text" maxLength={70} className="form-control text-end" aria-describedby="emailHelp" value={paymentDetails.paid_amount} onChange={(e) => changePaymentDetails(e.target.value, "paid_amount")}/>
+                        <input disabled={billCreationStatus} name="paid_amount" placeholder="Paid amount"  type="text" maxLength={70} className="form-control text-end" aria-describedby="emailHelp" value={paymentDetails.paid_amount} onChange={(e) => changePaymentDetails(e.target.value, "paid_amount")}/>
                     </div>
                     <div className="col d-flex flex-row align-items-center flex-nowrap">
                         <label className="form-label me-2 text-nowrap">Remaining amount :</label>
@@ -435,21 +480,21 @@ const changePaymentDetails = (value, type) => {
                     </div>
                     <div className="col d-flex flex-row align-items-center flex-nowrap">
                         <label className="form-label me-2 text-nowrap">Installation :</label>
-                        <select className="form-select" aria-label="Default select example" name="type" value={paymentDetails.pending_installation} onChange={(e) => changePaymentDetails(e.target.value, "pending_installation")}>
+                        <select disabled={billCreationStatus} className="form-select" aria-label="Default select example" name="type" value={paymentDetails.pending_installation} onChange={(e) => changePaymentDetails(e.target.value, "pending_installation")}>
                             <option>Not applicable</option>
                             <option value="PENDING">Pending</option>
                             <option value="COMPLETE">Complete</option>
                         </select>
                     </div>
                 </div>
-                <input name="info" placeholder="Enter any additional information releted to sell or product or installation."  type="text" maxLength={255} className="form-control mt-4 mb-4" aria-describedby="emailHelp" value={paymentDetails.info} onChange={(e) => changePaymentDetails(e.target.value, "info")}/>
+                <input disabled={billCreationStatus} name="info" placeholder="Enter any additional information releted to sell or product or installation."  type="text" maxLength={255} className="form-control mt-4 mb-4" aria-describedby="emailHelp" value={paymentDetails.info} onChange={(e) => changePaymentDetails(e.target.value, "info")}/>
                 <hr />
                 <div className="row">
                     <div className="col">
-                        <input autoComplete="off" name="buyer_phone" placeholder="Enter Buyer phone number"  type="text" maxLength={12} className="form-control" aria-describedby="emailHelp" value={buyerDetails.buyer_phone} onChange={(e) => changeBuyerDetails(e.target.value, "buyer_phone")}/>
+                        <input disabled={billCreationStatus} autoComplete="off" name="buyer_phone" placeholder="Enter Buyer phone number"  type="text" maxLength={12} className="form-control" aria-describedby="emailHelp" value={buyerDetails.buyer_phone} onChange={(e) => changeBuyerDetails(e.target.value, "buyer_phone")}/>
                     </div>
                     <div className="col">
-                        <input name="buyer_name" placeholder="Enter Buyer name"  type="text" maxLength={70} className="form-control" aria-describedby="emailHelp" value={buyerDetails.buyer_name} onChange={(e) => changeBuyerDetails(e.target.value, "buyer_name")}/>
+                        <input disabled={billCreationStatus} name="buyer_name" placeholder="Enter Buyer name"  type="text" maxLength={70} className="form-control" aria-describedby="emailHelp" value={buyerDetails.buyer_name} onChange={(e) => changeBuyerDetails(e.target.value, "buyer_name")}/>
                     </div>
                 </div>
                 {buyers.length > 0 && (
@@ -460,26 +505,26 @@ const changePaymentDetails = (value, type) => {
                 </ul>)}
                 <div className="row my-4">
                     <div className="col">
-                        <input name="buyer_address" placeholder="Enter Buyer address"  type="text" maxLength={70} className="form-control" aria-describedby="emailHelp" value={buyerDetails.buyer_address} onChange={(e) => changeBuyerDetails(e.target.value, "buyer_address")}/>
+                        <input disabled={billCreationStatus} name="buyer_address" placeholder="Enter Buyer address"  type="text" maxLength={70} className="form-control" aria-describedby="emailHelp" value={buyerDetails.buyer_address} onChange={(e) => changeBuyerDetails(e.target.value, "buyer_address")}/>
                     </div>
                     <div className="col">
-                        <input name="buyer_pin" placeholder="Enter Buyer PIN code"  type="text" maxLength={6} className="form-control" aria-describedby="emailHelp" value={buyerDetails.buyer_pin} onChange={(e) => changeBuyerDetails(e.target.value, "buyer_pin")}/>
+                        <input disabled={billCreationStatus} name="buyer_pin" placeholder="Enter Buyer PIN code"  type="text" maxLength={6} className="form-control" aria-describedby="emailHelp" value={buyerDetails.buyer_pin} onChange={(e) => changeBuyerDetails(e.target.value, "buyer_pin")}/>
                     </div>
                 </div>
                 <div className="row my-4">
                     <div className="col">
-                        <input name="buyer_email" placeholder="Enter Buyer email address"  type="email" maxLength={70} className="form-control" aria-describedby="emailHelp" value={buyerDetails.buyer_email} onChange={(e) => changeBuyerDetails(e.target.value, "buyer_email")}/>
+                        <input disabled={billCreationStatus} name="buyer_email" placeholder="Enter Buyer email address"  type="email" maxLength={70} className="form-control" aria-describedby="emailHelp" value={buyerDetails.buyer_email} onChange={(e) => changeBuyerDetails(e.target.value, "buyer_email")}/>
                     </div>
                     <div className="col">
-                        <input name="buyer_aadhar" placeholder="Enter Buyer Aadhar Number"  type="text" maxLength={12} className="form-control" aria-describedby="emailHelp" value={buyerDetails.buyer_aadhar} onChange={(e) => changeBuyerDetails(e.target.value, "buyer_aadhar")}/>
+                        <input disabled={billCreationStatus} name="buyer_aadhar" placeholder="Enter Buyer Aadhar Number"  type="text" maxLength={12} className="form-control" aria-describedby="emailHelp" value={buyerDetails.buyer_aadhar} onChange={(e) => changeBuyerDetails(e.target.value, "buyer_aadhar")}/>
                     </div>
                 </div>
             </div>
             <div className="d-flex justify-content-end mt-3 mb-5">
-                <button className="form-control mx-2" style={{maxWidth: "100px"}} onClick={() => submitBill()} >Submit</button>
-                <button className="form-control mx-2" style={{maxWidth: "100px"}} onClick={() => setBillListDiv(true)} >Home</button>
-                <button className="form-control mx-2" style={{maxWidth: "100px"}} onClick={() => setBillListDiv(true)} >Print</button>
-                <button className="form-control mx-2 bc-green-imp" style={{maxWidth: "140px"}} onClick={() => setBillListDiv(true)} >Whatsapp</button>
+                {!billCreationStatus && <button className="form-control mx-2" style={{maxWidth: "100px"}} onClick={() => submitBill()} >Submit</button>}
+                {billCreationStatus && <button className="form-control mx-2" style={{maxWidth: "100px"}} onClick={() => home()} >Home</button>}
+                {billCreationStatus && <button className="form-control mx-2" style={{maxWidth: "100px"}} onClick={() => printBill(true)} >Print</button>}
+                {billCreationStatus && <button className="form-control mx-2 bc-green-imp" style={{maxWidth: "140px"}} onClick={() => whatsappBill(true)} >Whatsapp</button>}
             </div>
         </div>}
     </div>

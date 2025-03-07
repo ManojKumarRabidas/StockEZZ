@@ -10,6 +10,9 @@ const buyerModel = require("../models/buyers");
 const sellerModel = require("../models/sellers");
 const brandModel = require("../models/brands");
 const stockModel = require("../models/stock");
+const billModel = require("../models/bills");
+const itemModel = require("../models/items");
+const categoryModel = require("../models/categories");
 module.exports = {
     createCode: async (userType) => {
         try {
@@ -58,6 +61,46 @@ module.exports = {
             res.status(500).json({ msg: "Failed to retrieve companies" });
           }
     },
+    fetchCompanyDetails: async(req, res)=>{
+        try {
+            const userId = new ObjectId(req.user.id);
+            const userType = req.user.user_type;
+            let companyId;
+            if (userType === "COMPANY") {
+                companyId = userId;
+            } else if(userType === "OPERATOR"){
+                let operator = await userModel.findOne({_id: userId}, {company: 1});
+                companyId = new ObjectId(operator.company)
+            }
+            if (!companyId){
+                res.status(400).json({ msg: "We are facing some technical error! Please try again later 1." });
+                return;
+            }
+            const company = await companyModel.findById({ _id: new ObjectId(companyId) },{name: 1, phone: 1, address: 1, gstNo: 1, company_type: 1, company_subtype: 1});
+            if (!(company && company.company_type)){
+                res.status(400).json({ msg: "We are facing some technical error! Please try again later 2." });
+                return;
+            }
+            const category = await categoryModel.findById({ _id: new ObjectId(company.company_type)}, {category:1, sub_categories: 1})
+            if (!(category && category.category)){
+                res.status(400).json({ msg: "We are facing some technical error! Please try again later 3." });
+                return;
+            }
+            const doc = {};
+            doc._id = new ObjectId(company._id);
+            doc.company_type_id = new ObjectId(company.company_type);
+            doc.company_type = category.category;
+            doc.company_subtype = company.company_subtype;
+            doc.company_subtypes = category.sub_categories;
+            doc.name = company.name;
+            doc.address = company.address;
+            doc.phone = company.phone;
+            doc.gstNo = company.gstNo ? company.gstNo : "Not available";
+            res.status(200).json({ doc: doc });
+        } catch (err) {
+            res.status(400).json({ msg: err.message });
+        }
+    },
     getCustomizeAddStockDetails: async(req, res)=>{
         try {
             const userId = new ObjectId(req.user.id);
@@ -98,18 +141,26 @@ module.exports = {
             res.status(500).json({ msg: "Failed to save stock structure" });
         }
     },
-    StockList: async(req, res)=>{
+    stockList: async(req, res)=>{
         try {
             const userId = new ObjectId(req.user.id);
             const userType = req.user.user_type;
             const value = req.headers.value;
+            const sold_status = req.headers.sold_status;
             let cmpMatchStage ={}
             let matchStage ={}
             let projectionStage ={}
             if(value){
-                cmpMatchStage = {item: {$regex: value, $options: "i"}} 
-                projectionStage = {item: "$item.name", brand: "$brand.name", model: 1,quantity: 1,item_sell_price: 1}
-            } else{
+                cmpMatchStage = {item: {$regex: value, $options: "i"}, quantity: {$gt: 0}} 
+                projectionStage = {item: "$item.name", brand: "$brand.name", model: 1,quantity: 1,item_sell_price: 1, color: 1, capacity: 1, height: 1, power: 1}
+            } else if(sold_status){
+                if(sold_status == "UNSOLD"){
+                    matchStage.quantity = {$gt: 0}
+                } else if(sold_status == "SOLD"){
+                    matchStage.quantity = {$lte: 0}
+                } else if(sold_status == "ALL"){
+                    matchStage.quantity = {$gte: 0}
+                }
                 projectionStage = { _id: 1,
                     sl_no: 1,
                     date: 1,
@@ -118,6 +169,10 @@ module.exports = {
                     batchId: 1,
                     description: 1,
                     model: 1,
+                    color: 1,
+                    capacity: 1,
+                    height: 1,
+                    power: 1,
                     seller: "$seller.name",
                     quantity: 1,
                     batch_no: 1,
@@ -159,11 +214,15 @@ module.exports = {
                 {$match: cmpMatchStage},
                 
             ]);
-            if(!value && (docs.length>0)){
+            if(docs.length>0){
                 for(let i=0; i<docs.length; i++){
                   const ref = docs[i];
                   ref.brand = ref.brand ? ref.brand: "N/A";
                   ref.model = ref.model ? ref.model: "N/A";
+                  ref.color = ref.color ? ref.color: "N/A";
+                  ref.capacity = ref.capacity ? ref.capacity: "N/A";
+                  ref.height = ref.height ?  ref.height: "N/A";
+                  ref.power = ref.power ? ref.power: "N/A";
                   ref.seller = ref.seller ? ref.seller: "N/A";
                   ref.date = moment(ref.date).format('DD/MM/YYYY');
                   ref.sl_no = ref.sl_no ? ref.sl_no: "N/A";
@@ -177,6 +236,173 @@ module.exports = {
                 } 
               }
             res.status(200).json({ docs: docs });
+        } catch (err) {
+            res.status(400).json({ msg: err.message });
+        }
+    },
+    billList: async(req, res)=>{
+        try {
+            const userId = new ObjectId(req.user.id);
+            const userType = req.user.user_type;
+            let cmpMatchStage ={}
+            let matchStage ={}
+            let tempMatchStage ={}
+            let projectionStage = { _id: 1,
+                    date: 1,
+                    items: 1,
+                    buyer: 1,
+                    total: 1,
+                    additional_charges: 1,
+                    discount: 1,
+                    grandTotal: 1,
+                    payment_type: 1,
+                    paid_amount: 1,
+                    ramaining_amount: 1,
+                    info: 1,
+                    pending_installation: 1
+                }
+            
+            if (userType === "COMPANY") {
+                matchStage.company_id = userId;
+                tempMatchStage.companyId = userId;
+            } else if(userType === "OPERATOR"){
+                let operator = await userModel.findOne({_id: userId}, {company: 1});
+                matchStage.company_id = new ObjectId(operator.company)
+                tempMatchStage.companyId = new ObjectId(operator.company)
+            }
+            const docs = await billModel.aggregate([
+                {$match: matchStage},
+                {$lookup: {from: "buyers",
+                    localField: "buyer_id",
+                    foreignField: "_id",
+                    as: "buyer"}},
+                {$addFields:{buyer:{ $arrayElemAt: ["$buyer", 0]}}},
+                {$project: projectionStage},
+                {$match: cmpMatchStage},
+                
+            ]);
+            if(docs.length>0){
+                for(let i=0; i<docs.length; i++){
+                    const outerRef = docs[i];
+                    outerRef.date = moment(outerRef.date).format('DD/MM/YYYY');
+                    outerRef.buyer_name = outerRef.buyer ? outerRef.buyer.name : "N/A";
+                    outerRef.pending_installation = outerRef.pending_installation ? outerRef.pending_installation : "N/A";
+                    outerRef.info = outerRef.info ? outerRef.info : "N/A";
+                }
+            }
+            res.status(200).json({ docs: docs });
+        } catch (err) {
+            res.status(400).json({ msg: err.message });
+        }
+    },
+    billDetails: async(req, res)=>{
+        try {
+            const params = req.params
+            if (!params || !params.id){
+                res.status(400).json({ msg: "Missing Parameters!" });
+                return;
+            }
+            const userId = new ObjectId(req.user.id);
+            const userType = req.user.user_type;
+            let matchStage ={_id: new ObjectId(params.id)}
+            let tempMatchStage ={}
+            let projectionStage ={_id: 1,
+                    date: 1,
+                    items: 1,
+                    buyer: 1,
+                    total: 1,
+                    additional_charges: 1,
+                    discount: 1,
+                    grandTotal: 1,
+                    payment_type: 1,
+                    paid_amount: 1,
+                    ramaining_amount: 1,
+                    info: 1,
+                    pending_installation: 1
+                }
+            
+            if (userType === "COMPANY") {
+                tempMatchStage.companyId = userId;
+            } else if(userType === "OPERATOR"){
+                let operator = await userModel.findOne({_id: userId}, {company: 1});
+                tempMatchStage.companyId = new ObjectId(operator.company)
+            }
+            const docs = await billModel.aggregate([
+                {$match: matchStage},
+                {$lookup: {from: "buyers",
+                        localField: "buyer_id",
+                        foreignField: "_id",
+                        as: "buyer"}},
+                {$addFields:{buyer:{ $arrayElemAt: ["$buyer", 0]}}},
+                {$lookup: {from: "stocks",
+                        localField: "items.item_id",
+                        foreignField: "_id",
+                        as: "itemDetails"}},
+                {$addFields: {items: {$map: {input: "$items",
+                                as: "item",
+                                in: {sell_price: "$$item.sell_price",
+                                    quantity: "$$item.quantity",
+                                    item: {$arrayElemAt: [{$map: {
+                                                    input: {$filter: {input: "$itemDetails",
+                                                            as: "detail",
+                                                            cond: { $eq: ["$$detail._id", "$$item.item_id"] }}},
+                                                    as: "filteredItem",
+                                                    in: {item_id: "$$filteredItem.itemId",
+                                                        brand_id: "$$filteredItem.brandId",
+                                                        batch_id: "$$filteredItem.batchId",
+                                                        sub_category: "$$filteredItem.sub_category",
+                                                        color: "$$filteredItem.color",
+                                                        capacity: "$$filteredItem.capacity",
+                                                        height: "$$filteredItem.height",
+                                                        power: "$$filteredItem.power",
+                                                        description: "$$filteredItem.description",
+                                                        model: "$$filteredItem.model"}}},
+                                            0]}}}}}},
+                {$project: projectionStage}
+            ]);
+            const brands = await brandModel.find(tempMatchStage, {name: 1});
+            const items = await itemModel.find(tempMatchStage, {name: 1});
+        
+            if(docs.length>0){
+                for(let i=0; i<docs.length; i++){
+                  const outerRef = docs[i];
+                  outerRef.date = moment(outerRef.date).format('DD/MM/YYYY');
+                  outerRef.buyer = outerRef.buyer ? outerRef.buyer : {name: "Not available",phone: "Not available",email: "Not available",aadhar: "Not available",pin: "Not available",address: "Not available",};
+                  outerRef.pending_installation = outerRef.pending_installation ? outerRef.pending_installation : "N/A";
+                  for(let j=0; j<outerRef.items.length; j++){
+                    const ref = outerRef.items[j].item;
+                    if(ref.brand_id){
+                        for(let i=0; i<brands.length; i++){
+                            if((brands[i]._id).toString() == (ref.brand_id).toString()){
+                                ref.brand_name = brands[i].name;
+                                break;     
+                            }
+                        }
+                    }
+                    if(ref.item_id){
+                        for(let i=0; i<items.length; i++){
+                            if((items[i]._id).toString() == (ref.item_id).toString()){
+                                ref.item_name = items[i].name;
+                                break;     
+                            }
+                        }
+                    }
+                    ref.sub_category = ref.sub_category ? ref.sub_category: "N/A";
+                    ref.color = ref.color ? ref.color: "N/A";
+                    ref.capacity = ref.capacity ? ref.capacity: "N/A";
+                    ref.height = ref.height ? ref.height: "N/A";
+                    ref.power = ref.power ? ref.power: "N/A";
+                    ref.description = ref.description ? ref.description: "N/A";
+                    ref.model = ref.model ? ref.model: "N/A";
+                }
+              } 
+            }
+            let doc = {}
+            if(docs.length>0){
+                doc=docs[0]
+            }
+            doc.userType = userType;
+            res.status(200).json({ doc: doc });
         } catch (err) {
             res.status(400).json({ msg: err.message });
         }
@@ -343,6 +569,7 @@ module.exports = {
     
     buyerList: async(req, res)=>{
         try {
+            console.log("req.headers", req.headers)
             const cmpVal = req.headers.value;
             const userId = new ObjectId(req.user.id);
             const userType = req.user.user_type;
@@ -367,6 +594,7 @@ module.exports = {
             const docs = await buyerModel.find(matchStage, projectionStage);
             res.status(200).json({ docs: docs });
         } catch (err) {
+            console.log(err)
             res.status(400).json({ msg: err.message });
         }
     },

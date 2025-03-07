@@ -30,7 +30,6 @@ function List() {
           if (response) {
             const result = await response.json();
             if (response.ok) {
-                console.log("result.doc", result.doc)
                 setCompanyDetails(result.doc)
                 getData(result.doc._id)
             } else {
@@ -46,7 +45,6 @@ function List() {
 
   const getData = async (_id) => {
     try {
-      console.log("company_details", company_details)
       const response = await fetch(`${HOST}:${PORT}/server/buyer-list`, {
         method: "GET",
         headers: { 'authorization': `Bearer ${token}`,"company_id": _id, },
@@ -78,7 +76,7 @@ function List() {
       const result = await response.json();
       if (response.ok) {
         toastr.success("Buyer deleted successfully");
-        getData();
+        getData(company_details._id);
       } else {
         toastr.error(result.error);
       }
@@ -102,7 +100,7 @@ function List() {
       
       if (response.ok) {
         toastr.success("Buyer activation status updated successfully");
-        getData();
+        getData(company_details._id);
       } else {
         toastr.error(result.error);
       }
@@ -173,7 +171,7 @@ function List() {
             <button type="button" className="btn btn-outline-light m-1" style={{ backgroundColor: "ghostwhite" }}>
               <Link to={`/buyers/buyer-update/${row.original._id}`} className="card-link m-2" >Edit</Link>
             </button>
-            <button type="button" className="btn btn-outline-light m-1" style={{ color: "blue", backgroundColor: "ghostwhite" }} onClick={() => handleDelete(row.original._id)} >Delete </button>
+            {/* <button type="button" className="btn btn-outline-light m-1" style={{ color: "blue", backgroundColor: "ghostwhite" }} onClick={() => handleDelete(row.original._id)} >Delete </button> */}
           </div>
         ),
       },

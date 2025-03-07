@@ -153,7 +153,7 @@ function List() {
             <button type="button" className="btn btn-outline-light m-1" style={{ backgroundColor: "ghostwhite" }}>
               <Link to={`/sellers/seller-update/${row.original._id}`} className="card-link m-2" >Edit</Link>
             </button>
-            <button type="button" className="btn btn-outline-light m-1" style={{ color: "blue", backgroundColor: "ghostwhite" }} onClick={() => handleDelete(row.original._id)} >Delete </button>
+            {/* <button type="button" className="btn btn-outline-light m-1" style={{ color: "blue", backgroundColor: "ghostwhite" }} onClick={() => handleDelete(row.original._id)} >Delete </button> */}
           </div>
         ),
       },
