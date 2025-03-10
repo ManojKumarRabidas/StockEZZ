@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 const HOST = import.meta.env.VITE_HOST
 const PORT = import.meta.env.VITE_PORT
@@ -8,23 +8,40 @@ const token = sessionStorage.getItem('token');
 function Create() {
     const [name, setName] = useState("");
     const [category, setCategory] = useState("");
-    const [sub_categories, setSubCategories] = useState([])
+    const [categories, setCategories] = useState([]);
     const [sub_category, setSubCategory] = useState("");
+    const [sub_categories, setSubCategories] = useState([])
     const [active, setActive] = useState(false);
     const navigate = useNavigate();
 
-    const categoryOption = {
-      "ELECTRONICS": ["MOBILE AND ACCESSORIES", "LAPTOP AND DESKTOP", "HOME ELECTRONICS"],
-      "HARDWARE": ["PUMP HARDWARE", "BREAK SAND IRON ROD", "PAINT"],
-      "MEDICINE": ["HOMEOPATHIC", "ALLOPATHIC", "AYURVEDIC"],
-      "SOLAR": []
+    const getCategories = async ()=>{
+      try {
+            const response = await fetch(`${HOST}:${PORT}/server/category-list`, {
+              method: "GET",
+              headers: { 'authorization': `Bearer ${token}`, 'item': true, 'active': true },
+            });
+      
+            const result = await response.json();
+            if (response.ok) {
+              setCategories(result.docs);;
+              setSubCategories([]);
+            } else {
+              toastr.error(result.msg);
+            }
+          } catch (err) {
+            toastr.error("We are unable to process now. Please try again later.");
+          }
     }
+
+    useEffect(() => {
+      getCategories();
+    }, []);
 
     const changeCategory = (value)=>{
       setCategory(value);
       if(value){
-        const sub_cat = categoryOption[value];
-        setSubCategories(sub_cat)
+        const matchedItems = categories.find((item)=> item._id == value);
+        setSubCategories(matchedItems.sub_categories)
       }
     }
 
@@ -77,10 +94,9 @@ function Create() {
               <label className="form-label">Category <span className="ei-col-red">*</span></label>
               <select className="form-select" aria-label="Default select example" name="type" value={category} onChange={(e) => changeCategory(e.target.value)}>
                   <option>--Select category--</option>
-                  <option value="ELECTRONICS">Electronics</option>
-                  <option value="HARDWARE">Hardware</option>
-                  <option value="MEDICINE">Medicine</option>
-                  <option value="SOLAR">Solar</option>
+                  {categories.map((item)=>(
+                  <option value={item._id}>{item.category}</option>
+                  ))}
               </select>
           </div>
         </div>
@@ -89,9 +105,9 @@ function Create() {
               <label className="form-label">Sub Category</label>
               <select className="form-select" aria-label="Default select example" name="type" value={sub_category} onChange={(e) => setSubCategory(e.target.value)}>
                   <option>--Select sub category--</option>
-                  {sub_categories.map((item)=>{
-                    <option key={item} value={item}>{item}</option>
-                  })}
+                  {sub_categories.map((item, index)=>(
+                    <option key={index} value={item}>{item}</option>
+                  ))}
               </select>
           </div>
         </div>

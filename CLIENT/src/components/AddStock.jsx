@@ -365,7 +365,7 @@ function AddStock() {
             </div>}
             {stockStructure.sub_category && <div className="col mb-3">
                 <label className="form-label mx-3">Sub Category </label>
-                <input placeholder="Enter sub category (optional)" name="sub_category" type="text" maxLength={70} className="form-control" aria-describedby="emailHelp" value={sub_category} onChange={(e) => handleDropValueChange(e.target.value, "SUBCATEGORY")}/>
+                <input autoComplete="off" placeholder="Enter sub category (optional)" name="sub_category" type="text" maxLength={70} className="form-control" aria-describedby="emailHelp" value={sub_category} onChange={(e) => handleDropValueChange(e.target.value, "SUBCATEGORY")}/>
                 {sub_categories.length > 0 && (
                   <ul style={{ border: "1px solid #ccc", padding: "5px", marginTop: "2px", listStyleType: "none", maxHeight: "150px", overflowY: "auto", position: "absolute", background: "white", width: "25%" }}>
                   {sub_categories.map((item, index) => (
@@ -512,7 +512,7 @@ function AddStock() {
             {stockStructure.item_status && <div className="col mb-3">
               <label className="form-label">Item Status <span className="ei-col-red">*</span></label>
               <select required className="form-select" aria-label="Default select example" name="item_status" value={item_status} onChange={(e) => setItemStatus(e.target.value)}>
-                  <option>--Select item status--</option>
+                  <option value="">--Select item status--</option>
                   <option value="RECEIVED">Received</option>
                   <option value="ACCEPTED">Accepted</option>
                   <option value="RETURNED">Returned</option>

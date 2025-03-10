@@ -10,6 +10,7 @@ function Update() {
     const [email, setEmail] = useState("");
     const [address, setAddress] = useState("");
     const [pin, setPin] = useState("");
+    const [aadhar, setAadhar] = useState("");
     const [active, setActive] = useState(false);
     const navigate = useNavigate();
     const { id } = useParams();
@@ -20,6 +21,7 @@ function Update() {
     setEmail("");
     setAddress("");
     setPin("");
+    setAadhar("");
     setActive(false);
   };
 
@@ -37,6 +39,7 @@ function Update() {
             setEmail(result.doc.email);
             setAddress(result.doc.address);
             setPin(result.doc.pin);
+            setAadhar(result.doc.aadhar);
             setActive(result.doc.active);
         } else {
           toastr.error(result.msg);
@@ -55,7 +58,7 @@ function Update() {
 
   const handleEdit = async (event) => {
     event.preventDefault();
-    const updateBuyer = {name, phone, email, address, pin, active };
+    const updateBuyer = {name, phone, email, address, pin, aadhar, active };
     if (!name || !phone ){
       toastr.error("Please enter all the required values.");
       return;
@@ -107,12 +110,18 @@ function Update() {
         </div>
         <div className="row">
           <div className="col mb-3">
-            <label className="form-label">Address </label>
-            <input name="address" type="text" maxLength={70} className="form-control" aria-describedby="emailHelp" value={address} onChange={(e) => setAddress(e.target.value)}/>
+            <label className="form-label">Aadhar Number </label>
+            <input name="aadhar" type="text" maxLength={70} className="form-control" aria-describedby="emailHelp" value={aadhar} onChange={(e) => setAadhar(e.target.value)}/>
           </div>
           <div className="col mb-3">
             <label className="form-label">PIN Code </label>
             <input name="pin" type="text" maxLength={6} className="form-control" aria-describedby="emailHelp" value={pin} onChange={(e) => setPin(e.target.value)}/>
+          </div>
+        </div>
+        <div className="row">
+          <div className="col mb-3">
+            <label className="form-label">Address </label>
+            <input name="address" type="text" maxLength={70} className="form-control" aria-describedby="emailHelp" value={address} onChange={(e) => setAddress(e.target.value)}/>
           </div>
         </div>
         <div className="mb-3 form-switch" style={{paddingLeft: "0"}}>

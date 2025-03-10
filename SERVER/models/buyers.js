@@ -8,6 +8,7 @@ const buyerSchema = new mongoose.Schema({
     email: {type: String},
     address: {type: String},
     pin: {type: String},
+    aadhar: {type: String},
     active: {type: Boolean},
     createdBy: {type: mongoose.Schema.Types.ObjectId},
     updatedBy: {type: mongoose.Schema.Types.ObjectId}

@@ -10,6 +10,12 @@ const { authorizeRole } = require('../middleware/authMiddleware');
 router.post('/login', userController.userLogin);
 router.post('/logout', userController.userLogout);
 router.get("/auth/user", userController.getUser);
+router.get("/get-profile-details",authorizeRole(['SUPPORTADMIN', 'COMPANY', 'OPERATOR']), userController.profileDetails);
+
+router.post("/change-password", authorizeRole(['ADMIN', 'SUPPORTADMIN', 'COMPANY', 'OPERATOR']), userController.changePassword);
+router.post("/forgot-password-send-otp", authorizeRole(['ADMIN', 'SUPPORTADMIN', 'COMPANY', 'OPERATOR']), userController.forgotPasswordSendOtp);
+router.post("/forgot-password-check-otp", authorizeRole(['ADMIN', 'SUPPORTADMIN', 'COMPANY', 'OPERATOR']), userController.forgotPasswordCheckOtp);
+router.post("/forgot-password-change-password", authorizeRole(['ADMIN', 'SUPPORTADMIN', 'COMPANY', 'OPERATOR']), userController.forgotPasswordChangePassword);
 
 router.get("/get-companies",utilController.getCompanyNames);
 
@@ -34,12 +40,12 @@ router.patch("/category-update/:id", authorizeRole(['ADMIN', 'SUPPORTADMIN']), a
 router.delete("/category-delete/:id", authorizeRole(['ADMIN', 'SUPPORTADMIN']), adminController.categoryDelete);
 router.put("/category-update-active/:id", authorizeRole(['ADMIN', 'SUPPORTADMIN']), adminController.categoryUpdateActive);
 
-router.get("/item-list", authorizeRole(['ADMIN', 'SUPPORTADMIN', 'COMPANY', 'OPERATOR']), adminController.itemList);
-router.post("/item-create", authorizeRole(['ADMIN', 'SUPPORTADMIN', 'COMPANY', 'OPERATOR']), adminController.itemCreate);
-router.get("/item-details/:id", authorizeRole(['ADMIN', 'SUPPORTADMIN', 'COMPANY', 'OPERATOR']), adminController.itemDetails);
-router.patch("/item-update/:id", authorizeRole(['ADMIN', 'SUPPORTADMIN', 'COMPANY', 'OPERATOR']), adminController.itemUpdate);
-router.delete("/item-delete/:id", authorizeRole(['ADMIN', 'SUPPORTADMIN', 'COMPANY', 'OPERATOR']), adminController.itemDelete);
-router.put("/item-update-active/:id", authorizeRole(['ADMIN', 'SUPPORTADMIN', 'COMPANY', 'OPERATOR']), adminController.itemUpdateActive);
+router.get("/item-list", authorizeRole(['ADMIN', 'SUPPORTADMIN', 'COMPANY', 'OPERATOR']), utilController.itemList);
+router.post("/item-create", authorizeRole(['ADMIN', 'SUPPORTADMIN', 'COMPANY', 'OPERATOR']), utilController.itemCreate);
+router.get("/item-details/:id", authorizeRole(['ADMIN', 'SUPPORTADMIN', 'COMPANY', 'OPERATOR']), utilController.itemDetails);
+router.patch("/item-update/:id", authorizeRole(['ADMIN', 'SUPPORTADMIN', 'COMPANY', 'OPERATOR']), utilController.itemUpdate);
+router.delete("/item-delete/:id", authorizeRole(['ADMIN', 'SUPPORTADMIN', 'COMPANY', 'OPERATOR']), utilController.itemDelete);
+router.put("/item-update-active/:id", authorizeRole(['ADMIN', 'SUPPORTADMIN', 'COMPANY', 'OPERATOR']), utilController.itemUpdateActive);
 
 router.get("/operator-list", authorizeRole(['ADMIN', 'SUPPORTADMIN', 'COMPANY']), utilController.operatorList);
 router.post("/operator-create", authorizeRole(['ADMIN', 'SUPPORTADMIN', 'COMPANY']), utilController.operatorCreate);
@@ -65,8 +71,17 @@ router.put("/seller-update-active/:id", authorizeRole(['OPERATOR', 'COMPANY']), 
 router.patch("/brand-list", authorizeRole(['COMPANY', 'OPERATOR']), utilController.brandList);
 router.patch("/customize-add-stock-details", authorizeRole(['COMPANY', 'OPERATOR']), utilController.getCustomizeAddStockDetails);
 router.post("/save-customize-add-stock-details", authorizeRole(['COMPANY', 'OPERATOR']), utilController.saveCustomizeAddStockDetails);
+router.get("/stock-list", authorizeRole(['COMPANY', 'OPERATOR']), utilController.stockList);
+router.get("/get-company-details", authorizeRole(['COMPANY','OPERATOR']), utilController.fetchCompanyDetails);
+
 router.post("/save-stock-details", authorizeRole(['OPERATOR']), operatorController.saveStockDetails);
-router.get("/stock-list", authorizeRole(['COMPANY', 'OPERATOR']), utilController.StockList);
-router.get("/get-company-details", authorizeRole(['OPERATOR']), operatorController.fetchCompanyDetails);
+router.patch("/stock-bulk-update", authorizeRole(['OPERATOR']), operatorController.stockBulkUpdate);
+
+router.post("/bill-create", authorizeRole(['OPERATOR']), operatorController.billCreate);
+router.patch("/bill-update/:id", authorizeRole(['OPERATOR']), operatorController.billUpdate);
+router.post("/generate-bill-pdf/:id", authorizeRole(['OPERATOR']), operatorController.generateBillPdf);
+
+router.get("/bill-list", authorizeRole(['COMPANY','OPERATOR']), utilController.billList);
+router.get("/bill-details/:id", authorizeRole(['COMPANY','OPERATOR']), utilController.billDetails);
 
 module.exports = router;

@@ -13,6 +13,6 @@ const userSchema = new mongoose.Schema({
     updatedBy: {type: mongoose.Schema.Types.ObjectId}
 }, { timestamps: true });
 
-userSchema.index({ code: 1 }, { unique: true });
+userSchema.index({ email: 1 }, { unique: true });
 const User = mongoose.model('user', userSchema)
 module.exports = User

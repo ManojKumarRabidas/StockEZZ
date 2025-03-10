@@ -4,6 +4,10 @@ import Error404 from "./components/Error404";
 import Unauthorized from "./components/Unauthorized";
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
+import Profile from './components/Profile';
+import UserManual from './components/UserManual';
+import Updates from './components/Updates';
+import Password from './components/Password';
 import Home from './components/Home';
 import SupportAdmins from './components/SupportAdmin';
 import Company from './components/Company';
@@ -16,6 +20,7 @@ import Buyer from './components/Buyers';
 import Seller from './components/Sellers';
 import Stocks from './components/StockDetails';
 import ManageStock from './components/ManageStock';
+import ManageBills from './components/ManageBills';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min';
 // import './assets/lib/font-awesome-all-min.css'
@@ -114,6 +119,10 @@ function AppContent({ isAuthenticated, userType }) {
               <Route path='/' element={<Navigate to={isAuthenticated ? '/home' : '/login'} replace />} />
               <Route path='/login' element={<Login />} />
               <Route path='/error-404' element={<Error404 />} />
+              <Route path='/profile' element={user_type != 'ADMIN' ? <Profile /> : <Unauthorized />} />
+              <Route path='/user-manual' element={<UserManual/>} />
+              <Route path='/updates' element={<Updates/>} />
+              <Route path='/password/*' element={<Password/>} />
               <Route path='/home' element={<Home />} />
               <Route path='/support-admins/*' element={user_type === 'ADMIN' ? <SupportAdmins /> : <Unauthorized />} />
               <Route path='/companies/*' element={((user_type ==='ADMIN') || (user_type ==='SUPPORTADMIN')) ? <Company /> : <Unauthorized />} />
@@ -126,6 +135,7 @@ function AppContent({ isAuthenticated, userType }) {
               <Route path='/sellers/*' element={((user_type ==='OPERATOR') || (user_type ==='COMPANY'))  ? <Seller /> : <Unauthorized />} />
               <Route path='/stocks/*' element={((user_type ==='OPERATOR') || (user_type ==='COMPANY'))  ? <Stocks /> : <Unauthorized />} />
               <Route path='/manage-stocks/*' element={(user_type ==='OPERATOR')  ? <ManageStock /> : <Unauthorized />} />
+              <Route path='/manage-bills/*' element={((user_type ==='OPERATOR') || (user_type ==='COMPANY'))  ? <ManageBills /> : <Unauthorized />} />
             </Routes>
           </main>
         </div>
