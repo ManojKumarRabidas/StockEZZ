@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 
 const billSchema = new mongoose.Schema({
     company_id: {type: mongoose.Schema.Types.ObjectId},
+    billNo: {type: String},
     date: {type: Date, required: true},
     items: {type: [Object], required: true},
     total: {type: Number},

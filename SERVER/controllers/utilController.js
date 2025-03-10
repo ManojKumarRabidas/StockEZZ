@@ -248,6 +248,7 @@ module.exports = {
             let matchStage ={}
             let tempMatchStage ={}
             let projectionStage = { _id: 1,
+                    billNo: 1,
                     date: 1,
                     items: 1,
                     buyer: 1,
@@ -569,7 +570,6 @@ module.exports = {
     
     buyerList: async(req, res)=>{
         try {
-            console.log("req.headers", req.headers)
             const cmpVal = req.headers.value;
             const userId = new ObjectId(req.user.id);
             const userType = req.user.user_type;
@@ -594,7 +594,6 @@ module.exports = {
             const docs = await buyerModel.find(matchStage, projectionStage);
             res.status(200).json({ docs: docs });
         } catch (err) {
-            console.log(err)
             res.status(400).json({ msg: err.message });
         }
     },
@@ -796,6 +795,137 @@ module.exports = {
             }
             const doc = await sellerModel.updateOne({_id: new ObjectId(params.id)},{$set: body}, {new: true});
             res.status(200).json({ message: "Seller's activation status updated successfully", doc: doc });
+        } catch (err) {
+            res.status(500).json({ msg: err.message });
+        }
+    },
+
+    itemList: async(req, res)=>{
+        try {
+            const cmpVal = req.headers.value;
+            const userId = new ObjectId(req.user.id);
+            const userType = req.user.user_type;
+            const activeStatus = req.headers.active;
+            let matchStage = {};
+            let projectionStage = {};
+            let companyIds;
+            if (userType === "COMPANY") {
+                companyIds = [userId, new ObjectId("67a826f87c2ba5493e1d7a1f")];
+            } else if(userType === "OPERATOR"){
+                let user = await userModel.findById(userId, {company:1});
+                companyIds = [new ObjectId(user.company), new ObjectId("67a826f87c2ba5493e1d7a1f")]
+            }
+            if(activeStatus && cmpVal){
+                matchStage = {companyId: {$in: companyIds}, active: true, name: {$regex: cmpVal, $options: "i"}} 
+                projectionStage = {name: 1}
+            } else if(activeStatus){
+                matchStage = {companyId: {$in: companyIds},  active: true}
+                projectionStage = {code: 1, name: 1, category: "$category.category", sub_category: 1, active: 1}
+            } else{
+                projectionStage = {code: 1,name: 1, category: "$category.category", sub_category: 1, active: 1}
+                if (userType != ("ADMIN" && "SUPPORTADMIN")) {
+                    matchStage = {}
+                }
+            }
+            // const docs = await itemModel.find(matchStage, projectionStage);
+            const docs = await itemModel.aggregate([
+                {$match: matchStage},
+                {$lookup: {from: "categories",
+                    localField: "category",
+                    foreignField: "_id",
+                    as: "category"}},
+                {$unwind: "$category"},
+                {$project: projectionStage},
+                
+            ]);
+            res.status(200).json({ docs: docs });
+        } catch (err) {
+            res.status(400).json({ msg: err.message });
+        }
+    },
+    itemCreate: async(req, res)=>{
+        try {
+            const body = req.body;
+            if (!body.name || !body.category ){
+                res.status(400).json({ msg: "Missing Parameters!" });
+                return;
+            }
+            const userId = new ObjectId(req.user.id);
+            const userType = req.user.user_type;
+            if (userType === ("ADMIN" || "SUPPORTADMIN")) {
+                body.companyId = new ObjectId("67a826f87c2ba5493e1d7a1f"); // Id of Admin user
+            } else if (userType === "COMPANY") {
+                body.companyId = userId;
+            } else if(userType === "OPERATOR"){
+                let user = await userModel.findById(userId, {company:1});
+                body.companyId = new ObjectId(user.company)
+            }
+            body.createdBy = new ObjectId(req.user.id);
+            body.updatedBy = new ObjectId(req.user.id);
+            const codeGenerator =await require("../controllers/utilController").createCode("ITEM");
+            body.code = codeGenerator.code
+            const doc = await itemModel.create(body);
+            res.status(201).json({ status: true, msg: "Item created successfully.", doc:doc});
+        } catch (err) {
+            if(err.code==11000){
+                res.status(500).json({ status: false, msg: "Same Code/Item already exists. Please contact to technical team." });
+                return
+            }
+            res.status(500).json({ status: false, msg: err.message });
+        }
+    },
+    itemDetails: async(req, res)=>{
+        try {
+            const params = req.params
+            if (!params || !params.id){
+                res.status(400).json({ msg: "Missing Parameters!" });
+                return;
+            }
+            const doc = await itemModel.findById({ _id: params.id });
+            res.status(200).json({ doc: doc });
+        } catch (err) {
+            res.status(400).json({ msg: err.message });
+        }
+    },
+    itemUpdate: async(req, res)=>{
+        try {
+            const params = req.params;
+            const body = req.body;
+            body.updatedBy = new ObjectId(req.user.id);
+            if (!params || !params.id || !body){
+                res.status(400).json({ msg: "Missing Parameters!" });
+                return;
+            }
+            const doc = await itemModel.findByIdAndUpdate(params.id, body, {new: true});
+            res.status(200).json({ message: "Item updated successfully", doc: doc });
+        } catch (err) {
+            res.status(500).json({ msg: err.message });
+        }
+    },
+    itemDelete: async(req, res)=>{
+        try {
+            const params = req.params;
+            if (!params || !params.id){
+                res.status(400).json({ msg: "Missing Parameters!" });
+                return;
+            }
+            await itemModel.findByIdAndDelete({ _id: params.id });
+            res.status(200).json({ message: "Item deleted successfully" });
+        } catch (err) {
+            res.status(400).json({ msg: err.message });
+        }
+    },
+    itemUpdateActive: async(req, res)=>{
+        try {
+            const params = req.params;
+            const body = req.body;
+            body.updatedBy = new ObjectId(req.user.id);
+            if (!params || !params.id || !body){
+                res.status(400).json({ msg: "Missing Parameters!" });
+                return;
+            }
+            const doc = await itemModel.updateOne({_id: new ObjectId(params.id)},{$set: body}, {new: true});
+            res.status(200).json({ message: "Item activation status updated successfully", doc: doc });
         } catch (err) {
             res.status(500).json({ msg: err.message });
         }

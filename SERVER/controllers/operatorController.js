@@ -159,7 +159,7 @@ module.exports = {
                 body.map(update => ({
                   updateOne: {
                     filter: { _id: new ObjectId(update._id) },
-                    update: { $set: { item_sell_price: update.item_sell_price, description: update.description, updatedBy: userId, updatedAt: new Date() } }
+                    update: { $set: { item_sell_price: update.item_sell_price, description: update.description, item_status: update.item_status, updatedBy: userId, updatedAt: new Date() } }
                   }
                 }))
               );
@@ -178,6 +178,7 @@ module.exports = {
             }
             body.buyer_id = null;
             body.date = new Date();
+            body.billNo = uuidv4().replace(/-/g, '').substring(0, 12);
             if(body.buyer_name || body.buyer_phone){
                 const matchString = {}
                 if(body.buyer_name){matchString.name = body.buyer_name}
@@ -263,7 +264,7 @@ module.exports = {
             res.status(500).json({ msg: err.message });
         }
     },
-    billPrint: async (req, res)=>{
+    generateBillPdf: async (req, res)=>{
         try{
             const params = req.params
             if (!params || !params.id){
@@ -274,7 +275,9 @@ module.exports = {
             const userType = req.user.user_type;
             let matchStage ={_id: new ObjectId(params.id)}
             let tempMatchStage ={}
+            let company;
             let projectionStage ={_id: 1,
+                    billNo: 1,
                     date: 1,
                     items: 1,
                     buyer: 1,
@@ -294,6 +297,7 @@ module.exports = {
             } else if(userType === "OPERATOR"){
                 let operator = await userModel.findOne({_id: userId}, {company: 1});
                 tempMatchStage.companyId = new ObjectId(operator.company)
+                company = await companyModel.findOne({_id: operator.company}, {name: 1, phone: 1, email: 1, address: 1, gstNo: 1});
             }
             const docs = await billModel.aggregate([
                 {$match: matchStage},
@@ -335,7 +339,13 @@ module.exports = {
                 for(let i=0; i<docs.length; i++){
                   const outerRef = docs[i];
                   outerRef.date = moment(outerRef.date).format('DD/MM/YYYY');
-                  outerRef.buyer = outerRef.buyer ? outerRef.buyer : {name: "Not available",phone: "Not available",email: "Not available",aadhar: "Not available",pin: "Not available",address: "Not available",};
+                //   outerRef.buyer = outerRef.buyer ? outerRef.buyer : {name: "Not available",phone: "Not available",email: "Not available",aadhar: "Not available",pin: "Not available",address: "Not available",};
+                  outerRef.buyer.name = outerRef.buyer.name ? outerRef.buyer.name : "Not available"
+                  outerRef.buyer.phone = outerRef.buyer.phone ? outerRef.buyer.phone : "Not available"
+                  outerRef.buyer.email = outerRef.buyer.email ? outerRef.buyer.email : "Not available"
+                  outerRef.buyer.aadhar = outerRef.buyer.aadhar ? outerRef.buyer.aadhar : "Not available"
+                  outerRef.buyer.pin = outerRef.buyer.pin ? outerRef.buyer.pin : "Not available"
+                  outerRef.buyer.address = outerRef.buyer.address ? outerRef.buyer.address : "Not available"
                   outerRef.pending_installation = outerRef.pending_installation ? outerRef.pending_installation : "N/A";
                   for(let j=0; j<outerRef.items.length; j++){
                     const ref = outerRef.items[j].item;
@@ -372,10 +382,9 @@ module.exports = {
                 return res.status(400).json({ status: false, msg: 'Failed to generate PDF. Please try again later.' });
             }
             doc.userType = userType;
+            doc.company = company;
             const pdfExportService = require("../services/pdfExportService");
-            console.log("abcd");
             const result = await pdfExportService.generateBill(doc);
-            console.log("abcde", result);
             
             if (!result.status) {
                 return res.status(400).json({ status: false, msg: 'Failed to generate PDF' });
@@ -394,7 +403,6 @@ module.exports = {
 
             pdfDoc.end();
         } catch(err){
-            console.log("err", err)
             res.status(500).json({ status: false, msg: err.message });
         }
     },

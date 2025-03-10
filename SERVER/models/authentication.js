@@ -9,6 +9,7 @@ const authenticationSchema = new mongoose.Schema({
   password: {type: String, required: true},
   user_type: {type: String, default: null},
   active: {type: Boolean,},
+  otpDetails: {type: Object},
   last_log_in: {type: Date, default: null},
   first_log_in: {type: Boolean,},
 

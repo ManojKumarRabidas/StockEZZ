@@ -512,7 +512,7 @@ function AddStock() {
             {stockStructure.item_status && <div className="col mb-3">
               <label className="form-label">Item Status <span className="ei-col-red">*</span></label>
               <select required className="form-select" aria-label="Default select example" name="item_status" value={item_status} onChange={(e) => setItemStatus(e.target.value)}>
-                  <option>--Select item status--</option>
+                  <option value="">--Select item status--</option>
                   <option value="RECEIVED">Received</option>
                   <option value="ACCEPTED">Accepted</option>
                   <option value="RETURNED">Returned</option>

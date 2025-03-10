@@ -4,6 +4,10 @@ import Error404 from "./components/Error404";
 import Unauthorized from "./components/Unauthorized";
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
+import Profile from './components/Profile';
+import UserManual from './components/UserManual';
+import Updates from './components/Updates';
+import Password from './components/Password';
 import Home from './components/Home';
 import SupportAdmins from './components/SupportAdmin';
 import Company from './components/Company';
@@ -115,6 +119,10 @@ function AppContent({ isAuthenticated, userType }) {
               <Route path='/' element={<Navigate to={isAuthenticated ? '/home' : '/login'} replace />} />
               <Route path='/login' element={<Login />} />
               <Route path='/error-404' element={<Error404 />} />
+              <Route path='/profile' element={user_type != 'ADMIN' ? <Profile /> : <Unauthorized />} />
+              <Route path='/user-manual' element={<UserManual/>} />
+              <Route path='/updates' element={<Updates/>} />
+              <Route path='/password/*' element={<Password/>} />
               <Route path='/home' element={<Home />} />
               <Route path='/support-admins/*' element={user_type === 'ADMIN' ? <SupportAdmins /> : <Unauthorized />} />
               <Route path='/companies/*' element={((user_type ==='ADMIN') || (user_type ==='SUPPORTADMIN')) ? <Company /> : <Unauthorized />} />

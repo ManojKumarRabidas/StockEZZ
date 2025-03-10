@@ -38,7 +38,7 @@ function Home() {
           </div>
           <div className="text-center m-3">
               {/* <div>Please feel free to reach us if you have any opinions or features we should include in the application to make it more usefull for you. Mail us on support@eduinsights.in</div> */}
-              <div>&copy; Copyright 2025 by stockezz.in || All Rights Reserved</div>
+              <div>Version 1.1.0 || &copy; Copyright 2025 by stockezz.in || All Rights Reserved</div>
           </div>
         </section>
       </main>

@@ -147,7 +147,7 @@ function ManageBills() {
     // } catch (error) {
     //   toastr.error("We are unable to process now. Please try again later.");
     // }
-    const printBill = useCallback(async (id) => {
+    const generateBillPdf = useCallback(async (id) => {
       try {
         // Prepare the bill data
         // const payload = {paid_amount: detailsBill.paid_amount, ramaining_amount: detailsBill.ramaining_amount, info: detailsBill.info, pending_installation: detailsBill.pending_installation };
@@ -158,7 +158,7 @@ function ManageBills() {
         //   // return;
         // }
   
-        const response = await fetch(`${HOST}:${PORT}/server/bill-print/${id}`, {
+        const response = await fetch(`${HOST}:${PORT}/server/generate-bill-pdf/${id}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -180,7 +180,6 @@ function ManageBills() {
         // Check if we got a valid PDF
         if (pdfBlob.size > 100) {
           saveAs(pdfBlob, `bill_${id}.pdf`);
-          toastr.success('Bill downloaded successfully');
         } else {
           throw new Error('Received empty or invalid PDF');
         }
@@ -207,6 +206,12 @@ function ManageBills() {
         enableSorting: true,
       },
       {
+        header: "Bill No",
+        accessorKey: "billNo",
+        sortingFn: "alphanumeric",
+        enableSorting: true,
+      },
+      {
         header: "Buyer Name",
         accessorKey: "buyer_name",
         sortingFn: "alphanumeric",
@@ -218,12 +223,12 @@ function ManageBills() {
       //   sortingFn: "alphanumeric",
       //   enableSorting: true,
       // },
-      {
-        header: "Total",
-        accessorKey: "total",
-        sortingFn: "alphanumeric",
-        enableSorting: true,
-      },
+      // {
+      //   header: "Total",
+      //   accessorKey: "total",
+      //   sortingFn: "alphanumeric",
+      //   enableSorting: true,
+      // },
       // {
       //   header: "Additional Charges",
       //   accessorKey: "additional_charges",
@@ -296,6 +301,7 @@ function ManageBills() {
     return data.filter((row) => {
       const lowercasedFilter = globalFilter.toLowerCase();
       return (
+        row.billNo.toString().toLowerCase().includes(lowercasedFilter) ||
         row.buyer_name.toString().toLowerCase().includes(lowercasedFilter) ||
         row.payment_type.toLowerCase().includes(lowercasedFilter) ||
         row.info.toString().toLowerCase().includes(lowercasedFilter) ||
@@ -380,7 +386,7 @@ function ManageBills() {
               ))}
               {table.getRowModel().rows.length === 0 && (
                 <tr>
-                  <td colSpan="7" className="text-center">No data available </td>
+                  <td colSpan="11" className="text-center">No data available </td>
                 </tr>
               )}
             </tbody>
@@ -551,8 +557,9 @@ function ManageBills() {
                 <button className="form-control mx-2" style={{maxWidth: "100px"}} onClick={() => backToBillList()} >Back</button>
                 {!billEditingStatus && (detailsBill.userType == "OPERATOR") && <button className="form-control mx-2" style={{maxWidth: "100px"}} onClick={() => setBillEditingStatus(true)} >Edit</button>}
                 {billEditingStatus && <button className="form-control mx-2" style={{maxWidth: "100px"}} onClick={() => updateBillDetails(detailsBill._id)} >Submit</button>}
-                {!billEditingStatus && <button className="form-control mx-2" style={{maxWidth: "130px"}} onClick={() => printBill(detailsBill._id)} >Save as Pdf</button>}
-                {!billEditingStatus && <button className="form-control mx-2 bc-green-imp" style={{maxWidth: "130px"}} onClick={() => whatsappBill(true)} >Whatsapp</button>}
+                {!billEditingStatus && (detailsBill.userType == "OPERATOR") && <button className="form-control mx-2" style={{maxWidth: "130px"}} onClick={() => generateBillPdf(detailsBill._id)} >Save as Pdf</button>}
+                {!billEditingStatus && (detailsBill.userType == "OPERATOR") && <button className="form-control mx-2" style={{maxWidth: "130px"}} onClick={() => generateBillPdf(detailsBill._id)} >Print</button>}
+                {!billEditingStatus && (detailsBill.userType == "OPERATOR") && <button className="form-control mx-2 bc-green-imp" style={{maxWidth: "130px"}} onClick={() => whatsappBill(true)} >Whatsapp</button>}
             </div>
         </div>}
     </div>

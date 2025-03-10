@@ -24,7 +24,6 @@ function StockDetails() {
 
    const getData = async()=>{
     try {
-      console.log("filters", filters)
       const response = await fetch(`${HOST}:${PORT}/server/stock-list`, {
         method: "GET",
         headers: { 'authorization': `Bearer ${token}`, "sold_status": filters.sold_status},
@@ -55,6 +54,8 @@ function StockDetails() {
           data[i].item_sell_price = value;
         } else if(type == "DESCRIPTION"){
           data[i].description = value;
+        } else if(type == "ITEMSTATUS"){
+          data[i].item_status = value;
         }
       }
     }
@@ -63,7 +64,6 @@ function StockDetails() {
   const editableStatus = async (status)=>{
     setEditableTable(status)
     if(!status){
-      console.log(data)
       const newBody = []
       for(let i=0; i<data.length; i++){
         if(data[i].edited){
@@ -71,6 +71,7 @@ function StockDetails() {
             _id: data[i]._id,
             item_sell_price: data[i].item_sell_price,
             description: data[i].description,
+            item_status: data[i].item_status,
           }
           newBody.push(ref);
         }
@@ -106,8 +107,6 @@ function StockDetails() {
   }
 
   const changeFilter = (value, type) => {
-    console.log("value", value)
-    console.log("type", type)
     if(type == "sold_status"){
       filters.sold_status = value;
       getData();
@@ -225,9 +224,32 @@ function StockDetails() {
       },
       {
         header: "Item Status",
+        id: "item_status",
         accessorKey: "item_status",
         sortingFn: "alphanumeric",
         enableSorting: true,
+        headerClassName: "ei-text-center-imp",
+        cell: ({ row }) => {
+          const [value, setValue] = useState(row.original.item_status);
+          const handleChange = (e) => {
+            const newValue = e.target.value;
+            setValue(newValue);
+            changeTableValue(row.original._id, newValue, "ITEMSTATUS");
+          };
+      
+          return (
+            <div style={{ textAlign: "center" }}>
+              {!editableTable && <label>{value}</label>}
+              {editableTable && <div>
+                <select style={{minWidth:"130px"}} className="form-select" aria-label="Default select example" name="item_status" value={value} onChange={handleChange}>
+                  <option value="RECEIVED">Received</option>
+                  <option value="ACCEPTED">Accepted</option>
+                  <option value="RETURNED">Returned</option>
+                </select> 
+              </div>}
+            </div>
+          );
+        },
       },
       {
         header: "Seller",
@@ -394,7 +416,7 @@ function StockDetails() {
             ))}
             {table.getRowModel().rows.length === 0 && (
               <tr>
-                <td colSpan="7" className="text-center">No data available </td>
+                <td colSpan="22" className="text-center">No data available </td>
               </tr>
             )}
           </tbody>

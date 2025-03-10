@@ -54,18 +54,21 @@ function Navbar() {
           <span className="navbar-toggler-icon"></span>
         </button> */}
         <div className="collapse navbar-collapse justify-content-end" id="navbarNav">
-          <div className='mx-2'>
+          {/* <div className='mx-2'>
             <FontAwesomeIcon icon={faCartShopping} style={{color:"whitesmoke"}} className='cursor-pointer' title='Cart'/>
-          </div>
+          </div> */}
           <div className='mx-2'>
             <ul className="navbar-nav">
               <li className="nav-item dropdown" >
                 <a className="nav-link dropdown-toggle" style={{color:"whitesmoke"}} href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">{userName || 'User'}</a>
                 <ul className="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
                   <li><Link className="dropdown-item" to="/">{userName}</Link></li>
-                  <li><hr className="dropdown-divider" /></li>
-                  <li><Link className="dropdown-item" to="/profile">Profile</Link></li>
+                <li><hr className="dropdown-divider" /></li>
+                {(userType != "ADMIN") && <li><Link className="dropdown-item" to="/profile">Profile</Link></li>}
                   <li><Link className="dropdown-item" to="/password">Password</Link></li>
+                  <li><hr className="dropdown-divider" /></li>
+                  <li><Link className="dropdown-item" to="/user-manual">User Manual</Link></li>
+                <li><Link className="dropdown-item" to="/updates">Updates</Link></li>
                   <li><hr className="dropdown-divider" /></li>
                   <li><a className="dropdown-item" href="#" onClick={handleLogout}>Sign Out</a></li>
                 </ul>

@@ -15,6 +15,7 @@ module.exports = {
       res.status(401).json({ msg: 'Unauthorized' });
     }
   },
+
   verifyToken: (req, res, next) => {
     const token = req.cookies.token;  // Get token from cookies
     if (!token) return res.status(401).json({ msg: 'No token, authorization denied' });
@@ -27,6 +28,7 @@ module.exports = {
         return res.status(401).json({ msg: 'Token is not valid' });
     }
   },
+
   userCreate: async (req, res) => {
     try {
       const body = req.body;
@@ -123,6 +125,7 @@ module.exports = {
   userLogout: (req, res) => {
     res.clearCookie('token').json({ msg: 'Logged out successfully' });
   }, 
+
   getUser:(req, res)=>{
     const token = req.headers.authorization?.split(' ')[1];
     if (!token) return res.status(401).json({status: false, msg: 'Authorization denied' });
@@ -132,51 +135,66 @@ module.exports = {
       res.status(200).json({status: true,doc: user });
     });
   },
+
   profileDetails: async(req, res) =>{
     try {
-      var userId = req.user.id
+      const userId = new ObjectId(req.user.id);
+      const userType = req.user.user_type;
       if (!userId) {
         return res.status(400).json({ msg: 'User ID is missing' });
       }
-      userId = new ObjectId(userId);
-        const docs = await userModel.aggregate([
-          {$match: {_id: userId}},
+      let matchStage = {_id : new ObjectId(userId)}
+      let projectionStage = {code: 1, name: 1, phone: 1, email:1, address: 1, pin: 1, active: "$auth.active", createdAt: 1}
+      let model;
+      if(userType == "COMPANY"){
+        model = require("../models/companies");
+        projectionStage.company_type = 1;
+        projectionStage.company_subtype = 1;
+        projectionStage.gstNo = 1;
+        projectionStage.director = 1;
+        projectionStage.subscription = 1;
+        projectionStage.subscriptionDuration = 1;
+      } else if (userType == "OPERATOR"){
+        projectionStage.company = 1;
+        model = require("../models/user");
+      } else{
+        model = require("../models/user");
+      }
+        const docs = await model.aggregate([
+          {$match: matchStage},
           {$lookup: {from: "authentications",
                   localField: "_id",
                   foreignField: "user_id",
                   as: "auth"}},
           {$unwind: "$auth"},
-          {$lookup: {from: "departments",
-                  localField: "department",
-                  foreignField: "_id",
-                  as: "department"}},
-          {$addFields: {department: { $arrayElemAt: ["$department", 0] }}},
-          {$project: { _id: 1,
-                  user_type: 1,
-                  name: 1,
-                  teacher_code: 1,
-                  employee_id: 1,
-                  registration_year: 1,
-                  registration_number: 1,
-                  phone: 1,
-                  email: 1,
-                  pin: 1,
-                  address: 1,
-                  specialization: 1,
-                  department: {$ifNull: ["$department.name", ""]},
-                  active: "$auth.active",
-                  is_verified: "$auth.is_verified",
-                  createdAt: 1,
-                  last_log_in: "$auth.last_log_in",
-                }},
+          {$project: projectionStage},
         ]);
         const doc = docs[0]
         doc.createdAt= moment(doc.createdAt).format('DD/MM/YYYY - hh:mm A');
-        doc.last_log_in= moment(doc.last_log_in).format('DD/MM/YYYY - hh:mm A');
-        doc.active= doc.active === 1 ? "Active" : "Inactive",
-        doc.is_verified= doc.is_verified === 1 ? "Verified" : (doc.is_verified === -1 ? "Rejected" : "Not Verified"),
+        doc.active= doc.active ? "Active" : "Inactive";
+       
+        if(userType == "COMPANY"){
+          const categoryModel = require("../models/categories");
+          const categories = await categoryModel.find({}, {category: 1});
+          for(let i=0; i<categories.length; i++){
+            if(doc.company_type.toString() == categories[i]._id.toString()){
+              doc.company_type_name = categories[i].category;
+              break;
+            }
+          }
+        } else if(userType == "OPERATOR"){
+          const companyModel = require("../models/companies");
+          const companies = await companyModel.find({}, {name: 1, gstNo: 1});
+          for(let i=0; i<companies.length; i++){
+            if(doc.company.toString() == companies[i]._id.toString()){
+              doc.company_name = companies[i].name;
+              break;
+            }
+          }
+        }
+        doc.user_type = userType;
         res.status(200).json({ doc: doc });
-    } catch (err) {
+      } catch (err) {
         res.status(400).json({ msg: err.message });
     }
   }, 
@@ -217,6 +235,7 @@ module.exports = {
   forgotPasswordSendOtp: async(req, res)=>{
     try{
         const userId = new ObjectId(req.user.id);
+        const userType = req.user.user_type;
         const newOtp = Math.floor(Math.random() * (999999 - 100000 + 1)) + 100000;
         const otpDetails={otp: newOtp, generateAt: new Date(), expireAt: new Date()}
         const setOtp = await authModel.findOneAndUpdate({user_id: userId}, {$set: {otpDetails: otpDetails}}, {upsert: true, returnNewDocument: true});
@@ -235,25 +254,30 @@ module.exports = {
     
             }
         });
-    
-         const user = await userModel.findById(new ObjectId(req.user.id));
+        let model;
+        if(userType == "COMPANY"){
+          model = require("../models/companies");
+        } else{
+          model = require("../models/user");
+        }
+         const user = await model.findById(userId);
         if(!user || !user.email){
             res.status(400).json({ msg: "Email Id not found!" });
         }
         const receiver = {
             from : "manojkumarrabidas367@gmail.com",
             to : user.email,
-            subject : "EduInsights Support Team : OTP for Forgot Password",
+            subject : "StockEZZ Support Team : OTP for Forgot Password",
             text : `Dear ${req.user.name}. 
 
                     Your One Time Password (OTP) for verify is: ${newOtp}.
 
                     OTP is valid only for 05:00 mins. Do not share this OTP with anyone.
 
-                    If you did not request this OTP, please connect with us immediately at complaint.support@eduinsights.in.
+                    If you did not request this OTP, please connect with us immediately at complaint.support@stockezz.in.
                     
                     Regards,
-                    Team EduInsights`,
+                    Team StockEZZ`,
         };
     
         auth.sendMail(receiver, (error, emailResponse) => {
@@ -265,9 +289,10 @@ module.exports = {
     
         res.status(200).json({status: true, msg: "OTP sent to your registered email id"});
     }catch(err){
-        res.status(500).json({status: false, msg: "Failed to send mail due to some technical problem. Please try again later." });
+      res.status(500).json({status: false, msg: "Failed to send mail due to some technical problem. Please try again later." });
     }
   },
+
   forgotPasswordCheckOtp: async(req, res)=>{
       try{
           if(!req.body || !req.body.otp){
@@ -282,7 +307,7 @@ module.exports = {
           const userId = new ObjectId(req.user.id);
           const doc= await authModel.findOne({user_id: userId},{otpDetails: 1});
           if(!doc || !doc.otpDetails){
-              res.status(400).json({ status: false, msg: "Unable to check otp duw to some technocal problem! Please resend OTP and try again." });
+              res.status(400).json({ status: false, msg: "Unable to check otp due to some technocal problem! Please resend OTP and try again." });
               return;
           }
           if(doc.otpDetails.otp != req.body.otp){
@@ -294,6 +319,7 @@ module.exports = {
           res.status(500).json({status: false, msg: "Failed to send mail due to some technical problem. Please try again later." });
       }
   },
+  
   forgotPasswordChangePassword: async(req, res)=>{
       try{
           if(!req.body || !req.body.password){
