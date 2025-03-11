@@ -604,7 +604,7 @@ function AddStock() {
       </form>}
       {!isStockStructure && <div>
         <h3>No form configuration found !!</h3>  <br />
-        <h3>Contact with company director and ask him/her to configure 'add stock form'.</h3> <br /> <br />
+        <h3>First configure 'add stock form' to continue.</h3> <br /> <br />
         <h5>Follow the below steps to configure 'add stock form'.</h5> <br /> 
         <h5>Company Login {"->"} Customize Add Stock {"->"} Change the necessary {"->"} Update</h5>  
       </div>}

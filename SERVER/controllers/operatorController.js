@@ -339,13 +339,17 @@ module.exports = {
                 for(let i=0; i<docs.length; i++){
                   const outerRef = docs[i];
                   outerRef.date = moment(outerRef.date).format('DD/MM/YYYY');
+                  if(! outerRef.buyer){
+                        outerRef.buyer = {name: "Not available",phone: "Not available",email: "Not available",aadhar: "Not available",pin: "Not available",address: "Not available",};
+                  } else {
+                        outerRef.buyer.name = outerRef.buyer.name ? outerRef.buyer.name : "Not available"
+                        outerRef.buyer.phone = outerRef.buyer.phone ? outerRef.buyer.phone : "Not available"
+                        outerRef.buyer.email = outerRef.buyer.email ? outerRef.buyer.email : "Not available"
+                        outerRef.buyer.aadhar = outerRef.buyer.aadhar ? outerRef.buyer.aadhar : "Not available"
+                        outerRef.buyer.pin = outerRef.buyer.pin ? outerRef.buyer.pin : "Not available"
+                        outerRef.buyer.address = outerRef.buyer.address ? outerRef.buyer.address : "Not available"
+                  }
                 //   outerRef.buyer = outerRef.buyer ? outerRef.buyer : {name: "Not available",phone: "Not available",email: "Not available",aadhar: "Not available",pin: "Not available",address: "Not available",};
-                  outerRef.buyer.name = outerRef.buyer.name ? outerRef.buyer.name : "Not available"
-                  outerRef.buyer.phone = outerRef.buyer.phone ? outerRef.buyer.phone : "Not available"
-                  outerRef.buyer.email = outerRef.buyer.email ? outerRef.buyer.email : "Not available"
-                  outerRef.buyer.aadhar = outerRef.buyer.aadhar ? outerRef.buyer.aadhar : "Not available"
-                  outerRef.buyer.pin = outerRef.buyer.pin ? outerRef.buyer.pin : "Not available"
-                  outerRef.buyer.address = outerRef.buyer.address ? outerRef.buyer.address : "Not available"
                   outerRef.pending_installation = outerRef.pending_installation ? outerRef.pending_installation : "N/A";
                   for(let j=0; j<outerRef.items.length; j++){
                     const ref = outerRef.items[j].item;
@@ -403,6 +407,7 @@ module.exports = {
 
             pdfDoc.end();
         } catch(err){
+            console.log(err)
             res.status(500).json({ status: false, msg: err.message });
         }
     },

@@ -31,6 +31,7 @@ function StockDetails() {
 
       const result = await response.json();
       if (response.ok) {
+        // console.log("result.docs", result.docs)
         setData(result.docs);
       } else {
         toastr.error(result.msg);

@@ -117,78 +117,39 @@ function ManageBills() {
     setDetailsBillDiv(false);
   }
 
+  const generateBillPdf = useCallback(async (id) => {
+    try {
+      const response = await fetch(`${HOST}:${PORT}/server/generate-bill-pdf/${id}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          // Add authorization header if needed
+          'Authorization': `Bearer ${token}`,
+        },
+        // body: JSON.stringify(payload),
+      });
 
-    // const updatedBillDetails  = {paid_amount: detailsBill.paid_amount, ramaining_amount: detailsBill.ramaining_amount, info: detailsBill.info, pending_installation: detailsBill.pending_installation };
-    // if (updatedBillDetails.paid_amount == "" ){
-    //   toastr.error("There must be some 'Paid amount'");
-    //   return;
-    // }
-    // try {
-    //   const response = await fetch(`${HOST}:${PORT}/server/bill-print/${id}`, {
-    //     method: "POST",
-    //     body: JSON.stringify(updatedBillDetails),
-    //     headers: {
-    //       'Content-Type': 'application/json',
-    //       'authorization': `Bearer ${token}`,
-    //     },
-    //   });
-
-    //   if (response) {
-    //     const result = await response.json();
-    //     if (response.ok) {
-    //       toastr.success("Bill printed successfully.");
-    //       // setBillEditingStatus(false);
-    //     } else {
-    //       toastr.error(result.msg);
-    //     }
-    //   } else {
-    //     toastr.error("We are unable to process now. Please try again later.");
-    //   }
-    // } catch (error) {
-    //   toastr.error("We are unable to process now. Please try again later.");
-    // }
-    const generateBillPdf = useCallback(async (id) => {
-      try {
-        // Prepare the bill data
-        // const payload = {paid_amount: detailsBill.paid_amount, ramaining_amount: detailsBill.ramaining_amount, info: detailsBill.info, pending_installation: detailsBill.pending_installation };
-  
-        // // Validate paid_amount
-        // if (!payload.paid_amount) {
-        //   // toastr.error('Please enter a valid paid amount');
-        //   // return;
-        // }
-  
-        const response = await fetch(`${HOST}:${PORT}/server/generate-bill-pdf/${id}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            // Add authorization header if needed
-            'Authorization': `Bearer ${token}`,
-          },
-          // body: JSON.stringify(payload),
-        });
-  
-        if (!response.ok) {
-          const errorData = await response.json();
-          toastr.error(errorData.msg || 'Failed to generate bill');
-          return;
-        }
-  
-        // Get the PDF blob
-        const pdfBlob = await response.blob();
-        
-        // Check if we got a valid PDF
-        if (pdfBlob.size > 100) {
-          saveAs(pdfBlob, `bill_${id}.pdf`);
-        } else {
-          throw new Error('Received empty or invalid PDF');
-        }
-  
-      } catch (error) {
-        console.error('Error printing bill:', error);
-        toastr.error(error.message || 'Failed to download bill PDF');
+      if (!response.ok) {
+        const errorData = await response.json();
+        toastr.error(errorData.msg || 'Failed to generate bill');
+        return;
       }
-    }, []);
+
+      // Get the PDF blob
+      const pdfBlob = await response.blob();
+      
+      // Check if we got a valid PDF
+      if (pdfBlob.size > 100) {
+        saveAs(pdfBlob, `bill_${id}.pdf`);
+      } else {
+        throw new Error('Received empty or invalid PDF');
+      }
+
+    } catch (error) {
+      console.error('Error printing bill:', error);
+      toastr.error(error.message || 'Failed to download bill PDF');
+    }
+  }, []);
   
   // Define table columns with proper accessorKeys
   const columns = useMemo(
