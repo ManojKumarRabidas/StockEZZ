@@ -147,6 +147,7 @@ module.exports = {
             const userType = req.user.user_type;
             const value = req.headers.value;
             const sold_status = req.headers.sold_status;
+            // console.log("sold_status", sold_status)
             let cmpMatchStage ={}
             let matchStage ={}
             let projectionStage ={}
@@ -823,11 +824,12 @@ module.exports = {
                 projectionStage = {code: 1, name: 1, category: "$category.category", sub_category: 1, active: 1}
             } else{
                 projectionStage = {code: 1,name: 1, category: "$category.category", sub_category: 1, active: 1}
-                if (userType != ("ADMIN" && "SUPPORTADMIN")) {
+                if (userType == ("ADMIN" || "SUPPORTADMIN")) {
                     matchStage = {}
+                } else {
+                    matchStage = {companyId: {$in: companyIds}}
                 }
             }
-            // const docs = await itemModel.find(matchStage, projectionStage);
             const docs = await itemModel.aggregate([
                 {$match: matchStage},
                 {$lookup: {from: "categories",

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect , useCallback} from "react";
 import moment from 'moment';
 import toastr from 'toastr';
 const token = sessionStorage.getItem('token');
@@ -16,6 +16,7 @@ function StockDetails() {
   const [paymentDetails, setPaymentDetails] = useState({});
   const [buyerDetails, setBuyerDetails] = useState({buyer_phone: "", buyer_name: "", buyer_address: "", buyer_pin: "", buyer_email: "", buyer_aadhar: ""});
   const [buyers, setBuyers] = useState([]);
+  const [billId, setBillId] = useState("");
 
   const fetchCompanyDetails = async () => {
     try {
@@ -273,6 +274,7 @@ const changePaymentDetails = (value, type) => {
       const result = await response.json();
       if (response.ok && result.status){
         setBillCreationStatus(true)
+        setBillId(result.doc._id)
         toastr.success("Bill created successfully.");
       } else{
         toastr.error(result.msg);
@@ -291,6 +293,41 @@ const changePaymentDetails = (value, type) => {
     setBuyerDetails({buyer_phone: "", buyer_name: "", buyer_address: "", buyer_pin: "", buyer_email: "", buyer_aadhar: ""})
     setBillCreationStatus(false)
   };
+
+  const generateBillPdf = useCallback(async (id) => {
+      try {
+        const response = await fetch(`${HOST}:${PORT}/server/generate-bill-pdf/${id}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            // Add authorization header if needed
+            'Authorization': `Bearer ${token}`,
+          },
+          // body: JSON.stringify(payload),
+        });
+  
+        if (!response.ok) {
+          const errorData = await response.json();
+          toastr.error(errorData.msg || 'Failed to generate bill');
+          return;
+        }
+  
+        // Get the PDF blob
+        const pdfBlob = await response.blob();
+        
+        // Check if we got a valid PDF
+        if (pdfBlob.size > 100) {
+          saveAs(pdfBlob, `bill_${id}.pdf`);
+        } else {
+          throw new Error('Received empty or invalid PDF');
+        }
+  
+      } catch (error) {
+        console.error('Error printing bill:', error);
+        toastr.error(error.message || 'Failed to download bill PDF');
+      }
+    }, []);
+
   return (
     <div className="container my-2">
         {billListDiv && <div>
@@ -523,7 +560,8 @@ const changePaymentDetails = (value, type) => {
             <div className="d-flex justify-content-end mt-3 mb-5">
                 {!billCreationStatus && <button className="form-control mx-2" style={{maxWidth: "100px"}} onClick={() => submitBill()} >Submit</button>}
                 {billCreationStatus && <button className="form-control mx-2" style={{maxWidth: "100px"}} onClick={() => home()} >Home</button>}
-                {billCreationStatus && <button className="form-control mx-2" style={{maxWidth: "100px"}} onClick={() => printBill(true)} >Print</button>}
+                {billCreationStatus && <button className="form-control mx-2" style={{maxWidth: "100px"}} onClick={() => generateBillPdf(billId)} >Print</button>}
+                {billCreationStatus && <button className="form-control mx-2" style={{maxWidth: "130px"}} onClick={() => generateBillPdf(billId)} >Save as Pdf</button>}
                 {billCreationStatus && <button className="form-control mx-2 bc-green-imp" style={{maxWidth: "140px"}} onClick={() => whatsappBill(true)} >Whatsapp</button>}
             </div>
         </div>}
