@@ -159,6 +159,7 @@ function StockDetails() {
         paymentDetails.paid_amount = tempObj.grandTotal;
         paymentDetails.ramaining_amount = 0;
         paymentDetails.info = "";
+        console.log("tempObj", tempObj)
         setFinalBillingData(tempObj)
     }
   }
@@ -247,10 +248,12 @@ const changePaymentDetails = (value, type) => {
 
   const submitBill = async () =>{
     const billingItemDetails = [];
+    console.log("finalBillingData.billingData",finalBillingData.billingData)
     for(let i=0; i<finalBillingData.billingData.length; i++){
         const ref = {
             item_id: finalBillingData.billingData[i]._id,
             sell_price: finalBillingData.billingData[i].item_sell_price,
+            buy_price: finalBillingData.billingData[i].item_buy_price,
             quantity: finalBillingData.billingData[i].quantity
         }
         billingItemDetails.push(ref);
@@ -333,7 +336,7 @@ const changePaymentDetails = (value, type) => {
         {billListDiv && <div>
             <div className="row">
                 <div className="col-9">
-                    <input value={searchElement} name="searchElement" onChange={(e) => searchFilter(e.target.value)} placeholder="Search item..." className="form-control my-3"/>
+                    <input autoComplete="off" value={searchElement} name="searchElement" onChange={(e) => searchFilter(e.target.value)} placeholder="Search item..." className="form-control my-3"/>
                 </div>
                 <div className="col-1">
                     <button disabled className="form-control my-3 disabled-btn">Scan</button>

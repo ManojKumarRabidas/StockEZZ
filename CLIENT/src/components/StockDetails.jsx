@@ -131,7 +131,7 @@ function StockDetails() {
       },
       {
         header: "Brand",
-        accessorKey: "brand",
+        accessorKey: "brand_name",
         sortingFn: "alphanumeric",
         enableSorting: true,
       },
@@ -272,7 +272,7 @@ function StockDetails() {
       },
       {
         header: "Batch Id",
-        accessorKey: "batchId",
+        accessorKey: "batch_id",
         sortingFn: "alphanumeric",
         enableSorting: true,
       },
@@ -317,11 +317,18 @@ function StockDetails() {
       const lowercasedFilter = globalFilter.toLowerCase();
       return (
         row.item.toString().toLowerCase().includes(lowercasedFilter) ||
-        row.brand.toLowerCase().includes(lowercasedFilter) ||
+        row.brand_name.toLowerCase().includes(lowercasedFilter) ||
         row.model.toString().toLowerCase().includes(lowercasedFilter) ||
-        row.remarks.toString().toLowerCase().includes(lowercasedFilter) ||
-        row.batchId.toString().toLowerCase().includes(lowercasedFilter) ||
-        row.description.toString().toLowerCase().includes(lowercasedFilter)
+        row.color.toString().toLowerCase().includes(lowercasedFilter) ||
+        row.capacity.toString().toLowerCase().includes(lowercasedFilter) ||
+        row.height.toString().toLowerCase().includes(lowercasedFilter) ||
+        row.power.toString().toLowerCase().includes(lowercasedFilter) ||
+        row.description.toString().toLowerCase().includes(lowercasedFilter) ||
+        row.item_status.toString().toLowerCase().includes(lowercasedFilter) ||
+        row.seller.toString().toLowerCase().includes(lowercasedFilter) ||
+        row.sl_no.toString().toLowerCase().includes(lowercasedFilter) ||
+        row.batch_id.toString().toLowerCase().includes(lowercasedFilter) ||
+        row.remarks.toString().toLowerCase().includes(lowercasedFilter)
       );
     });
   }, [data, globalFilter]);
@@ -379,65 +386,68 @@ function StockDetails() {
     <div className="container my-2">
       <div className="row">
         <div className="col-7">
-          <input value={globalFilter || ""} onChange={(e) => setGlobalFilter(e.target.value)} placeholder="Search by any field of table..." className="form-control my-3"/>
+          <input disabled={data.length<=0} value={globalFilter || ""} onChange={(e) => setGlobalFilter(e.target.value)} placeholder="Search by any field of table..." className="form-control my-3"/>
         </div>
         <div className="col-3 d-flex align-items-center">
           <label className="form-label me-2 text-nowrap">Sold Status :</label>
-          <select className="form-select" aria-label="Default select example" name="sold_status" value={filters.sold_status} onChange={(e) => changeFilter(e.target.value, "sold_status")}>
+          <select  disabled={data.length<=0} className="form-select" aria-label="Default select example" name="sold_status" value={filters.sold_status} onChange={(e) => changeFilter(e.target.value, "sold_status")}>
               <option value="UNSOLD">Unsold</option>
               <option value="SOLD">Sold</option>
               <option value="ALL">All</option>
           </select> 
         </div>
         <div className="col-2 d-flex align-items-center justify-content-end">
-          {!editableTable && <button className="btn btn-secondary" onClick={() => editableStatus(true)}>Bulk Edit</button>}
+          {!editableTable && <button disabled={data.length<=0} className="btn btn-secondary" onClick={() => editableStatus(true)}>Bulk Edit</button>}
           {editableTable && <button className="btn btn-secondary" onClick={() => editableStatus(false)}>Save</button>}
         </div>
       </div>
-      <div className="scroll-hidden">
-        <table className="table table-striped shadow-sm p-3 bg-body-tertiary rounded" style={{ fontSize: "smaller", margin: "0" }}>
-          <thead style={{textWrap: "nowrap"}}>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id} className="text-center">
-                {headerGroup.headers.map((header) => (
-                  <th key={header.id} onClick={header.column.getToggleSortingHandler()} className={header.column.columnDef.headerClassName} >
-                    {flexRender(header.column.columnDef.header,header.getContext())}{{asc: " 🔼", desc: " 🔽", }[header.column.getIsSorted()] ?? null}
-                  </th>
-                ))}
-              </tr>
-            ))}
-          </thead>
-          <tbody>
-            {table.getRowModel().rows.map((row) => (
-              <tr key={row.id} className="text-center">
-                {row.getVisibleCells().map((cell) => (
-                  <td className="p-3" key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>
-                ))}
-              </tr>
-            ))}
-            {table.getRowModel().rows.length === 0 && (
-              <tr>
-                <td colSpan="22" className="text-center">No data available </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-      <div className="d-flex justify-content-between my-3">
-        <select className="form-select mx-2" style={{maxWidth: "fit-content"}}  value={pageSize} onChange={(e) => setPageSize(Number(e.target.value))} >
-          {[5, 10, 15 , 20, 25].map((size) => (
-            <option key={size} value={size}> Show {size} </option>
-          ))}
-        </select>
-        <span className="text-nowrap mx-2 text-center">
-          Page{" "}
-          <strong> {pageIndex + 1} of {table.getPageCount()} </strong>
-        </span>
-        <div className="btn-group mx-2">
-          <button className="btn btn-secondary" onClick={() => table.previousPage()}disabled={!table.getCanPreviousPage()} >Previous</button>
-          <button className="btn btn-secondary" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}> Next </button>
+      {data.length>0 && <div>
+        <div className="scroll-hidden">
+          <table className="table table-striped shadow-sm p-3 bg-body-tertiary rounded" style={{ fontSize: "smaller", margin: "0" }}>
+            <thead style={{textWrap: "nowrap"}}>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <tr key={headerGroup.id} className="text-center">
+                  {headerGroup.headers.map((header) => (
+                    <th key={header.id} onClick={header.column.getToggleSortingHandler()} className={header.column.columnDef.headerClassName} >
+                      {flexRender(header.column.columnDef.header,header.getContext())}{{asc: " 🔼", desc: " 🔽", }[header.column.getIsSorted()] ?? null}
+                    </th>
+                  ))}
+                </tr>
+              ))}
+            </thead>
+            <tbody>
+              {table.getRowModel().rows.map((row) => (
+                <tr key={row.id} className="text-center">
+                  {row.getVisibleCells().map((cell) => (
+                    <td className="p-3" key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>
+                  ))}
+                </tr>
+              ))}
+              {table.getRowModel().rows.length === 0 && (
+                <tr>
+                  <td colSpan="22" className="text-center">No data available </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
-      </div>
+        <div className="d-flex justify-content-between my-3">
+          <select className="form-select mx-2" style={{maxWidth: "fit-content"}}  value={pageSize} onChange={(e) => setPageSize(Number(e.target.value))} >
+            {[5, 10, 15 , 20, 25].map((size) => (
+              <option key={size} value={size}> Show {size} </option>
+            ))}
+          </select>
+          <span className="text-nowrap mx-2 text-center">
+            Page{" "}
+            <strong> {pageIndex + 1} of {table.getPageCount()} </strong>
+          </span>
+          <div className="btn-group mx-2">
+            <button className="btn btn-secondary" onClick={() => table.previousPage()}disabled={!table.getCanPreviousPage()} >Previous</button>
+            <button className="btn btn-secondary" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}> Next </button>
+          </div>
+        </div>
+      </div>}
+      {data.length<=0 && <div className="text-center mt-5">Your stock is empty. Add items from "Add Stock" to see details here.</div>}
     </div>
   );
 }

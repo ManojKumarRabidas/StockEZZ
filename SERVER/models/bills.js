@@ -11,6 +11,7 @@ const billSchema = new mongoose.Schema({
     grandTotal: {type: Number},
     payment_type: {type: String},
     paid_amount: {type: Number},
+    total_profit: {type: Number},
     ramaining_amount: {type: Number},
     pending_installation: {type: String},
     info: {type: String},

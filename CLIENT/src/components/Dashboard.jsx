@@ -1,22 +1,15 @@
 import "../App.css";
-
-// export default function Dashboard(){
-//     return(
-//         <div className="d-flex flex-column justify-content-between" style={{minHeight: "90vh"}}>
-//             <div>   
-//                 <div className="text-center">
-//                     Coming soon...
-//                 </div>
-//             </div>
-//         </div>
-//     )
-// }
 import React, { useState, useEffect } from 'react';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend } from 'chart.js';
 import { Bar, Line } from 'react-chartjs-2';
 import { CSVLink } from 'react-csv';
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import toastr from 'toastr';
+
+const token = sessionStorage.getItem('token');
+const HOST = import.meta.env.VITE_HOST;
+const PORT = import.meta.env.VITE_PORT;
 
 // Register ChartJS components
 ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend);
@@ -27,63 +20,146 @@ const Dashboard = () => {
     pendingBills: [],
     stockInOutData: null,
     monthlyRevenue: null,
+    metricsData: null,
     loading: true
   });
   const [stockFilter, setStockFilter] = useState(10);
-  const [dateRange, setDateRange] = useState({
-    start: new Date(new Date().getMonth() - 1),
-    end: new Date()
+  const [dateRange, setDateRange] = useState(() => {
+    const today = new Date();
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    return {
+      start: startOfMonth,
+      end: today,
+    };
   });
   const [selectedItem, setSelectedItem] = useState(null);
   const [selectedBill, setSelectedBill] = useState(null);
   const [reorderQuantity, setReorderQuantity] = useState(0);
 
+  const formatDate = (date) => {
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
+  // Function to fetch financial data (Revenue, Profit, Stock Movement)
+  const fetchFinancialData = async () => {
+    try {
+      const response = await fetch(`${HOST}:${PORT}/server/financials?start=${dateRange.start.toISOString()}&end=${dateRange.end.toISOString()}`,
+        {headers: { 'Authorization': `Bearer ${token}`}}
+      );
+      const data = await response.json();
+      console.log("data", data)
+      setDashboardData(prev => ({
+        ...prev,
+        stockInOutData: {
+          labels: data.labels || [],
+          stockIn: data.stockIn || [],
+          stockOut: data.stockOut || [],
+          totalValue: data.totalStockValue || 0
+        },
+        monthlyRevenue: {
+          labels: data.labels || [],
+          values: data.revenue || [],
+          profit: data.profit || [],
+          currentMonth: data.currentMonthRevenue || 0,
+          currentMonthProfit: data.currentMonthProfit || 0
+        }
+      }));
+    } catch (error) {
+      console.error('Error fetching financial data:', error);
+      toastr.error('Failed to fetch financial data');
+    }
+  };
+
+  // Function to fetch metrics data (called only on page load)
+  const fetchMetricsData = async () => {
+    try {
+      const response = await fetch(
+        `${HOST}:${PORT}/server/metrics`,
+        {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }
+      );
+      const data = await response.json();
+      setDashboardData(prev => ({
+        ...prev,
+        metricsData: {
+          totalStockValue: data.totalStockValue || 0,
+          totalPendingBills: data.totalPendingBills || 0,
+          totalPendingInstall: data.totalPendingInstall || 0,
+          pendingBillDetails: data.pendingBillDetails || []
+        }
+      }));
+    } catch (error) {
+      console.error('Error fetching metrics data:', error);
+      toastr.error('Failed to fetch metrics data');
+    }
+  };
+
+  // Function to fetch low stock items
+  const fetchLowStockItems = async () => {
+    try {
+      const response = await fetch(
+        `${HOST}:${PORT}/server/stock/low?threshold=${stockFilter}`,
+        {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }
+      );
+      const data = await response.json();
+      setDashboardData(prev => ({
+        ...prev,
+        lowStockItems: data.filter(item => item.quantity > 0 && item.quantity < stockFilter)
+      }));
+    } catch (error) {
+      console.error('Error fetching low stock items:', error);
+      toastr.error('Failed to fetch low stock items');
+    }
+  };
+
+  // Initial page load effect
   useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        const [lowStockRes, pendingBillsRes, stockStatsRes, revenueRes] = await Promise.all([
-          fetch(`/api/stock/low?threshold=${stockFilter}`),
-          fetch(`/api/bills/pending?start=${dateRange.start.toISOString()}&end=${dateRange.end.toISOString()}`),
-          fetch(`/api/stock/stats?start=${dateRange.start.toISOString()}&end=${dateRange.end.toISOString()}`),
-          fetch(`/api/revenue/monthly?start=${dateRange.start.toISOString()}&end=${dateRange.end.toISOString()}`)
-        ]);
-
-        const lowStockData = await lowStockRes.json();
-        const pendingBillsData = await pendingBillsRes.json();
-        const stockStatsData = await stockStatsRes.json();
-        const revenueData = await revenueRes.json();
-
-        setDashboardData({
-          lowStockItems: lowStockData,
-          pendingBills: pendingBillsData,
-          stockInOutData: stockStatsData,
-          monthlyRevenue: revenueData,
-          loading: false
-        });
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error);
-        setDashboardData({ ...dashboardData, loading: false });
-      }
+    const fetchInitialData = async () => {
+      setDashboardData(prev => ({ ...prev, loading: true }));
+      await Promise.all([
+        fetchFinancialData(),
+        fetchMetricsData(),
+        fetchLowStockItems()
+      ]);
+      setDashboardData(prev => ({ ...prev, loading: false }));
     };
+    fetchInitialData();
+  }, []);
 
-    fetchDashboardData();
-  }, [stockFilter, dateRange]);
+  // Effect for date range and stock filter changes
+  useEffect(() => {
+    fetchFinancialData();
+    fetchLowStockItems();
+  }, [dateRange, stockFilter]);
 
   const handleReorder = async (item) => {
     try {
-      await fetch('/api/stock/reorder', {
+      await fetch(`${HOST}:${PORT}/server/stock/reorder`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ itemId: item._id, quantity: reorderQuantity })
       });
-      const lowStockRes = await fetch(`/api/stock/low?threshold=${stockFilter}`);
-      const lowStockData = await lowStockRes.json();
-      setDashboardData({ ...dashboardData, lowStockItems: lowStockData });
+      await fetchLowStockItems();
       setSelectedItem(null);
       setReorderQuantity(0);
+      toastr.success('Item reordered successfully');
     } catch (error) {
       console.error('Error reordering:', error);
+      toastr.error('Failed to reorder item');
     }
+  };
+
+  const handleSearch = () => {
+    fetchFinancialData();
   };
 
   // Stock In/Out Graph Data
@@ -103,7 +179,7 @@ const Dashboard = () => {
     ]
   };
 
-  // Revenue Graph Data
+  // Revenue & Profit Graph Data
   const revenueGraphData = {
     labels: dashboardData.monthlyRevenue?.labels || [],
     datasets: [
@@ -112,6 +188,12 @@ const Dashboard = () => {
         data: dashboardData.monthlyRevenue?.values || [],
         borderColor: 'rgb(53, 162, 235)',
         backgroundColor: 'rgba(53, 162, 235, 0.5)',
+      },
+      {
+        label: 'Profit',
+        data: dashboardData.monthlyRevenue?.profit || [],
+        borderColor: 'rgb(75, 192, 192)',
+        backgroundColor: 'rgba(75, 192, 192, 0.5)',
       }
     ]
   };
@@ -123,12 +205,12 @@ const Dashboard = () => {
     status: item.quantity === 0 ? 'Out of Stock' : 'Low Stock'
   }));
 
-  const pendingBillsCSVData = dashboardData.pendingBills?.map(bill => ({
+  const pendingBillsCSVData = dashboardData.metricsData?.pendingBillDetails?.map(bill => ({
     billNumber: bill.billNumber,
     customerName: bill.customerName,
     amount: bill.amount,
     dueDate: new Date(bill.dueDate).toLocaleDateString()
-  }));
+  })) || [];
 
   if (dashboardData.loading) {
     return (
@@ -149,7 +231,6 @@ const Dashboard = () => {
             }
   
             .shimmer-container {
-            //   background: #e0e0e0;
               border-radius: 8px;
               overflow: hidden;
               height: 150px;
@@ -167,7 +248,6 @@ const Dashboard = () => {
   
             .shimmer-table-row {
               height: 40px;
-            //   background: #e0e0e0;
               margin-bottom: 10px;
               border-radius: 4px;
             }
@@ -218,59 +298,76 @@ const Dashboard = () => {
           <p className="text-muted mb-0">You focus on managing your life. Let us manage your stock. 😊</p>
         </div>
         <div className="d-flex align-items-center">
-          {/* <input
-            type="date"
-            value={dateRange.start.toISOString().split('T')[0]}
-            onChange={(e) => setDateRange({ ...dateRange, start: new Date(e.target.value) })}
-            className="form-control form-control-sm me-2"
-          />
-          <input
-            type="date"
-            value={dateRange.end.toISOString().split('T')[0]}
-            onChange={(e) => setDateRange({ ...dateRange, end: new Date(e.target.value) })}
-            className="form-control form-control-sm"
-          /> */}
-          Date Range: 
-          <div className="mx-2" >
-            <DatePicker dateFormat="yyyy/MM/dd" required name="date" selected={dateRange.start.toISOString().split('T')[0]} className="form-control" aria-describedby="emailHelp" value={dateRange.start.toISOString().split('T')[0]}  onChange={(e) => setDateRange({ ...dateRange, start: new Date(e.target.value) })}/>
+          <div className="mx-2">
+            <DatePicker 
+              dateFormat="dd/MM/yyyy" 
+              required 
+              name="startDate" 
+              selected={dateRange.start} 
+              className="form-control" 
+              onChange={(date) => setDateRange({ ...dateRange, start: date })}
+            />
           </div>
           <div>
-            <DatePicker dateFormat="yyyy/MM/dd" required name="date" selected={dateRange.end.toISOString().split('T')[0]} className="form-control" aria-describedby="emailHelp" value={dateRange.end.toISOString().split('T')[0]} onChange={(e) => setDateRange({ ...dateRange, end: new Date(e.target.value) })}/>
+            <DatePicker 
+              dateFormat="dd/MM/yyyy" 
+              required 
+              name="endDate" 
+              selected={dateRange.end} 
+              className="form-control" 
+              onChange={(date) => setDateRange({ ...dateRange, end: date })}
+            />
           </div>
+          <button 
+            className="btn btn-primary ms-2"
+            onClick={handleSearch}
+          >
+            Search
+          </button>
         </div>
       </div>
 
       <div className="row g-3">
         {/* Row 1: Key Metrics */}
-        <div className="col-12 col-md-3">
+        <div className="col">
           <div className="card p-3">
             <h5 className="card-title mb-2">Total Stock Value</h5>
             <p className="card-text display-6 text-primary mb-0">
-              ${dashboardData.stockInOutData?.totalValue?.toLocaleString() || 0}
+              ₹{dashboardData.metricsData?.totalStockValue?.toLocaleString() || 6851020}
             </p>
           </div>
         </div>
-        <div className="col-12 col-md-3">
+        <div className="col">
           <div className="card p-3">
-            <h5 className="card-title mb-2">Pending Bills</h5>
+            <h5 className="card-title mb-2">Total Pending Bills</h5>
             <p className="card-text display-6 text-danger mb-0">
-              ${dashboardData.pendingBills?.reduce((sum, bill) => sum + bill.amount, 0)?.toLocaleString() || 0}
+              ₹{dashboardData.metricsData?.totalPendingBills?.toLocaleString() || 95803}
             </p>
           </div>
         </div>
-        <div className="col-12 col-md-3">
+        <div className="col">
           <div className="card p-3">
-            <h5 className="card-title mb-2">Low Stock Items</h5>
+            <h5 className="card-title mb-2 d-flex align-items-center">Total Install <p style={{fontSize:"0.9rem", margin: "0", padding: "0"}}> (Pending)</p></h5>
             <p className="card-text display-6 text-warning mb-0">
-              {dashboardData.lowStockItems?.length || 0}
+              {dashboardData.metricsData?.totalPendingInstall || 13}
             </p>
           </div>
         </div>
-        <div className="col-12 col-md-3">
+        <div className="col">
           <div className="card p-3">
-            <h5 className="card-title mb-2">Monthly Revenue</h5>
+            <h5 className="card-title mb-2">Revenue</h5>
+            <p className="card-text display-6 text-info mb-0">
+              {/* ₹{dashboardData.monthlyRevenue?.currentMonth?.toLocaleString() || 784521} */}
+              ₹784521
+            </p>
+          </div>
+        </div>
+        <div className="col">
+          <div className="card p-3">
+            <h5 className="card-title mb-2">Profit</h5>
             <p className="card-text display-6 text-success mb-0">
-              ${dashboardData.monthlyRevenue?.currentMonth?.toLocaleString() || 0}
+              {/* ₹{dashboardData.monthlyRevenue?.currentMonthProfit?.toLocaleString() || 65302} */}
+              ₹65302
             </p>
           </div>
         </div>
@@ -280,7 +377,28 @@ const Dashboard = () => {
         {/* Row 2: Graphs */}
         <div className="col-12 col-md-6">
           <div className="card p-3">
-            <h5 className="card-title mb-2">Stock Movement</h5>
+             <div className="d-flex justify-content-between align-items-center">
+              <h5 className="card-title mb-2">Stock Movement</h5>
+              <select style={{maxWidth: "15rem"}} className="form-select" aria-label="Default select example" name="warrantee_guarantee_duration" onChange={(e) => handleLowerPartChange(index, "warrantee_guarantee_duration", e.target.value)}>
+                  <option>--Select item--</option>
+                  <option value="1">1 Month</option>
+                  <option value="3">3 Months</option>
+                  <option value="6">6 Months</option>
+                  <option value="12">1 Year</option>
+                  <option value="24">2 Years</option>
+                  <option value="36">3 Years</option>
+                  <option value="48">4 Years</option>
+                  <option value="60">5 Years</option>
+                  <option value="72">6 Years</option>
+                  <option value="84">7 Years</option>
+                  <option value="96">8 Years</option>
+                  <option value="108">9 Years</option>
+                  <option value="120">10 Years</option>
+                  <option value="180">15 Years</option>
+                  <option value="240">20 Years</option>
+                  <option value="300">25 Years</option>
+              </select>
+            </div> 
             <Bar 
               data={stockGraphData}
               options={{
@@ -294,7 +412,7 @@ const Dashboard = () => {
         </div>
         <div className="col-12 col-md-6">
           <div className="card p-3">
-            <h5 className="card-title mb-2">Revenue Trend</h5>
+            <h5 className="card-title mb-2">Revenue & Profit</h5>
             <Line 
               data={revenueGraphData}
               options={{
@@ -316,9 +434,10 @@ const Dashboard = () => {
               <h5 className="card-title mb-0">Low Stock Items</h5>
               <div className="d-flex">
                 <input
+                  placeholder="Threshold"
                   type="number"
                   value={stockFilter}
-                  onChange={(e) => setStockFilter(parseInt(e.target.value))}
+                  onChange={(e) => setStockFilter(parseInt(e.target.value) || 10)}
                   className="form-control form-control-sm me-2"
                   style={{ width: '100px' }}
                 />
@@ -385,11 +504,11 @@ const Dashboard = () => {
                 </tr>
               </thead>
               <tbody>
-                {dashboardData.pendingBills?.map((bill) => (
+                {dashboardData.metricsData?.pendingBillDetails?.map((bill) => (
                   <tr key={bill._id}>
                     <td>{bill.billNumber}</td>
                     <td>{bill.customerName}</td>
-                    <td>${bill.amount.toLocaleString()}</td>
+                    <td>₹{bill.amount.toLocaleString()}</td>
                     <td>
                       <span className={new Date(bill.dueDate) < new Date() ? 'badge bg-danger' : 'badge bg-secondary'}>
                         {new Date(bill.dueDate).toLocaleDateString()}
@@ -461,7 +580,7 @@ const Dashboard = () => {
               </div>
               <div className="modal-body">
                 <p className="mb-1">Customer: {selectedBill.customerName}</p>
-                <p className="mb-1">Amount: ${selectedBill.amount?.toLocaleString()}</p>
+                <p className="mb-1">Amount: ₹{selectedBill.amount?.toLocaleString()}</p>
                 <p className="mb-1">Due Date: {selectedBill.dueDate && new Date(selectedBill.dueDate).toLocaleDateString()}</p>
                 <p className="mb-0">Status: {selectedBill.status}</p>
               </div>

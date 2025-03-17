@@ -12,18 +12,18 @@ function AddStock() {
   const [time, setTime] = useState(new Date());
   const [sub_category, setSubCategory] = useState("")
   const [item, setItem] = useState("");
-  const [itemId, setItemId] = useState("");
-  const [brand, setBrand] = useState("");
-  const [brandId, setBrandId] = useState("");
-  const [color, setColor] = useState("");
-  const [capacity, setCapacity] = useState("");
-  const [height, setHeight] = useState("");
-  const [power, setPower] = useState("");
-  const [description, setDescription] = useState("");
-  const [model, setModel] = useState("");
+  const [item_id, setItemId] = useState("");
+  const [batch_brand, setBatchBrand] = useState("");
+  const [batch_brand_id, setBatchBrandId] = useState("");
+  const [batch_color, setBatchColor] = useState("");
+  const [batch_capacity, setBatchCapacity] = useState("");
+  const [batch_height, setBatchHeight] = useState("");
+  const [batch_power, setBatchPower] = useState("");
+  const [batch_description, setBatchDescription] = useState("");
+  const [batch_model, setBatchModel] = useState("");
   const [seller, setSeller] = useState("");
-  const [sellerId, setSellerId] = useState("");
-  const [quantity, setQuantity] = useState("");
+  const [seller_id, setSellerId] = useState("");
+  const [total_quantity, setTotalQuantity] = useState("");
   const [batch_no, setBatchNo] = useState("");
   const [batch_buy_price, setBatchBuyPrice] = useState("");
   const [batch_sell_price, setBatchSellPrice] = useState("");
@@ -39,6 +39,15 @@ function AddStock() {
   const [lowerPartEntries, setLowerPartEntries] = useState([
     {
       unique_code: "",
+      model: "",
+      brand: "",
+      brand_id: "",
+      color: "",
+      capacity: "",
+      height: "",
+      power: "",
+      description: "",
+      quantity: "",
       mfg_date: "",
       exp_date: "",
       item_buy_price: "",
@@ -55,12 +64,22 @@ function AddStock() {
   const [items, setItems] = useState([]);
   const [brands, setBrands] = useState([]);
   const [sellers, setSellers] = useState([]);
+  const [brandIndex, setBrandIndex] = useState(-1);
 
   const addLowerPartEntry = () => {
     setLowerPartEntries([
       ...lowerPartEntries,
       {
         unique_code: "",
+        model: "",
+        brand: "",
+        brand_id: "",
+        color: "",
+        capacity: "",
+        height: "",
+        power: "",
+        description: "",
+        quantity: "",
         mfg_date: "",
         exp_date: "",
         item_buy_price: "",
@@ -213,7 +232,7 @@ function AddStock() {
     fetchCompanyDetails();
   }, []);
 
-  const handleDropValueChange = (value, type) => {
+  const handleDropValueChange = (value, type, index) => {
     if (type == "SUBCATEGORY"){
       setSubCategory(value);
       setSubCategories([])
@@ -226,13 +245,19 @@ function AddStock() {
       setItem(value);
       setItems([])
       if(value != ""){fetchItems(value)};
-    } else if(type == "BRAND"){
-      setBrand(value);
+    } else if(type == "BATCHBRAND"){
+      setBrandIndex(-1)
+      setBatchBrand(value);
+      setBrands([])
+      if(value != ""){fetchBrands(value)};
+    } else if(type == "brand"){
+      handleLowerPartChange(index, type, value)
+      setBrandIndex(index)
       setBrands([])
       if(value != ""){fetchBrands(value)};
     }
   };
-  const handleSelect = (name, type, id) => {
+  const handleSelect = (name, type, id, index) => {
     if(type =="SUBCATEGORY"){
       setSubCategory(name);
       setSubCategories([]);
@@ -244,16 +269,20 @@ function AddStock() {
       setItem(name);
       setItemId(id);
       setItems([]);
-    } else if(type == "BRAND"){
-      setBrand(name);
-      setBrandId(id);
+    } else if(type == "BATCHBRAND"){
+      setBatchBrand(name);
+      setBatchBrandId(id);
+      setBrands([]);
+    } else if(type == "brand"){
+      handleLowerPartChange(index, "brand_id", id)
+      handleLowerPartChange(index, "brand", name)
       setBrands([]);
     }
   };
   const handleBuyPrice = (value, type) =>{
     let temp
-    if(type == "QUANTITY"){
-      setQuantity(value)
+    if(type == "TOTALQUANTITY"){
+      setTotalQuantity(value)
       if(batch_buy_price && value != "" && value != 0){
         temp = batch_buy_price/value
         setPerPeaceBuyPrice(temp);
@@ -263,21 +292,21 @@ function AddStock() {
       }
     } else if(type == "BATCHBUYPRICE"){
       setBatchBuyPrice(value)
-      if(quantity && value != "" && value != 0){
-        temp = value/quantity
+      if(total_quantity && value != "" && value != 0){
+        temp = value/total_quantity
         setPerPeaceBuyPrice(temp);
       } else if(per_peace_buy_price && value != "" && value != 0){
         temp = value/per_peace_buy_price
-        setQuantity(temp);
+        setTotalQuantity(temp);
       }
     } else if(type == "PERPEACEBUYPRICE"){
       setPerPeaceBuyPrice(value)
-      if(quantity && value != "" && value != 0){
-        temp = value*quantity
+      if(total_quantity && value != "" && value != 0){
+        temp = value*total_quantity
         setBatchBuyPrice(temp);
       } else if(batch_buy_price && value != "" && value != 0){
         temp = batch_buy_price/value
-        setQuantity(temp);
+        setTotalQuantity(temp);
       }
     }
   };
@@ -287,15 +316,18 @@ function AddStock() {
     setTime(new Date());
     setSubCategory("")
     setItem("")
-    setBrand("")
-    setColor("")
-    setCapacity("")
-    setHeight("")
-    setPower("")
-    setDescription("")
-    setModel("")
+    setItemId("")
+    setBatchBrand("")
+    setBatchBrandId("")
+    setBatchColor("")
+    setBatchCapacity("")
+    setBatchHeight("")
+    setBatchPower("")
+    setBatchDescription("")
+    setBatchModel("")
     setSeller("")
-    setQuantity("")
+    setSellerId("")
+    setTotalQuantity("")
     setBatchNo("")
     setBatchBuyPrice("")
     setBatchSellPrice("")
@@ -311,6 +343,15 @@ function AddStock() {
     setLowerPartEntries([
       {
         unique_code: "",
+        model: "",
+        brand: "",
+        brand_id: "",
+        color: "",
+        capacity: "",
+        height: "",
+        power: "",
+        description: "",
+        quantity: "",
         mfg_date: "",
         exp_date: "",
         item_buy_price: "",
@@ -322,9 +363,9 @@ function AddStock() {
   };
   const handleSubmit = async (event) => {
     event.preventDefault();
-    const data = {sl_no, date, time, sub_category, item, itemId, brand, brandId, color, capacity, height, power, description, model, seller, sellerId, quantity, batch_no, item_status, return_reason, remarks, stock_details: lowerPartEntries};
-    const additionalData = {batch_buy_price, batch_sell_price, per_peace_buy_price, per_peace_sell_price, batch_mfg_date, batch_exp_date, batch_warrantee_guarantee, batch_warrantee_guarantee_duration}
-    if(!data.date || !data.item || !data.quantity || !additionalData.per_peace_buy_price || !data.item_status){
+    const data = {sl_no, date, time, sub_category, item, item_id, seller, seller_id, total_quantity, batch_no, item_status, return_reason, remarks, stock_details: lowerPartEntries};
+    const additionalData = {batch_brand, batch_brand_id, batch_color, batch_capacity, batch_height, batch_power, batch_description, batch_model, batch_buy_price, batch_sell_price, per_peace_buy_price, per_peace_sell_price, batch_mfg_date, batch_exp_date, batch_warrantee_guarantee, batch_warrantee_guarantee_duration}
+    if(!data.date || !data.item || !data.total_quantity || !additionalData.per_peace_buy_price || !data.item_status){
       toastr.error("Please enter all required field.");
       return;
     }
@@ -351,262 +392,893 @@ function AddStock() {
     }
   };
 
+  const chunkArray = (array, chunkSize) => {
+    const result = [];
+    for (let i = 0; i < array.length; i += chunkSize) {
+      result.push(array.slice(i, i + chunkSize));
+    }
+    return result;
+  };
+
+  const getUpperPartVisibleFields = () => {
+    const fields = [];
+
+    if (stockStructure.date) {
+      fields.push(
+        <div className="col mb-3 d-flex flex-column" key="date">
+          <label className="form-label mx-3">Received Date <span className="ei-col-red">*</span></label>
+          <DatePicker
+            required
+            name="date"
+            selected={date}
+            className="form-control"
+            aria-describedby="emailHelp"
+            value={date}
+            onChange={(date) => setDate(date)}
+          />
+        </div>
+      );
+    }
+
+    if (stockStructure.time) {
+      fields.push(
+        <div className="col mb-3 d-flex flex-column" key="time">
+          <label className="form-label mx-3">Time </label>
+          <DatePicker
+            name="time"
+            selected={time}
+            className="form-control"
+            aria-describedby="emailHelp"
+            value={time}
+            onChange={(time) => setTime(time)}
+            showTimeSelect
+            showTimeSelectOnly
+            timeCaption="Select Time"
+            timeIntervals={10}
+            dateFormat="HH:mm aa"
+          />
+        </div>
+      );
+    }
+
+    if (stockStructure.sub_category) {
+      fields.push(
+        <div className="col mb-3" key="sub_category">
+          <label className="form-label mx-3">Sub Category </label>
+          <input
+            autoComplete="off"
+            placeholder="Enter sub category (optional)"
+            name="sub_category"
+            type="text"
+            maxLength={70}
+            className="form-control"
+            aria-describedby="emailHelp"
+            value={sub_category}
+            onChange={(e) => handleDropValueChange(e.target.value, "SUBCATEGORY")}
+          />
+          {sub_categories.length > 0 && (
+            <ul style={{ border: "1px solid #ccc", padding: "5px", marginTop: "2px", listStyleType: "none", maxHeight: "150px", overflowY: "auto", position: "absolute", background: "white", width: "25%" }}>
+              {sub_categories.map((item, index) => (
+                <li key={index} onClick={() => handleSelect(item, "SUBCATEGORY")} style={{ padding: "5px", cursor: "pointer", borderBottom: "1px solid #eee" }}>
+                  {item}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      );
+    }
+
+    if (stockStructure.sl_no) {
+      fields.push(
+        <div className="col mb-3" key="sl_no">
+          <label className="form-label mx-3">Sl No</label>
+          <input
+            placeholder="Enter Sl no"
+            name="sl_no"
+            type="text"
+            maxLength={70}
+            className="form-control"
+            aria-describedby="emailHelp"
+            value={sl_no}
+            onChange={(e) => setSlNo(e.target.value)}
+          />
+        </div>
+      );
+    }
+
+    if (stockStructure.item) {
+      fields.push(
+        <div className="col mb-3" key="item">
+          <label className="form-label mx-3">Item Name <span className="ei-col-red">*</span></label>
+          <input
+            required
+            placeholder="Enter item name"
+            autoComplete="off"
+            name="item"
+            type="text"
+            maxLength={244}
+            className="form-control"
+            aria-describedby="emailHelp"
+            value={item}
+            onChange={(e) => handleDropValueChange(e.target.value, "ITEM")}
+          />
+          <input hidden name="item_id" type="text" maxLength={244} className="form-control" aria-describedby="emailHelp" value={item_id} />
+          {items.length > 0 && (
+            <ul style={{ border: "1px solid #ccc", padding: "5px", marginTop: "2px", listStyleType: "none", maxHeight: "150px", overflowY: "auto", position: "absolute", background: "white", width: "25%" }}>
+              {items.map((item, index) => (
+                <li key={index} onClick={() => handleSelect(item.name, "ITEM", item._id)} style={{ padding: "5px", cursor: "pointer", borderBottom: "1px solid #eee" }}>
+                  {item.name}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      );
+    }
+
+    if (stockStructure.batch_brand) {
+      fields.push(
+        <div className="col mb-3" key="batch_brand">
+          <label className="form-label mx-3">Brand</label>
+          <input
+            placeholder="Enter brand name"
+            autoComplete="off"
+            name="batch_brand"
+            type="text"
+            maxLength={244}
+            className="form-control"
+            aria-describedby="emailHelp"
+            value={batch_brand}
+            onChange={(e) => handleDropValueChange(e.target.value, "BATCHBRAND")}
+          />
+          <input hidden name="batch_brand_id" type="text" maxLength={244} className="form-control" aria-describedby="emailHelp" value={batch_brand_id} />
+          {brandIndex === -1 && brands.length > 0 && (
+            <ul style={{ border: "1px solid #ccc", padding: "5px", marginTop: "2px", listStyleType: "none", maxHeight: "150px", overflowY: "auto", position: "absolute", background: "white", width: "25%" }}>
+              {brands.map((item, index) => (
+                <li key={index} onClick={() => handleSelect(item.name, "BATCHBRAND", item._id)} style={{ padding: "5px", cursor: "pointer", borderBottom: "1px solid #eee" }}>
+                  {item.name}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      );
+    }
+
+    if (stockStructure.batch_color) {
+      fields.push(
+        <div className="col mb-3" key="batch_color">
+          <label className="form-label mx-3">Color </label>
+          <input
+            placeholder="Enter color (if required)"
+            name="batch_color"
+            type="text"
+            maxLength={70}
+            className="form-control"
+            aria-describedby="emailHelp"
+            value={batch_color}
+            onChange={(e) => setBatchColor(e.target.value)}
+          />
+        </div>
+      );
+    }
+
+    if (stockStructure.batch_capacity) {
+      fields.push(
+        <div className="col mb-3" key="batch_capacity">
+          <label className="form-label mx-3">Capacity</label>
+          <input
+            placeholder="Enter capacity (if required)"
+            name="batch_capacity"
+            type="text"
+            maxLength={70}
+            className="form-control"
+            aria-describedby="emailHelp"
+            value={batch_capacity}
+            onChange={(e) => setBatchCapacity(e.target.value)}
+          />
+        </div>
+      );
+    }
+
+    if (stockStructure.batch_height) {
+      fields.push(
+        <div className="col mb-3" key="batch_height">
+          <label className="form-label mx-3">Height/Width</label>
+          <input
+            placeholder="Enter height/width (if required)"
+            name="batch_height"
+            type="text"
+            maxLength={70}
+            className="form-control"
+            aria-describedby="emailHelp"
+            value={batch_height}
+            onChange={(e) => setBatchHeight(e.target.value)}
+          />
+        </div>
+      );
+    }
+
+    if (stockStructure.batch_power) {
+      fields.push(
+        <div className="col mb-3" key="batch_power">
+          <label className="form-label mx-3">Power/Watt</label>
+          <input
+            placeholder="Enter power/watt (if required)"
+            name="batch_power"
+            type="text"
+            maxLength={70}
+            className="form-control"
+            aria-describedby="emailHelp"
+            value={batch_power}
+            onChange={(e) => setBatchPower(e.target.value)}
+          />
+        </div>
+      );
+    }
+
+    if (stockStructure.batch_model) {
+      fields.push(
+        <div className="col mb-3" key="batch_model">
+          <label className="form-label mx-3">Model</label>
+          <input
+            placeholder="Enter model number (if available)"
+            name="batch_model"
+            type="text"
+            maxLength={70}
+            className="form-control"
+            aria-describedby="emailHelp"
+            value={batch_model}
+            onChange={(e) => setBatchModel(e.target.value)}
+          />
+        </div>
+      );
+    }
+
+    if (stockStructure.batch_description) {
+      fields.push(
+        <div className="col mb-3" key="batch_description">
+          <label className="form-label mx-3">Description</label>
+          <input
+            placeholder="Enter description (it will help to find the item)"
+            name="batch_description"
+            type="text"
+            maxLength={70}
+            className="form-control"
+            aria-describedby="emailHelp"
+            value={batch_description}
+            onChange={(e) => setBatchDescription(e.target.value)}
+          />
+        </div>
+      );
+    }
+
+    if (stockStructure.seller) {
+      fields.push(
+        <div className="col mb-3" key="seller">
+          <label className="form-label mx-3">Seller</label>
+          <input
+            placeholder="Enter seller name (optional)"
+            autoComplete="off"
+            name="seller"
+            type="text"
+            maxLength={244}
+            className="form-control"
+            aria-describedby="emailHelp"
+            value={seller}
+            onChange={(e) => handleDropValueChange(e.target.value, "SELLER")}
+          />
+          <input hidden name="seller_id" type="text" maxLength={244} className="form-control" aria-describedby="emailHelp" value={seller_id} />
+          {sellers.length > 0 && (
+            <ul style={{ border: "1px solid #ccc", padding: "5px", marginTop: "2px", listStyleType: "none", maxHeight: "150px", overflowY: "auto", position: "absolute", background: "white", width: "25%" }}>
+              {sellers.map((item, index) => (
+                <li key={index} onClick={() => handleSelect(item.name, "SELLER", item._id)} style={{ padding: "5px", cursor: "pointer", borderBottom: "1px solid #eee" }}>
+                  {item.name}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      );
+    }
+
+    if (stockStructure.total_quantity) {
+      fields.push(
+        <div className="col mb-3" key="total_quantity">
+          <label className="form-label mx-3">Total Quantity <span className="ei-col-red">*</span></label>
+          <input
+            required
+            placeholder="Enter total quantity"
+            name="total_quantity"
+            type="number"
+            className="form-control"
+            aria-describedby="emailHelp"
+            value={total_quantity}
+            onChange={(e) => handleBuyPrice(e.target.value, "TOTALQUANTITY")}
+          />
+        </div>
+      );
+    }
+
+    if (stockStructure.batch_no) {
+      fields.push(
+        <div className="col mb-3" key="batch_no">
+          <label className="form-label mx-3">Batch No </label>
+          <input
+            placeholder="Enter batch number"
+            name="batch_no"
+            type="text"
+            maxLength={70}
+            className="form-control"
+            aria-describedby="emailHelp"
+            value={batch_no}
+            onChange={(e) => setBatchNo(e.target.value)}
+          />
+        </div>
+      );
+    }
+
+    if (stockStructure.batch_buy_price) {
+      fields.push(
+        <div className="col mb-3" key="batch_buy_price">
+          <label className="form-label mx-3">Batch Buy Price</label>
+          <input
+            placeholder="Enter batch buy price"
+            name="batch_buy_price"
+            type="number"
+            className="form-control"
+            aria-describedby="emailHelp"
+            value={batch_buy_price}
+            onChange={(e) => handleBuyPrice(e.target.value, "BATCHBUYPRICE")}
+          />
+        </div>
+      );
+    }
+
+    if (stockStructure.batch_sell_price) {
+      fields.push(
+        <div className="col mb-3" key="batch_sell_price">
+          <label className="form-label mx-3">Batch Sell Price</label>
+          <input
+            placeholder="Enter batch sell price (Optional)"
+            name="batch_sell_price"
+            type="number"
+            className="form-control"
+            aria-describedby="emailHelp"
+            value={batch_sell_price}
+            onChange={(e) => setBatchSellPrice(e.target.value)}
+          />
+        </div>
+      );
+    }
+
+    if (stockStructure.per_peace_buy_price) {
+      fields.push(
+        <div className="col mb-3" key="per_peace_buy_price">
+          <label className="form-label mx-3">Per Piece Buy Price <span className="ei-col-red">*</span></label>
+          <input
+            required
+            placeholder="Enter item buy price"
+            name="per_peace_buy_price"
+            type="number"
+            className="form-control"
+            aria-describedby="emailHelp"
+            value={per_peace_buy_price}
+            onChange={(e) => handleBuyPrice(e.target.value, "PERPEACEBUYPRICE")}
+          />
+        </div>
+      );
+    }
+
+    if (stockStructure.per_peace_sell_price) {
+      fields.push(
+        <div className="col mb-3" key="per_peace_sell_price">
+          <label className="form-label mx-3">Per Piece Sell Price </label>
+          <input
+            placeholder="Enter item sell price"
+            name="per_peace_sell_price"
+            type="number"
+            className="form-control"
+            aria-describedby="emailHelp"
+            value={per_peace_sell_price}
+            onChange={(e) => setPerPeaceSellPrice(e.target.value)}
+          />
+        </div>
+      );
+    }
+
+    if (stockStructure.batch_mfg_date) {
+      fields.push(
+        <div className="col mb-3" key="batch_mfg_date">
+          <label className="form-label mx-3">Batch Mfg Date</label>
+          <input
+            name="batch_mfg_date"
+            type="date"
+            className="form-control"
+            aria-describedby="emailHelp"
+            value={batch_mfg_date}
+            onChange={(e) => setBatchMfgDate(e.target.value)}
+          />
+        </div>
+      );
+    }
+
+    if (stockStructure.batch_exp_date) {
+      fields.push(
+        <div className="col mb-3" key="batch_exp_date">
+          <label className="form-label mx-3">Batch Exp Date</label>
+          <input
+            name="batch_exp_date"
+            type="date"
+            className="form-control"
+            aria-describedby="emailHelp"
+            value={batch_exp_date}
+            onChange={(e) => setBatchExpDate(e.target.value)}
+          />
+        </div>
+      );
+    }
+
+    if (stockStructure.batch_warrantee_guarantee) {
+      fields.push(
+        <div className="col mb-3" key="batch_warrantee_guarantee">
+          <label className="form-label">Batch Warrantee/Guarantee</label>
+          <select
+            className="form-select"
+            aria-label="Default select example"
+            name="batch_warrantee_guarantee"
+            value={batch_warrantee_guarantee}
+            onChange={(e) => setBatchWarranteeGuarente(e.target.value)}
+          >
+            <option>--Select if applicable--</option>
+            <option value="WARRANTEE">Warrantee Applicable</option>
+            <option value="GUARENTE">Guarantee Applicable</option>
+            <option value="NOTHING">Nothing Applicable</option>
+          </select>
+        </div>
+      );
+    }
+
+    if (stockStructure.batch_warrantee_guarantee_duration && (batch_warrantee_guarantee === "WARRANTEE" || batch_warrantee_guarantee === "GUARENTE")) {
+      fields.push(
+        <div className="col mb-3" key="batch_warrantee_guarantee_duration">
+          <label className="form-label">Batch Warrantee/Guarantee Duration</label>
+          <select
+            className="form-select"
+            aria-label="Default select example"
+            name="batch_warrantee_guarantee_duration"
+            value={batch_warrantee_guarantee_duration}
+            onChange={(e) => setBatchWarranteeGuarenteDuration(e.target.value)}
+          >
+            <option>--Select duration if applicable--</option>
+            <option value="1">1 Month</option>
+            <option value="3">3 Months</option>
+            <option value="6">6 Months</option>
+            <option value="12">1 Year</option>
+            <option value="24">2 Years</option>
+            <option value="36">3 Years</option>
+            <option value="48">4 Years</option>
+            <option value="60">5 Years</option>
+            <option value="72">6 Years</option>
+            <option value="84">7 Years</option>
+            <option value="96">8 Years</option>
+            <option value="108">9 Years</option>
+            <option value="120">10 Years</option>
+            <option value="180">15 Years</option>
+            <option value="240">20 Years</option>
+            <option value="300">25 Years</option>
+          </select>
+        </div>
+      );
+    }
+
+    if (stockStructure.item_status) {
+      fields.push(
+        <div className="col mb-3" key="item_status">
+          <label className="form-label">Item Status <span className="ei-col-red">*</span></label>
+          <select
+            required
+            className="form-select"
+            aria-label="Default select example"
+            name="item_status"
+            value={item_status}
+            onChange={(e) => setItemStatus(e.target.value)}
+          >
+            <option value="">--Select item status--</option>
+            <option value="RECEIVED">Received</option>
+            <option value="ACCEPTED">Accepted</option>
+            <option value="RETURNED">Returned</option>
+          </select>
+        </div>
+      );
+    }
+
+    if (stockStructure.return_reason && item_status === "RETURNED") {
+      fields.push(
+        <div className="col mb-3" key="return_reason">
+          <label className="form-label mx-3">Return Reason</label>
+          <input
+            placeholder="Describe return reason"
+            name="return_reason"
+            type="text"
+            maxLength={70}
+            className="form-control"
+            aria-describedby="emailHelp"
+            value={return_reason}
+            onChange={(e) => setReturnReason(e.target.value)}
+          />
+        </div>
+      );
+    }
+
+    if (stockStructure.remarks) {
+      fields.push(
+        <div className="col mb-3" key="remarks">
+          <label className="form-label mx-3">Remarks (If any)</label>
+          <input
+            placeholder="Enter remarks if any"
+            name="remarks"
+            type="text"
+            maxLength={70}
+            className="form-control"
+            aria-describedby="emailHelp"
+            value={remarks}
+            onChange={(e) => setRemarks(e.target.value)}
+          />
+        </div>
+      );
+    }
+
+    return fields;
+  };
+
+  // Collect all visible fields for a single lower part entry
+  const getLowerPartVisibleFields = (entry, index) => {
+    const fields = [];
+
+    if (stockStructure.unique_code) {
+      fields.push(
+        <div className="col mb-3" key={`unique_code_${index}`}>
+          <label className="form-label mx-3">Unique Code</label>
+          <input
+            placeholder="Enter unique code (if available)"
+            name="unique_code"
+            type="text"
+            maxLength={70}
+            className="form-control"
+            aria-describedby="emailHelp"
+            value={entry.unique_code}
+            onChange={(e) => handleLowerPartChange(index, "unique_code", e.target.value)}
+          />
+        </div>
+      );
+    }
+
+    if (stockStructure.brand) {
+      fields.push(
+        <div className="col mb-3" key={`brand_${index}`}>
+          <label className="form-label mx-3">Brand</label>
+          <input
+            placeholder="Enter brand name"
+            autoComplete="off"
+            name="brand"
+            type="text"
+            maxLength={244}
+            className="form-control"
+            aria-describedby="emailHelp"
+            value={entry.brand}
+            onChange={(e) => handleDropValueChange(e.target.value, "brand", index)}
+          />
+          <input hidden name="brand_id" type="text" maxLength={244} className="form-control" aria-describedby="emailHelp" value={entry.brand_id} />
+          {brandIndex === index && brands.length > 0 && (
+            <ul style={{ border: "1px solid #ccc", padding: "5px", marginTop: "2px", listStyleType: "none", maxHeight: "150px", overflowY: "auto", position: "absolute", background: "white", width: "25%" }}>
+              {brands.map((item, innerIndex) => (
+                <li key={innerIndex} onClick={() => handleSelect(item.name, "brand", item._id, index)} style={{ padding: "5px", cursor: "pointer", borderBottom: "1px solid #eee" }}>
+                  {item.name}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      );
+    }
+
+    if (stockStructure.mfg_date) {
+      fields.push(
+        <div className="col mb-3" key={`mfg_date_${index}`}>
+          <label className="form-label mx-3">Item Mfg Date</label>
+          <input
+            name="mfg_date"
+            type="date"
+            maxLength={70}
+            className="form-control"
+            aria-describedby="emailHelp"
+            value={entry.mfg_date}
+            onChange={(e) => handleLowerPartChange(index, "mfg_date", e.target.value)}
+          />
+        </div>
+      );
+    }
+
+    if (stockStructure.exp_date) {
+      fields.push(
+        <div className="col mb-3" key={`exp_date_${index}`}>
+          <label className="form-label mx-3">Item Exp Date</label>
+          <input
+            name="exp_date"
+            type="date"
+            maxLength={70}
+            className="form-control"
+            aria-describedby="emailHelp"
+            value={entry.exp_date}
+            onChange={(e) => handleLowerPartChange(index, "exp_date", e.target.value)}
+          />
+        </div>
+      );
+    }
+
+    if (stockStructure.color) {
+      fields.push(
+        <div className="col mb-3" key={`color_${index}`}>
+          <label className="form-label mx-3">Color </label>
+          <input
+            placeholder="Enter color (if required)"
+            name="color"
+            type="text"
+            maxLength={70}
+            className="form-control"
+            aria-describedby="emailHelp"
+            value={entry.color}
+            onChange={(e) => handleLowerPartChange(index, "color", e.target.value)}
+          />
+        </div>
+      );
+    }
+
+    if (stockStructure.capacity) {
+      fields.push(
+        <div className="col mb-3" key={`capacity_${index}`}>
+          <label className="form-label mx-3">Capacity</label>
+          <input
+            placeholder="Enter capacity (if required)"
+            name="capacity"
+            type="text"
+            maxLength={70}
+            className="form-control"
+            aria-describedby="emailHelp"
+            value={entry.capacity}
+            onChange={(e) => handleLowerPartChange(index, "capacity", e.target.value)}
+          />
+        </div>
+      );
+    }
+
+    if (stockStructure.height) {
+      fields.push(
+        <div className="col mb-3" key={`height_${index}`}>
+          <label className="form-label mx-3">Height/Width</label>
+          <input
+            placeholder="Enter height/width (if required)"
+            name="height"
+            type="text"
+            maxLength={70}
+            className="form-control"
+            aria-describedby="emailHelp"
+            value={entry.height}
+            onChange={(e) => handleLowerPartChange(index, "height", e.target.value)}
+          />
+        </div>
+      );
+    }
+
+    if (stockStructure.power) {
+      fields.push(
+        <div className="col mb-3" key={`power_${index}`}>
+          <label className="form-label mx-3">Power/Watt</label>
+          <input
+            placeholder="Enter power/watt (if required)"
+            name="power"
+            type="text"
+            maxLength={70}
+            className="form-control"
+            aria-describedby="emailHelp"
+            value={entry.power}
+            onChange={(e) => handleLowerPartChange(index, "power", e.target.value)}
+          />
+        </div>
+      );
+    }
+
+    if (stockStructure.model) {
+      fields.push(
+        <div className="col mb-3" key={`model_${index}`}>
+          <label className="form-label mx-3">Model</label>
+          <input
+            placeholder="Enter model number (if available)"
+            name="model"
+            type="text"
+            maxLength={70}
+            className="form-control"
+            aria-describedby="emailHelp"
+            value={entry.model}
+            onChange={(e) => handleLowerPartChange(index, "model", e.target.value)}
+          />
+        </div>
+      );
+    }
+
+    if (stockStructure.description) {
+      fields.push(
+        <div className="col mb-3" key={`description_${index}`}>
+          <label className="form-label mx-3">Description</label>
+          <input
+            placeholder="Enter description (it will help to find the item)"
+            name="description"
+            type="text"
+            maxLength={70}
+            className="form-control"
+            aria-describedby="emailHelp"
+            value={entry.description}
+            onChange={(e) => handleLowerPartChange(index, "description", e.target.value)}
+          />
+        </div>
+      );
+    }
+
+    if (stockStructure.quantity) {
+      fields.push(
+        <div className="col mb-3" key={`quantity_${index}`}>
+          <label className="form-label mx-3">Quantity <span className="ei-col-red">*</span></label>
+          <input
+            required
+            placeholder="Enter quantity"
+            name="quantity"
+            type="number"
+            className="form-control"
+            aria-describedby="emailHelp"
+            value={entry.quantity}
+            onChange={(e) => handleLowerPartChange(index, "quantity", e.target.value)}
+          />
+        </div>
+      );
+    }
+
+    if (stockStructure.item_buy_price) {
+      fields.push(
+        <div className="col mb-3" key={`item_buy_price_${index}`}>
+          <label className="form-label mx-3">Item Buy Price</label>
+          <input
+            placeholder="Enter item buy price (if required)"
+            name="item_buy_price"
+            type="number"
+            maxLength={70}
+            className="form-control"
+            aria-describedby="emailHelp"
+            value={entry.item_buy_price}
+            onChange={(e) => handleLowerPartChange(index, "item_buy_price", e.target.value)}
+          />
+        </div>
+      );
+    }
+
+    if (stockStructure.item_sell_price) {
+      fields.push(
+        <div className="col mb-3" key={`item_sell_price_${index}`}>
+          <label className="form-label mx-3">Item Sell Price</label>
+          <input
+            placeholder="Enter item buy price (optional)"
+            name="item_sell_price"
+            type="number"
+            maxLength={70}
+            className="form-control"
+            aria-describedby="emailHelp"
+            value={entry.item_sell_price}
+            onChange={(e) => handleLowerPartChange(index, "item_sell_price", e.target.value)}
+          />
+        </div>
+      );
+    }
+
+    if (stockStructure.warrantee_guarantee) {
+      fields.push(
+        <div className="col mb-3" key={`warrantee_guarantee_${index}`}>
+          <label className="form-label">Warrantee/Guarantee</label>
+          <select
+            className="form-select"
+            aria-label="Default select example"
+            name="warrantee_guarantee"
+            value={entry.warrantee_guarantee}
+            onChange={(e) => handleLowerPartChange(index, "warrantee_guarantee", e.target.value)}
+          >
+            <option>--Select if applicable--</option>
+            <option value="WARRANTEE">Warrantee Applicable</option>
+            <option value="GUARENTE">Guarantee Applicable</option>
+            <option value="NOTHING">Nothing Applicable</option>
+          </select>
+        </div>
+      );
+    }
+
+    if (stockStructure.warrantee_guarantee_duration && (entry.warrantee_guarantee === "WARRANTEE" || entry.warrantee_guarantee === "GUARENTE")) {
+      fields.push(
+        <div className="col mb-3" key={`warrantee_guarantee_duration_${index}`}>
+          <label className="form-label">Warrantee/Guarantee Duration</label>
+          <select
+            className="form-select"
+            aria-label="Default select example"
+            name="warrantee_guarantee_duration"
+            value={entry.warrantee_guarantee_duration}
+            onChange={(e) => handleLowerPartChange(index, "warrantee_guarantee_duration", e.target.value)}
+          >
+            <option>--Select duration--</option>
+            <option value="1">1 Month</option>
+            <option value="3">3 Months</option>
+            <option value="6">6 Months</option>
+            <option value="12">1 Year</option>
+            <option value="24">2 Years</option>
+            <option value="36">3 Years</option>
+            <option value="48">4 Years</option>
+            <option value="60">5 Years</option>
+            <option value="72">6 Years</option>
+            <option value="84">7 Years</option>
+            <option value="96">8 Years</option>
+            <option value="108">9 Years</option>
+            <option value="120">10 Years</option>
+            <option value="180">15 Years</option>
+            <option value="240">20 Years</option>
+            <option value="300">25 Years</option>
+          </select>
+        </div>
+      );
+    }
+
+    return fields;
+  };
+
   return (
     <div className="container my-2">
-      {isStockStructure && <form onSubmit={handleSubmit}>
-        <div className="row">
-            {stockStructure.date && <div className="col mb-3 d-flex flex-column">
-                <label className="form-label mx-3">Received Date <span className="ei-col-red">*</span></label>
-                <DatePicker required name="date" selected={date} className="form-control" aria-describedby="emailHelp" value={date} onChange={(date) => setDate(date)}/>
-            </div>}
-            {stockStructure.time && <div className="col mb-3 d-flex flex-column">
-                <label className="form-label mx-3">Time </label>
-                <DatePicker name="time" selected={time} className="form-control" aria-describedby="emailHelp" value={time} onChange={(time) => setTime(time)} showTimeSelect showTimeSelectOnly timeCaption="Select Time" timeIntervals={10} dateFormat="HH:mm aa"/>
-            </div>}
-            {stockStructure.sub_category && <div className="col mb-3">
-                <label className="form-label mx-3">Sub Category </label>
-                <input autoComplete="off" placeholder="Enter sub category (optional)" name="sub_category" type="text" maxLength={70} className="form-control" aria-describedby="emailHelp" value={sub_category} onChange={(e) => handleDropValueChange(e.target.value, "SUBCATEGORY")}/>
-                {sub_categories.length > 0 && (
-                  <ul style={{ border: "1px solid #ccc", padding: "5px", marginTop: "2px", listStyleType: "none", maxHeight: "150px", overflowY: "auto", position: "absolute", background: "white", width: "25%" }}>
-                  {sub_categories.map((item, index) => (
-                    <li key={index} onClick={() => handleSelect(item, "SUBCATEGORY")} style={{ padding: "5px", cursor: "pointer", borderBottom: "1px solid #eee",}}>{item}</li>
+      {isStockStructure && (
+        <form onSubmit={handleSubmit}>
+          {/* Upper part: Render visible fields in rows of 3 */}
+          {chunkArray(getUpperPartVisibleFields(), 3).map((rowFields, rowIndex) => (
+            <div className="row" key={`upper_row_${rowIndex}`}>
+              {rowFields}
+            </div>
+          ))}
+
+          {/* Lower part: Render visible fields for each entry in rows of 3 */}
+          {(stockStructure.unique_code || stockStructure.mfg_date || stockStructure.exp_date || stockStructure.item_buy_price || stockStructure.item_sell_price || stockStructure.warrantee_guarantee || stockStructure.warrantee_guarantee_duration || stockStructure.brand || stockStructure.color || stockStructure.capacity || stockStructure.height || stockStructure.power || stockStructure.model || stockStructure.description || stockStructure.quantity) && (
+            <div>
+              <hr />
+              <h6>Fill the below form if any specific item has any specific properties. You can specify multiple items with "+Add More" button</h6>
+              {lowerPartEntries.map((entry, index) => (
+                <div key={index} className="border p-3 mb-3">
+                  {/* Render visible fields for this entry in rows of 3 */}
+                  {chunkArray(getLowerPartVisibleFields(entry, index), 3).map((rowFields, rowIndex) => (
+                    <div className="row" key={`lower_entry_${index}_row_${rowIndex}`}>
+                      {rowFields}
+                    </div>
                   ))}
-                </ul>)}
-            </div>}
-            {stockStructure.sl_no && <div className="col mb-3">
-                <label className="form-label mx-3">Sl No</label>
-                <input placeholder="Enter Sl no" name="sl_no" type="text" maxLength={70} className="form-control" aria-describedby="emailHelp" value={sl_no} onChange={(e) => setSlNo(e.target.value)}/>
-            </div>}
-        </div>
-        <div className="row">
-          {stockStructure.item && <div className="col mb-3">
-              <label className="form-label mx-3">Item Name <span className="ei-col-red">*</span></label>
-              <input required placeholder="Enter item name" autoComplete="off" name="item" type="text" maxLength={244} className="form-control" aria-describedby="emailHelp" value={item} onChange={(e) => {handleDropValueChange(e.target.value, "ITEM")}} />
-              <input hidden name="itemId" type="text" maxLength={244} className="form-control" aria-describedby="emailHelp" value={itemId} />
-              {items.length > 0 && (
-                <ul style={{ border: "1px solid #ccc", padding: "5px", marginTop: "2px", listStyleType: "none", maxHeight: "150px", overflowY: "auto", position: "absolute", background: "white", width: "25%" }}>
-                {items.map((item, index) => (
-                  <li key={index} onClick={() => handleSelect(item.name, "ITEM", item._id)} style={{ padding: "5px", cursor: "pointer", borderBottom: "1px solid #eee",}}>{item.name}</li>
-                ))}
-              </ul>)}
-            </div>}
-          {stockStructure.brand && <div className="col mb-3">
-              <label className="form-label mx-3">Brand</label>
-              <input placeholder="Enter brand name" autoComplete="off" name="brand" type="text" maxLength={244} className="form-control" aria-describedby="emailHelp" value={brand} onChange={(e) => {handleDropValueChange(e.target.value, "BRAND")}} />
-              <input hidden name="brandId" type="text" maxLength={244} className="form-control" aria-describedby="emailHelp" value={brandId} />
-              {brands.length > 0 && (
-                <ul style={{ border: "1px solid #ccc", padding: "5px", marginTop: "2px", listStyleType: "none", maxHeight: "150px", overflowY: "auto", position: "absolute", background: "white", width: "25%" }}>
-                {brands.map((item, index) => (
-                  <li key={index} onClick={() => handleSelect(item.name, "BRAND", item._id)} style={{ padding: "5px", cursor: "pointer", borderBottom: "1px solid #eee",}}>{item.name}</li>
-                ))}
-              </ul>)}
-            </div>}
-        </div>
-        <div className="row">  
-            {stockStructure.color && <div className="col mb-3">
-                <label className="form-label mx-3">Color </label>
-                <input placeholder="Enter color (if required)" name="color" type="text" maxLength={70} className="form-control" aria-describedby="emailHelp" value={color} onChange={(e) => setColor(e.target.value)}/>
-            </div>}
-            {stockStructure.capacity && <div className="col mb-3">
-                <label className="form-label mx-3">Capacity</label>
-                <input placeholder="Enter capacity (if required)" name="capacity" type="text" maxLength={70} className="form-control" aria-describedby="emailHelp" value={capacity} onChange={(e) => setCapacity(e.target.value)}/>
-            </div>}
-            {stockStructure.height && <div className="col mb-3">
-                <label className="form-label mx-3">Height/Width</label>
-                <input placeholder="Enter height/width (if required)" name="height" type="text" maxLength={70} className="form-control" aria-describedby="emailHelp" value={height} onChange={(e) => setHeight(e.target.value)}/>
-            </div>}
-            {stockStructure.power && <div className="col mb-3">
-                <label className="form-label mx-3">Power/Watt</label>
-                <input placeholder="Enter power/watt (if required)" name="power" type="text" maxLength={70} className="form-control" aria-describedby="emailHelp" value={power} onChange={(e) => setPower(e.target.value)}/>
-            </div>}
-        </div>
-        <div className="row">
-            {stockStructure.model && <div className="col mb-3">
-                <label className="form-label mx-3">Model</label>
-                <input placeholder="Enter model number (if available)"  name="model" type="text" maxLength={70} className="form-control" aria-describedby="emailHelp" value={model} onChange={(e) => setModel(e.target.value)}/>
-            </div>}
-            {stockStructure.description && <div className="col mb-3">
-                <label className="form-label mx-3">Description</label>
-                <input placeholder="Enter description (it will help to find the item)"name="description" type="text" maxLength={70} className="form-control" aria-describedby="emailHelp" value={description} onChange={(e) => setDescription(e.target.value)}/>
-            </div>}
-            {stockStructure.seller && <div className="col mb-3">
-                <label className="form-label mx-3">Seller</label>
-                <input placeholder="Enter seller name (optional)" autoComplete="off" name="seller" type="text" maxLength={244} className="form-control" aria-describedby="emailHelp" value={seller} onChange={(e) => {handleDropValueChange(e.target.value, "SELLER")}} />
-                <input hidden name="sellerId" type="text" maxLength={244} className="form-control" aria-describedby="emailHelp" value={sellerId} />
-                {sellers.length > 0 && (
-                  <ul style={{ border: "1px solid #ccc", padding: "5px", marginTop: "2px", listStyleType: "none", maxHeight: "150px", overflowY: "auto", position: "absolute", background: "white", width: "25%" }}>
-                  {sellers.map((item, index) => (
-                    <li key={index} onClick={() => handleSelect(item.name, "SELLER",  item._id)} style={{ padding: "5px", cursor: "pointer", borderBottom: "1px solid #eee",}}>{item.name}</li>
-                  ))}
-                </ul>)}
-            </div>}
-        </div>
-        <div className="row">  
-            {stockStructure.quantity && <div className="col mb-3">
-                <label className="form-label mx-3">Quantity <span className="ei-col-red">*</span></label>
-                <input required placeholder="Enter quantity" name="quantity" type="NUMBER" className="form-control" aria-describedby="emailHelp" value={quantity} onChange={(e) => handleBuyPrice(e.target.value, "QUANTITY")}/>
-            </div>}
-            {stockStructure.batch_no && <div className="col mb-3">
-                <label className="form-label mx-3">Batch No </label>
-                <input placeholder="Enter batch number" name="batch_no" type="text" maxLength={70} className="form-control" aria-describedby="emailHelp" value={batch_no} onChange={(e) => setBatchNo(e.target.value)}/>
-            </div>}
-            {stockStructure.batch_buy_price && <div className="col mb-3">
-                <label className="form-label mx-3">Batch Buy Price</label>
-                <input placeholder="Enter batch buy price" name="batch_buy_price" type="NUMBER" className="form-control" aria-describedby="emailHelp" value={batch_buy_price} onChange={(e) => handleBuyPrice(e.target.value, "BATCHBUYPRICE")}/>
-            </div>}
-            {stockStructure.batch_sell_price && <div className="col mb-3">
-                <label className="form-label mx-3">Batch Sell Price</label>
-                <input placeholder="Enter batch sell price (Optional)"  name="batch_sell_price" type="NUMBER" className="form-control" aria-describedby="emailHelp" value={batch_sell_price} onChange={(e) => setBatchSellPrice(e.target.value)}/>
-            </div>}
-        </div>
-        <div className="row">  
-            {stockStructure.per_peace_buy_price && <div className="col mb-3">
-                <label className="form-label mx-3">Per Peace Buy Price <span className="ei-col-red">*</span></label>
-                <input required placeholder="Enter item buy price"  name="per_peace_buy_price" type="number" className="form-control" aria-describedby="emailHelp" value={per_peace_buy_price} onChange={(e) => handleBuyPrice(e.target.value, "PERPEACEBUYPRICE")}/>
-            </div>}
-            {stockStructure.per_peace_sell_price && <div className="col mb-3">
-                <label className="form-label mx-3">Per Peace Sell Price </label>
-                <input placeholder="Enter item sell price"  name="per_peace_sell_price" type="number" className="form-control" aria-describedby="emailHelp" value={per_peace_sell_price} onChange={(e) => setPerPeaceSellPrice(e.target.value)}/>
-            </div>}
-            {stockStructure.batch_mfg_date && <div className="col mb-3">
-                <label className="form-label mx-3">Batch Mfg Date</label>
-                <input name="batch_mfg_date" type="date" className="form-control" aria-describedby="emailHelp" value={batch_mfg_date} onChange={(e) => setBatchMfgDate(e.target.value)}/>
-            </div>}
-            {stockStructure.batch_exp_date && <div className="col mb-3">
-                <label className="form-label mx-3">Batch Exp Date</label>
-                <input name="batch_exp_date" type="date" className="form-control" aria-describedby="emailHelp" value={batch_exp_date} onChange={(e) => setBatchExpDate(e.target.value)}/>
-            </div>}
-        </div>
-        <div className="row">
-            {stockStructure.batch_warrantee_guarantee && <div className="col mb-3">
-              <label className="form-label">Batch Warrantee/Guarente</label>
-              <select className="form-select" aria-label="Default select example" name="batch_warrantee_guarantee" value={batch_warrantee_guarantee} onChange={(e) => setBatchWarranteeGuarente(e.target.value)}>
-                  <option>--Select if applicable--</option>
-                  <option value="WARRANTEE">Warrantee Applicable</option>
-                  <option value="GUARENTE">Guarente Applicable</option>
-                  <option value="NOTHING">Nothing Applicable</option>
-              </select>
-            </div>}
-            {stockStructure.batch_warrantee_guarantee_duration && ((batch_warrantee_guarantee == "WARRANTEE") || (batch_warrantee_guarantee == "GUARENTE")) && <div className="col mb-3">
-              <label className="form-label">Batch Warrantee/Guarente Duration</label>
-              <select className="form-select" aria-label="Default select example" name="batch_warrantee_guarantee_duration" value={batch_warrantee_guarantee_duration} onChange={(e) => setBatchWarranteeGuarenteDuration(e.target.value)}>
-                  <option>--Select duration if applicable--</option>
-                  <option value="1">1 Month</option>
-                  <option value="3">3 Months</option>
-                  <option value="6">6 Months</option>
-                  <option value="12">1 Year</option>
-                  <option value="24">2 Years</option>
-                  <option value="36">3 Years</option>
-                  <option value="48">4 Years</option>
-                  <option value="60">5 Years</option>
-                  <option value="72">6 Years</option>
-                  <option value="84">7 Years</option>
-                  <option value="96">8 Years</option>
-                  <option value="108">9 Years</option>
-                  <option value="120">10 Years</option>
-                  <option value="180">15 Years</option>
-                  <option value="240">20 Years</option>
-                  <option value="300">25 Years</option>
-              </select>
-            </div>}
-            {stockStructure.item_status && <div className="col mb-3">
-              <label className="form-label">Item Status <span className="ei-col-red">*</span></label>
-              <select required className="form-select" aria-label="Default select example" name="item_status" value={item_status} onChange={(e) => setItemStatus(e.target.value)}>
-                  <option value="">--Select item status--</option>
-                  <option value="RECEIVED">Received</option>
-                  <option value="ACCEPTED">Accepted</option>
-                  <option value="RETURNED">Returned</option>
-              </select>
-            </div>}
-        </div>
-        <div className="row">
-            {stockStructure.return_reason && (item_status == "RETURNED") && <div className="col mb-3">
-                <label className="form-label mx-3">Return Reason</label>
-                <input placeholder="Describe return reason"  name="return_reason" type="text" maxLength={70} className="form-control" aria-describedby="emailHelp" value={return_reason} onChange={(e) => setReturnReason(e.target.value)}/>
-            </div>}
-        </div>
-        <div className="row">
-            {stockStructure.remarks && <div className="col mb-3">
-                <label className="form-label mx-3">Remarks (If any)</label>
-                <input placeholder="Enter remarks if any"  name="remarks" type="text" maxLength={70} className="form-control" aria-describedby="emailHelp" value={remarks} onChange={(e) => setRemarks(e.target.value)}/>
-            </div>}
-        </div>
-        {(stockStructure.unique_code || stockStructure.mfg_date || stockStructure.exp_date || stockStructure.item_buy_price || stockStructure.item_sell_price || stockStructure.warrantee_guarantee || stockStructure.warrantee_guarantee_duration) && <div>
-          <hr />
-          <h6>Fill the below form if any specific item has any specific properties. You can specify multiple item with "+Add More" button</h6>
-          {lowerPartEntries.map((entry, index) => (
-            <div key={index} className="border p-3 mb-3">
-              <div className="row">
-                  
-                  {stockStructure.unique_code && <div className="col mb-3">
-                      <label className="form-label mx-3">Unique Code</label>
-                      <input placeholder="Enter unique code (if available)" name="unique_code" type="text" maxLength={70} className="form-control" aria-describedby="emailHelp" value={entry.unique_code} onChange={(e) => handleLowerPartChange(index, "unique_code", e.target.value)}/>
-                  </div>}
-                  {stockStructure.mfg_date && <div className="col mb-3">
-                      <label className="form-label mx-3">Item Mfg Date</label>
-                      <input name="mfg_date" type="date" maxLength={70} className="form-control" aria-describedby="emailHelp" value={entry.mfg_date} onChange={(e) => handleLowerPartChange(index, "mfg_date", e.target.value)}/>
-                  </div>}
-                  {stockStructure.exp_date && <div className="col mb-3">
-                      <label className="form-label mx-3">Item Exp Date</label>
-                      <input name="exp_date" type="date" maxLength={70} className="form-control" aria-describedby="emailHelp" value={entry.exp_date} onChange={(e) => handleLowerPartChange(index, "exp_date", e.target.value)}/>
-                  </div>}
-              </div>
-              <div className="row">
-                  {stockStructure.item_buy_price && <div className="col mb-3">
-                      <label className="form-label mx-3">Item Buy Price</label>
-                      <input placeholder="Enter item buy price (if required)" name="item_buy_price" type="number" maxLength={70} className="form-control" aria-describedby="emailHelp" value={entry.item_buy_price} onChange={(e) => handleLowerPartChange(index, "item_buy_price", e.target.value)}/>
-                  </div>}
-                  {stockStructure.item_sell_price && <div className="col mb-3">
-                      <label className="form-label mx-3">Item Sell Price</label>
-                      <input placeholder="Enter item buy price (optional)" name="item_sell_price" type="number" maxLength={70} className="form-control" aria-describedby="emailHelp" value={entry.item_sell_price} onChange={(e) => handleLowerPartChange(index, "item_sell_price", e.target.value)}/>
-                  </div>}
-                  {stockStructure.warrantee_guarantee && <div className="col mb-3">
-                    <label className="form-label">Warrantee/Guarente <span className="ei-col-red">*</span></label>
-                    <select className="form-select" aria-label="Default select example" name="warrantee_guarantee" value={entry.warrantee_guarantee} onChange={(e) => handleLowerPartChange(index, "warrantee_guarantee", e.target.value)}>
-                        <option>--Select if applicable--</option>
-                        <option value="WARRANTEE">Warrantee Applicable</option>
-                        <option value="GUARENTE">Guarente Applicable</option>
-                        <option value="NOTHING">Nothing Applicable</option>
-                    </select>
-                  </div>}
-                  {stockStructure.warrantee_guarantee_duration && (entry.warrantee_guarantee == "WARRANTEE" || entry.warrantee_guarantee ==  "GUARENTE") && <div className="col mb-3">
-                    <label className="form-label">Warrantee/Guarente Duration</label>
-                    <select className="form-select" aria-label="Default select example" name="warrantee_guarantee_duration" value={entry.warrantee_guarantee_duration} onChange={(e) => handleLowerPartChange(index, "warrantee_guarantee_duration", e.target.value)}>
-                        <option>--Select duration--</option>
-                        <option value="1">1 Month</option>
-                        <option value="3">3 Months</option>
-                        <option value="6">6 Months</option>
-                        <option value="12">1 Year</option>
-                        <option value="24">2 Years</option>
-                        <option value="36">3 Years</option>
-                        <option value="48">4 Years</option>
-                        <option value="60">5 Years</option>
-                        <option value="72">6 Years</option>
-                        <option value="84">7 Years</option>
-                        <option value="96">8 Years</option>
-                        <option value="108">9 Years</option>
-                        <option value="120">10 Years</option>
-                        <option value="180">15 Years</option>
-                        <option value="240">20 Years</option>
-                        <option value="300">25 Years</option>
-                    </select>
-                  </div>}
-              </div>
-              {(stockStructure.model || stockStructure.unique_code || stockStructure.mfg_date || stockStructure.exp_date || stockStructure.item_buy_price || stockStructure.item_sell_price || stockStructure.warrantee_guarantee || stockStructure.warrantee_guarantee_duration) && <div className="d-flex justify-content-end">
-                <button type="button" className="btn btn-danger mx-2" onClick={() => removeLowerPartEntry(index)}>Remove</button>
-                <button type="button" className="btn btn-primary mx-2" onClick={addLowerPartEntry}>+ Add More</button>
-              </div>}
-            </div>))}
-        </div>}
-        <button type="submit" className="btn btn-primary">Save</button>
-        <button type="button" className="btn btn-primary ms-4" onClick={handleReset}>Reset</button>
-        
-      </form>}
+                  {/* Add/Remove buttons */}
+                  <div className="d-flex justify-content-end mt-3">
+                    <button type="button" className="btn btn-danger mx-2" onClick={() => removeLowerPartEntry(index)}>Remove</button>
+                    <button type="button" className="btn btn-primary mx-2" onClick={addLowerPartEntry}>+ Add More</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <button type="submit" className="btn btn-primary">Save</button>
+          <button type="button" className="btn btn-primary ms-4" onClick={handleReset}>Reset</button>
+        </form>
+      )}
       {!isStockStructure && <div>
         <h3>No form configuration found !!</h3>  <br />
         <h3>First configure 'add stock form' to continue.</h3> <br /> <br />
         <h5>Follow the below steps to configure 'add stock form'.</h5> <br /> 
-        <h5>Company Login {"->"} Customize Add Stock {"->"} Change the necessary {"->"} Update</h5>  
+        <h5>Login {"->"} Customize Add Stock {"->"} Change the necessary {"->"} Save/Update</h5>  
       </div>}
     </div>
   );

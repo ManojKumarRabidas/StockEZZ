@@ -84,4 +84,6 @@ router.post("/generate-bill-pdf/:id", authorizeRole(['OPERATOR']), operatorContr
 router.get("/bill-list", authorizeRole(['COMPANY','OPERATOR']), utilController.billList);
 router.get("/bill-details/:id", authorizeRole(['COMPANY','OPERATOR']), utilController.billDetails);
 
+router.get("/financials", authorizeRole(['COMPANY','OPERATOR']), utilController.dashboardFinancials);
+
 module.exports = router;

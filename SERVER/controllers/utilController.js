@@ -131,9 +131,14 @@ module.exports = {
             body.sl_no = true;
             body.date = true;
             body.item = true;
-            body.quantity = true;
+            body.total_quantity = true;
             body.per_peace_buy_price = true;
             body.item_status = true;
+            if(body.unique_code || body.model || body.brand || body.color || body.capacity || body.height || body.power || body.description || body.mfg_date || body.exp_date || body.item_buy_price || body.item_sell_price || body.warrantee_guarantee || body.warrantee_guarantee_duration){
+                body.quantity = true;
+            } else{
+                body.quantity = false;
+            }
             body.updatedBy = new ObjectId(req.user.id);
             const doc = await stockStructureModel.updateOne({companyId: body.companyId},{$set: body}, {upsert: true, new: true});
             res.status(201).json({ status: true, msg: "Structure saved successfully.", doc:doc});
@@ -153,7 +158,7 @@ module.exports = {
             let projectionStage ={}
             if(value){
                 cmpMatchStage = {item: {$regex: value, $options: "i"}, quantity: {$gt: 0}} 
-                projectionStage = {item: "$item.name", brand: "$brand.name", model: 1,quantity: 1,item_sell_price: 1, color: 1, capacity: 1, height: 1, power: 1}
+                projectionStage = {item: "$item.name", brand: "$brand.name", model: 1,quantity: 1,item_sell_price: 1, item_buy_price: 1, color: 1, capacity: 1, height: 1, power: 1}
             } else if(sold_status){
                 if(sold_status == "UNSOLD"){
                     matchStage.quantity = {$gt: 0}
@@ -166,15 +171,15 @@ module.exports = {
                     sl_no: 1,
                     date: 1,
                     item: "$item.name",
-                    brand: "$brand.name",
-                    batchId: 1,
+                    brand_name: { $ifNull: ["$brand.name", "N/A"] },
+                    batch_id: 1,
                     description: 1,
                     model: 1,
                     color: 1,
                     capacity: 1,
                     height: 1,
                     power: 1,
-                    seller: "$seller.name",
+                    seller_name: { $ifNull: ["$seller.name", "N/A"] },
                     quantity: 1,
                     batch_no: 1,
                     item_status: 1,
@@ -189,32 +194,37 @@ module.exports = {
                 }
             }
             if (userType === "COMPANY") {
-                matchStage.companyId = userId;
+                matchStage.company_id = userId;
             } else if(userType === "OPERATOR"){
                 let operator = await userModel.findOne({_id: userId}, {company: 1});
-                matchStage.companyId = new ObjectId(operator.company)
+                matchStage.company_id = new ObjectId(operator.company)
             }
+            console.log("matchStage", matchStage)
+            console.log("projectionStage", projectionStage)
+            console.log("cmpMatchStage", cmpMatchStage)
             const docs = await stockModel.aggregate([
                 {$match: matchStage},
                 {$lookup: {from: "items",
-                    localField: "itemId",
+                    localField: "item_id",
                     foreignField: "_id",
                     as: "item"}},
                 {$unwind: "$item"},
                 {$lookup: {from: "brands",
-                    localField: "brandId",
-                    foreignField: "_id",
-                    as: "brand"}},
-                {$unwind: "$brand"},
+                        let: { brand_id: "$brand_id" },
+                        pipeline: [{$match: {$expr: {$eq: ["$_id", "$$brand_id"]}}}],
+                        as: "brand"}},
+                { $unwind: { path: "$brand", preserveNullAndEmptyArrays: true}},
                 {$lookup: {from: "sellers",
-                    localField: "sellerId",
-                    foreignField: "_id",
-                    as: "seller"}},
-                {$unwind: "$seller"},
+                        let: { seller_id: "$seller_id" },
+                        pipeline: [{$match: {$expr: {$eq: ["$_id", "$$seller_id"]
+                                    }}}],
+                                    as: "seller"}},
+                {$unwind: {path: "$seller",preserveNullAndEmptyArrays: true}},
                 {$project: projectionStage},
                 {$match: cmpMatchStage},
                 
             ]);
+            console.log("docs", docs);
             if(docs.length>0){
                 for(let i=0; i<docs.length; i++){
                   const ref = docs[i];
@@ -408,6 +418,15 @@ module.exports = {
         } catch (err) {
             res.status(400).json({ msg: err.message });
         }
+    },
+
+    dashboardFinancials: async(req, res)=>{
+        const { start, end } = req.query;
+        if (!start || !end) {
+          return res.status(400).json({ error: 'Start and end dates are required' });
+        }
+        console.log("aaa", new Date(start), "bbbb", new Date(end))
+        return res.status(400).json({ error: 'Start and end dates are required' });
     },
 
     operatorList: async(req, res)=>{

@@ -1,22 +1,22 @@
 const mongoose = require('mongoose');
 
 const stockSchema = new mongoose.Schema({
-    companyId: {type: mongoose.Schema.Types.ObjectId},
-    batchId: {type: String},
-    categoryId: {type: mongoose.Schema.Types.ObjectId},
+    company_id: {type: mongoose.Schema.Types.ObjectId},
+    batch_id: {type: String},
+    category_id: {type: mongoose.Schema.Types.ObjectId},
     sl_no: {type: String},
     date: {type: Date, required: true},
     time: {type: Date},
     sub_category: {type: String},
-    itemId: {type: mongoose.Schema.Types.ObjectId, required: true},
-    brandId: {type: mongoose.Schema.Types.ObjectId},
+    item_id: {type: mongoose.Schema.Types.ObjectId, required: true},
+    brand_id: {type: mongoose.Schema.Types.ObjectId},
     color: {type: String},
     capacity: {type: String},
     height: {type: String},
     power: {type: String},
     description: {type: String},
     model: {type: String},
-    sellerId: {type: mongoose.Schema.Types.ObjectId},
+    seller_id: {type: mongoose.Schema.Types.ObjectId},
     quantity: {type: Number},
     batch_no: {type: String},
     batch_buy_price: {type: Number},
@@ -43,13 +43,14 @@ const stockSchema = new mongoose.Schema({
             buyer_id: mongoose.Schema.Types.ObjectId,
             sell_price: Number,
             quantity: Number,
+            profit: Number,
             sold_at: { type: Date, default: Date.now },
           },
         ],
         default: [],
       },
-    createdBy: {type: mongoose.Schema.Types.ObjectId},
-    updatedBy: {type: mongoose.Schema.Types.ObjectId}
+    created_by: {type: mongoose.Schema.Types.ObjectId},
+    updated_by: {type: mongoose.Schema.Types.ObjectId}
 }, { timestamps: true });
 
 const Stock = mongoose.model('stock', stockSchema)
