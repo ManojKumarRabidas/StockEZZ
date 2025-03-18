@@ -516,8 +516,8 @@ module.exports = {
                 {$unwind: "$item"},
                 {$project: {
                     month: { $dateToString: { format: "%Y-%m", date: "$date" } },
-                    stockIn: "$quantity",
-                    // stockIn: "$total_quantity",
+                    // stockIn: "$quantity",
+                    stockIn: "$total_quantity",
                     sub_category: 1,
                     item: "$item.name"}},
                 {$group: {
