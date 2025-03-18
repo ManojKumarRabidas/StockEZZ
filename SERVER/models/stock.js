@@ -17,6 +17,7 @@ const stockSchema = new mongoose.Schema({
     description: {type: String},
     model: {type: String},
     seller_id: {type: mongoose.Schema.Types.ObjectId},
+    total_quantity: {type: Number},
     quantity: {type: Number},
     batch_no: {type: String},
     batch_buy_price: {type: Number},

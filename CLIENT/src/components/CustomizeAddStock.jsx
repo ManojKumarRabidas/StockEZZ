@@ -57,7 +57,6 @@ function CustomizeAddStock() {
           if (response) {
             const result = await response.json();
             if (response.ok) {
-                console.log("result.stockStructure", result.stockStructure)
                 if(result.stockStructure != null){
                     setSlNo(result.stockStructure.sl_no);
                     setDate(result.stockStructure.date);
@@ -507,7 +506,7 @@ function CustomizeAddStock() {
             </div>
             <div className="col mb-3">
                 <div className="mb-3 form-switch d-flex justify-content-between vrrl " style={{paddingLeft: "0"}}>
-                    <label className="form-label mx-2">Quantity <span class="title-class" data-tooltip="If any field is turned on in 'Individual items field' section, this 'Quantity' field will show in the 'Add Stock' form autometically."><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-info-circle" viewBox="0 0 16 16">
+                    <label className="form-label mx-2">Quantity <span className="title-class" data-tooltip="If any field is turned on in 'Individual items field' section, this 'Quantity' field will show in the 'Add Stock' form autometically."><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-info-circle" viewBox="0 0 16 16">
                             <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
                             <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0"/>
                             </svg>
@@ -578,7 +577,7 @@ function CustomizeAddStock() {
             </div>
             <div className="col-4 mb-3">
                 <div className="mb-3 form-switch d-flex justify-content-between vrrl " style={{paddingLeft: "0"}}>
-                    <label className="form-label mx-2">Warrantee/Guarente <span class="title-class" data-tooltip="Turn on if Warrantee/Guarente is available"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-info-circle" viewBox="0 0 16 16">
+                    <label className="form-label mx-2">Warrantee/Guarente <span className="title-class" data-tooltip="Turn on if Warrantee/Guarente is available"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-info-circle" viewBox="0 0 16 16">
                             <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
                             <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0"/>
                             </svg>

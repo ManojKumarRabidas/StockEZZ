@@ -85,5 +85,6 @@ router.get("/bill-list", authorizeRole(['COMPANY','OPERATOR']), utilController.b
 router.get("/bill-details/:id", authorizeRole(['COMPANY','OPERATOR']), utilController.billDetails);
 
 router.get("/financials", authorizeRole(['COMPANY','OPERATOR']), utilController.dashboardFinancials);
+router.get("/metrics", authorizeRole(['COMPANY','OPERATOR']), utilController.dashboardMetrics);
 
 module.exports = router;

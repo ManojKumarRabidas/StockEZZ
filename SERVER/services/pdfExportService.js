@@ -102,7 +102,7 @@ module.exports = {
           columns: [
             { text: `Payment Type: ${doc.payment_type}`, alignment: "left"  },
             { text: ` Paid Amt: ${doc.paid_amount}`, alignment: "center"  },
-            { text: ` Remaining Amt: ${doc.ramaining_amount ? doc.ramaining_amount: "00"}`, alignment: "right"  }
+            { text: ` Remaining Amt: ${doc.remaining_amount ? doc.remaining_amount: "00"}`, alignment: "right"  }
           ],
           margin: [0, 10, 0, 10],
         },
@@ -169,7 +169,6 @@ module.exports = {
         const pdfDoc = printer.createPdfKitDocument(docDefinition);
         return { status: true, doc: pdfDoc };
     } catch (err) {
-      console.log("err", err)
         return { status: false, err: err.message };
     }
 },

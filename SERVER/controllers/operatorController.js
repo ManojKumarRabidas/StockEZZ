@@ -16,8 +16,6 @@ module.exports = {
         try{
             const body = req.body.data;
             const additionalData = req.body.additionalData;
-            console.log("body", body)
-            console.log("additionalData", additionalData)
             if(!req.body || !req.body.data || !body.date || !body.item || !body.total_quantity || !req.body.additionalData || !additionalData.per_peace_buy_price){
                 res.status(400).json({ msg: "Missing Parameters!" });
                 return;
@@ -83,10 +81,8 @@ module.exports = {
                 body.item_id = doc.upsertedId;
             }
             if(additionalData.batch_brand_id){
-                console.log("additionalData.batch_brand_id", additionalData.batch_brand_id)
                 body.brand_id = new ObjectId(additionalData.batch_brand_id);
             } else if(additionalData.batch_brand){
-                console.log("additionalData.batch_brand", additionalData.batch_brand)
                 const newBrand = {
                     name: additionalData.batch_brand,
                     companyId : body.company_id,
@@ -103,10 +99,8 @@ module.exports = {
                     return;
                 }
                 body.brand_id = doc.upsertedId;
-                console.log("body.brand_id", body.brand_id)
             }
             if(body.seller_id){
-                console.log("habji gabji");
                 
                 body.seller_id = new ObjectId(body.seller_id);
             } else if(body.seller){
@@ -149,15 +143,15 @@ module.exports = {
                 body.warrantee_guarantee = additionalData.batch_warrantee_guarantee ? additionalData.batch_warrantee_guarantee: null;
                 body.warrantee_guarantee_duration = additionalData.batch_warrantee_guarantee_duration ? Number(additionalData.batch_warrantee_guarantee_duration): null;
                 body.quantity = itemQuantity - detailsBodyTotalQuantity;
+                body.total_quantity = itemQuantity - detailsBodyTotalQuantity;
                 finalStockBody.push(body);
             }
-            // console.log("detailsBodyTotalQuantity", detailsBodyTotalQuantity)
-            // console.log("stockDetailsBody", stockDetailsBody)
             if(detailsBodyTotalQuantity > 0){
                 for(let i=0; i<stockDetailsBody.length; i++){
                     const ref = stockDetailsBody[i];
                     const newBody = Object.assign({}, body);
                     newBody.quantity = ref.quantity;
+                    newBody.total_quantity = ref.quantity;
                     if(ref.brand_id){
                         newBody.brand_id = new ObjectId(ref.brand_id);
                     } else if(ref.brand){
@@ -194,14 +188,11 @@ module.exports = {
                     newBody.item_sell_price = ref.item_sell_price ? Number(ref.item_sell_price) : (additionalData.per_peace_sell_price ? Number(additionalData.per_peace_sell_price): null);
                     newBody.warrantee_guarantee = ref.warrantee_guarantee ? ref.warrantee_guarantee : ((additionalData.batch_warrantee_guarantee ? additionalData.batch_warrantee_guarantee: null));
                     newBody.warrantee_guarantee_duration = ref.warrantee_guarantee_duration ? Number(ref.warrantee_guarantee_duration) : (((additionalData.batch_warrantee_guarantee_duration ? Number(additionalData.batch_warrantee_guarantee_duration): null)));
-                    console.log("newBody",newBody)
                     finalStockBody.push(newBody);
                 }
             }
-            // console.log("finalStockBody", finalStockBody)
             if(finalStockBody.length < 1){res.status(400).json({ msg: "Missing Parameters!" }); return;}
             const doc = await stockModel.insertMany(finalStockBody);
-            // console.log("doc",doc)
             res.status(201).json({ status: true, msg: "Stock saved successfully.", doc:doc});
         } catch(err){
             res.status(500).json({ status: false, msg: err.message });
@@ -232,7 +223,6 @@ module.exports = {
         try{
             const body = req.body
             const user = req.user
-            console.log("body", body)
             if(!body || !body.company_id){
                 res.status(400).json({status: false, msg: "Missing Parameters!" });
                 return;
@@ -306,8 +296,9 @@ module.exports = {
             body.discount = body.discount ? Number(body.discount): 0;
             body.grandTotal = Number(body.grandTotal);
             body.paid_amount = body.paid_amount ? Number(body.paid_amount): 0;
-            body.ramaining_amount = body.ramaining_amount ? Number(body.ramaining_amount): 0;
-            body.total_profit = (total_profit+body.additional_charges-body.discount)
+            body.remaining_amount = body.remaining_amount ? Number(body.remaining_amount): 0;
+            body.profit = (total_profit+body.additional_charges-body.discount);
+            body.total_profit = body.profit - body.remaining_amount;
             const doc = await billModel.create(body)
             res.status(201).json({ status: true, msg: "Bill created successfully.", doc:doc});
         } catch(err){
@@ -323,6 +314,7 @@ module.exports = {
                 res.status(400).json({ msg: "Missing Parameters!" });
                 return;
             }
+            body.total_profit = body.profit - body.remaining_amount;
             const doc = await billModel.findByIdAndUpdate(params.id, body, {new: true});
             res.status(200).json({ message: "Details updated successfully", doc: doc });
         } catch (err) {
@@ -352,7 +344,7 @@ module.exports = {
                     grandTotal: 1,
                     payment_type: 1,
                     paid_amount: 1,
-                    ramaining_amount: 1,
+                    remaining_amount: 1,
                     info: 1,
                     pending_installation: 1
                 }
@@ -472,7 +464,6 @@ module.exports = {
 
             pdfDoc.end();
         } catch(err){
-            console.log(err)
             res.status(500).json({ status: false, msg: err.message });
         }
     },

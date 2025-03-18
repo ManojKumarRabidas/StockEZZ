@@ -152,7 +152,6 @@ module.exports = {
             const userType = req.user.user_type;
             const value = req.headers.value;
             const sold_status = req.headers.sold_status;
-            // console.log("sold_status", sold_status)
             let cmpMatchStage ={}
             let matchStage ={}
             let projectionStage ={}
@@ -199,9 +198,6 @@ module.exports = {
                 let operator = await userModel.findOne({_id: userId}, {company: 1});
                 matchStage.company_id = new ObjectId(operator.company)
             }
-            console.log("matchStage", matchStage)
-            console.log("projectionStage", projectionStage)
-            console.log("cmpMatchStage", cmpMatchStage)
             const docs = await stockModel.aggregate([
                 {$match: matchStage},
                 {$lookup: {from: "items",
@@ -224,7 +220,6 @@ module.exports = {
                 {$match: cmpMatchStage},
                 
             ]);
-            console.log("docs", docs);
             if(docs.length>0){
                 for(let i=0; i<docs.length; i++){
                   const ref = docs[i];
@@ -269,7 +264,7 @@ module.exports = {
                     grandTotal: 1,
                     payment_type: 1,
                     paid_amount: 1,
-                    ramaining_amount: 1,
+                    remaining_amount: 1,
                     info: 1,
                     pending_installation: 1
                 }
@@ -328,7 +323,7 @@ module.exports = {
                     grandTotal: 1,
                     payment_type: 1,
                     paid_amount: 1,
-                    ramaining_amount: 1,
+                    remaining_amount: 1,
                     info: 1,
                     pending_installation: 1
                 }
@@ -420,15 +415,232 @@ module.exports = {
         }
     },
 
-    dashboardFinancials: async(req, res)=>{
-        const { start, end } = req.query;
-        if (!start || !end) {
-          return res.status(400).json({ error: 'Start and end dates are required' });
+    dashboardMetrics: async(req, res)=>{
+        try{
+            const userId = new ObjectId(req.user.id);
+            const userType = req.user.user_type;
+            let company_id;
+            if (userType === "COMPANY") {
+                company_id = userId;
+            } else if(userType === "OPERATOR"){
+                let operator = await userModel.findOne({_id: userId}, {company: 1});
+                company_id = new ObjectId(operator.company)
+            }
+            const stocks = await stockModel.find({company_id: company_id, quantity: {$gt: 0}}, {quantity: 1, item_buy_price: 1});
+            let totalStockValue = 0;
+            for(let i=0; i<stocks.length; i++){
+                let temp = Number(stocks[i].quantity) * Number(stocks[i].item_buy_price);
+                totalStockValue = totalStockValue + temp
+            }
+            const bills = await billModel.aggregate([
+                    {$match: {
+                        company_id: company_id,
+                        $or: [
+                            {remaining_amount: {$gt: 0}},
+                            {pending_installation: "PENDING"}
+                        ]
+                    }},
+                    {$lookup: {
+                        from: "buyers",
+                        localField: "buyer_id",
+                        foreignField: "_id",
+                        as: "buyer_info"
+                    }},
+                    {$unwind: {path: "$buyer_info", preserveNullAndEmptyArrays: true}},
+                    {$project: {
+                        billNo: 1, date: 1, grandTotal: 1, remaining_amount: 1, pending_installation: 1, buyer_name: "$buyer_info.name"
+                    }}                     
+            ]);
+            let totalPendingInstallation = 0
+            let totalPendingBills = 0
+            for (let i=0; i<bills.length; i++){
+                totalPendingBills = totalPendingBills + bills[i].remaining_amount;
+                if(bills[i].pending_installation == "PENDING"){totalPendingInstallation++}
+                else if(!bills[i].pending_installation){bills[i].pending_installation = "N/A"}
+                if(!bills[i].buyer_name) {bills[i].buyer_name= "N/A"}
+                bills[i].date = moment(bills[i].date).format('DD/MM/YYYY');
+            }
+            res.status(200).json({status: true, doc:{totalPendingBills: totalPendingBills, totalStockValue: totalStockValue, totalPendingInstallation: totalPendingInstallation, bills: bills} });
+        } catch(err){
+            res.status(400).json({ msg: err.message });
         }
-        console.log("aaa", new Date(start), "bbbb", new Date(end))
-        return res.status(400).json({ error: 'Start and end dates are required' });
     },
+    dashboardFinancials: async(req, res)=>{
+        try{
+            const userId = new ObjectId(req.user.id);
+            const userType = req.user.user_type;
+            let company_id;
+            if (userType === "COMPANY") {
+                company_id = userId;
+            } else if(userType === "OPERATOR"){
+                let operator = await userModel.findOne({_id: userId}, {company: 1});
+                company_id = new ObjectId(operator.company)
+            }
+            const {start, end} = req.query;
+            if(!(start && end)){
+                res.status(400).json({ msg: "Missing Parameters!" });
+                return;
+            }
+            startDate = new Date(start);
+            endDate = new Date(end);
+            const revenueProfitResult = await billModel.aggregate([
+                {$match: {company_id: company_id, date: { $gte: startDate, $lte: endDate }}},
+                {$project: {paid_amount: 1, total_profit: 1, month: { $dateToString: { format: "%Y-%m", date: "$date" } }}},
+                {$group: {
+                    _id: "$month",
+                    totalRevenue: { $sum: "$paid_amount" },
+                    totalProfit: { $sum: "$total_profit" }
+                    }},
+                {$sort: { _id: 1 }}
+            ])
+            // **Processing the results**
+            let totalRevenue = 0;
+            let totalProfit = 0;
+            let profitRevenue = [];
+            revenueProfitResult.forEach((item) => {
+            totalRevenue += item.totalRevenue;
+            totalProfit += item.totalProfit;
 
+            profitRevenue.push({
+                month: new Date(item._id + "-01").toLocaleString("en-US", { month: "long" }),
+                Revenue: item.totalRevenue,
+                Profit: item.totalProfit
+            });
+            });
+            const stockInPipeline = [
+                {$match: {"date": { $gte: startDate, $lte: endDate }, "company_id": company_id}},
+                {$lookup: {from: "items",
+                    localField: "item_id",
+                    foreignField: "_id",
+                    as: "item"}},
+                {$unwind: "$item"},
+                {$project: {
+                    month: { $dateToString: { format: "%Y-%m", date: "$date" } },
+                    stockIn: "$quantity",
+                    // stockIn: "$total_quantity",
+                    sub_category: 1,
+                    item: "$item.name"}},
+                {$group: {
+                    _id: { month: "$month", sub_category: "$sub_category", item: "$item" },
+                    totalStockIn: { $sum: "$stockIn" }}},
+                {$sort: { "_id.month": 1 }}
+            ];
+            
+            const stockOutPipeline = [
+                {$unwind: "$sell_details"},
+                {$match: {"sell_details.sold_at": { $gte: startDate, $lte: endDate }, "company_id": company_id}},
+                {$lookup: {from: "items",
+                    localField: "item_id",
+                    foreignField: "_id",
+                    as: "item"}},
+                {$unwind: "$item"},
+                {$project: {
+                    month: { $dateToString: { format: "%Y-%m", date: "$sell_details.sold_at" } },
+                    sub_category: 1,
+                    stockOut: "$sell_details.quantity",
+                    item: "$item.name"}},
+                {$group: {
+                    _id: { month: "$month", sub_category: "$sub_category", item: "$item" },
+                    totalStockOut: { $sum: "$stockOut" }}},
+                {$sort: { "_id.month": 1}}
+            ];
+            
+            const stockInResult = await stockModel.aggregate(stockInPipeline)
+            const stockOutResult = await stockModel.aggregate(stockOutPipeline)
+            
+            const formatMonth = (monthStr) => {
+                const [year, monthNum] = monthStr.split('-');
+                const months = [
+                    'JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE',
+                    'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'
+                ];
+                return `${months[parseInt(monthNum) - 1]} ${year}`;
+            };
+        
+            // Helper function to parse month string back to Date for sorting
+            const parseMonthForSorting = (monthStr) => {
+                const [monthName, year] = monthStr.split(' ');
+                const monthIndex = [
+                    'JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE',
+                    'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'
+                ].indexOf(monthName);
+                return new Date(parseInt(year), monthIndex);
+            };
+        
+            // Create a Map to store combined data
+            const combinedMap = new Map();
+        
+            // Process stockInResult
+            stockInResult.forEach(stockIn => {
+                const key = `${stockIn._id.sub_category}-${stockIn._id.item}`;
+                const formattedMonth = formatMonth(stockIn._id.month);
+                const existing = combinedMap.get(key) || {
+                    item: stockIn._id.item,
+                    sub_category: stockIn._id.sub_category,
+                    stockInOut: []
+                };
+        
+                existing.stockInOut.push({
+                    month: formattedMonth,
+                    stockIn: stockIn.totalStockIn,
+                    stockOut: 0
+                });
+        
+                combinedMap.set(key, existing);
+            });
+        
+            // Process stockOutResult and merge with existing data
+            stockOutResult.forEach(stockOut => {
+                if (!stockOut.totalStockOut) return;
+        
+                const key = `${stockOut._id.sub_category}-${stockOut._id.item}`;
+                const formattedMonth = formatMonth(stockOut._id.month);
+                let existing = combinedMap.get(key);
+        
+                if (!existing) {
+                    existing = {
+                        item: stockOut._id.item,
+                        sub_category: stockOut._id.sub_category,
+                        stockInOut: []
+                    };
+                }
+        
+                const monthEntry = existing.stockInOut.find(
+                    entry => entry.month === formattedMonth
+                );
+        
+                if (monthEntry) {
+                    monthEntry.stockOut = stockOut.totalStockOut;
+                } else {
+                    existing.stockInOut.push({
+                        month: formattedMonth,
+                        stockIn: 0,
+                        stockOut: stockOut.totalStockOut
+                    });
+                }
+        
+                combinedMap.set(key, existing);
+            });
+        
+            // Convert Map to array and sort stockInOut arrays
+            const stockInOutResult = Array.from(combinedMap.values()).map(item => {
+                item.stockInOut.sort((a, b) => {
+                    return parseMonthForSorting(a.month) - parseMonthForSorting(b.month);
+                });
+                return item;
+            });
+            
+            const finalOutput = {
+                totalRevenue,
+                totalProfit,
+                profitRevenue,
+                stockMovement: stockInOutResult
+              };
+            res.status(200).json({status: true, doc: finalOutput})
+        } catch(err){
+            res.status(400).json({ msg: err.message });
+        }
+    },
     operatorList: async(req, res)=>{
         try {
             const userId = new ObjectId(req.user.id);

@@ -21,20 +21,31 @@ const Dashboard = () => {
     stockInOutData: null,
     monthlyRevenue: null,
     metricsData: null,
-    loading: true
+    // loading: true
   });
+  const [loading, setLoading] = useState(true)
   const [stockFilter, setStockFilter] = useState(10);
+  const [itemName, setItemName] = useState("");
+  const [chartType, setChartType] = useState("BAR");
   const [dateRange, setDateRange] = useState(() => {
     const today = new Date();
-    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const sixMonthsAgo = new Date(today);
+    sixMonthsAgo.setMonth(today.getMonth() - 6);
+    // Adjust the date to match today's date exactly
+    sixMonthsAgo.setDate(today.getDate());
+
     return {
-      start: startOfMonth,
+      start: sixMonthsAgo,
       end: today,
     };
   });
   const [selectedItem, setSelectedItem] = useState(null);
   const [selectedBill, setSelectedBill] = useState(null);
   const [reorderQuantity, setReorderQuantity] = useState(0);
+
+  const [matricsData, setMatricsData] = useState({});
+  const [financialData, setFinancialData] = useState({stockMovement: []});
+  const [stockMovementData, setStockMovementData] = useState({});
 
   const formatDate = (date) => {
     const day = String(date.getDate()).padStart(2, "0");
@@ -43,33 +54,31 @@ const Dashboard = () => {
     return `${day}/${month}/${year}`;
   };
 
+  const handleStockMovement = (item, data) => {
+    let temp;
+    if(data){
+      temp = data.find((elem)=> elem.item == item)
+    } else{
+      temp = financialData.stockMovement.find((elem)=> elem.item == item)
+    }
+    setItemName(item);
+    setStockMovementData(temp);
+  }
   // Function to fetch financial data (Revenue, Profit, Stock Movement)
   const fetchFinancialData = async () => {
     try {
       const response = await fetch(`${HOST}:${PORT}/server/financials?start=${dateRange.start.toISOString()}&end=${dateRange.end.toISOString()}`,
         {headers: { 'Authorization': `Bearer ${token}`}}
       );
-      const data = await response.json();
-      console.log("data", data)
-      setDashboardData(prev => ({
-        ...prev,
-        stockInOutData: {
-          labels: data.labels || [],
-          stockIn: data.stockIn || [],
-          stockOut: data.stockOut || [],
-          totalValue: data.totalStockValue || 0
-        },
-        monthlyRevenue: {
-          labels: data.labels || [],
-          values: data.revenue || [],
-          profit: data.profit || [],
-          currentMonth: data.currentMonthRevenue || 0,
-          currentMonthProfit: data.currentMonthProfit || 0
-        }
-      }));
-    } catch (error) {
-      console.error('Error fetching financial data:', error);
-      toastr.error('Failed to fetch financial data');
+      const result = await response.json();
+      if (response.ok) {
+        setFinancialData(result.doc);
+        handleStockMovement(result.doc.stockMovement[0] ? result.doc.stockMovement[0].item: "", result.doc.stockMovement) 
+      } else {
+        toastr.error(result.msg);
+      }
+    } catch (err) {
+      toastr.error('Failed to fetch financial data ');
     }
   };
 
@@ -82,18 +91,13 @@ const Dashboard = () => {
           headers: { 'Authorization': `Bearer ${token}` }
         }
       );
-      const data = await response.json();
-      setDashboardData(prev => ({
-        ...prev,
-        metricsData: {
-          totalStockValue: data.totalStockValue || 0,
-          totalPendingBills: data.totalPendingBills || 0,
-          totalPendingInstall: data.totalPendingInstall || 0,
-          pendingBillDetails: data.pendingBillDetails || []
-        }
-      }));
-    } catch (error) {
-      console.error('Error fetching metrics data:', error);
+      const result = await response.json();
+      if (response.ok) {
+        setMatricsData(result.doc);
+      } else {
+        toastr.error(result.msg);
+      }
+    } catch (err) {
       toastr.error('Failed to fetch metrics data');
     }
   };
@@ -112,8 +116,7 @@ const Dashboard = () => {
         ...prev,
         lowStockItems: data.filter(item => item.quantity > 0 && item.quantity < stockFilter)
       }));
-    } catch (error) {
-      console.error('Error fetching low stock items:', error);
+    } catch (err) {
       toastr.error('Failed to fetch low stock items');
     }
   };
@@ -121,13 +124,13 @@ const Dashboard = () => {
   // Initial page load effect
   useEffect(() => {
     const fetchInitialData = async () => {
-      setDashboardData(prev => ({ ...prev, loading: true }));
+      setLoading(true)
       await Promise.all([
         fetchFinancialData(),
         fetchMetricsData(),
-        fetchLowStockItems()
+        // fetchLowStockItems()
       ]);
-      setDashboardData(prev => ({ ...prev, loading: false }));
+      setLoading(false)
     };
     fetchInitialData();
   }, []);
@@ -135,8 +138,11 @@ const Dashboard = () => {
   // Effect for date range and stock filter changes
   useEffect(() => {
     fetchFinancialData();
-    fetchLowStockItems();
   }, [dateRange, stockFilter]);
+
+  useEffect(() => {
+    // fetchLowStockItems();
+  }, [stockFilter]);
 
   const handleReorder = async (item) => {
     try {
@@ -158,40 +164,37 @@ const Dashboard = () => {
     }
   };
 
-  const handleSearch = () => {
-    fetchFinancialData();
-  };
 
   // Stock In/Out Graph Data
   const stockGraphData = {
-    labels: dashboardData.stockInOutData?.labels || [],
+    labels: (stockMovementData?.stockInOut ? stockMovementData?.stockInOut.map(item => item.month): []) || [],
     datasets: [
       {
         label: 'Stock In',
-        data: dashboardData.stockInOutData?.stockIn || [],
+        data: (stockMovementData?.stockInOut ? stockMovementData?.stockInOut.map(item => item.stockIn): []) || [],
         backgroundColor: 'rgba(75, 192, 192, 0.5)',
       },
       {
         label: 'Stock Out',
-        data: dashboardData.stockInOutData?.stockOut || [],
+        data: (stockMovementData?.stockInOut ? stockMovementData?.stockInOut.map(item => item.stockOut): []) || [],
         backgroundColor: 'rgba(255, 99, 132, 0.5)',
       }
     ]
   };
 
   // Revenue & Profit Graph Data
-  const revenueGraphData = {
-    labels: dashboardData.monthlyRevenue?.labels || [],
+  const profitRevenueGraphData = {
+    labels: (financialData?.profitRevenue ? financialData?.profitRevenue.map(item => item.month): []) || [],
     datasets: [
       {
         label: 'Revenue',
-        data: dashboardData.monthlyRevenue?.values || [],
+        data: (financialData?.profitRevenue? financialData?.profitRevenue.map(item => item.Revenue): []) || [],
         borderColor: 'rgb(53, 162, 235)',
         backgroundColor: 'rgba(53, 162, 235, 0.5)',
       },
       {
         label: 'Profit',
-        data: dashboardData.monthlyRevenue?.profit || [],
+        data: (financialData?.profitRevenue? financialData?.profitRevenue.map(item => item.Profit): []) || [],
         borderColor: 'rgb(75, 192, 192)',
         backgroundColor: 'rgba(75, 192, 192, 0.5)',
       }
@@ -212,7 +215,7 @@ const Dashboard = () => {
     dueDate: new Date(bill.dueDate).toLocaleDateString()
   })) || [];
 
-  if (dashboardData.loading) {
+  if (loading) {
     return (
       <div className="container-fluid p-3" style={{ backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
         <style>
@@ -318,12 +321,6 @@ const Dashboard = () => {
               onChange={(date) => setDateRange({ ...dateRange, end: date })}
             />
           </div>
-          <button 
-            className="btn btn-primary ms-2"
-            onClick={handleSearch}
-          >
-            Search
-          </button>
         </div>
       </div>
 
@@ -333,7 +330,7 @@ const Dashboard = () => {
           <div className="card p-3">
             <h5 className="card-title mb-2">Total Stock Value</h5>
             <p className="card-text display-6 text-primary mb-0">
-              ₹{dashboardData.metricsData?.totalStockValue?.toLocaleString() || 6851020}
+              ₹{matricsData?.totalStockValue?.toLocaleString() || 0}
             </p>
           </div>
         </div>
@@ -341,7 +338,7 @@ const Dashboard = () => {
           <div className="card p-3">
             <h5 className="card-title mb-2">Total Pending Bills</h5>
             <p className="card-text display-6 text-danger mb-0">
-              ₹{dashboardData.metricsData?.totalPendingBills?.toLocaleString() || 95803}
+              ₹{matricsData?.totalPendingBills?.toLocaleString() || 0}
             </p>
           </div>
         </div>
@@ -349,7 +346,7 @@ const Dashboard = () => {
           <div className="card p-3">
             <h5 className="card-title mb-2 d-flex align-items-center">Total Install <p style={{fontSize:"0.9rem", margin: "0", padding: "0"}}> (Pending)</p></h5>
             <p className="card-text display-6 text-warning mb-0">
-              {dashboardData.metricsData?.totalPendingInstall || 13}
+              {matricsData?.totalPendingInstallation || 0}
             </p>
           </div>
         </div>
@@ -357,8 +354,7 @@ const Dashboard = () => {
           <div className="card p-3">
             <h5 className="card-title mb-2">Revenue</h5>
             <p className="card-text display-6 text-info mb-0">
-              {/* ₹{dashboardData.monthlyRevenue?.currentMonth?.toLocaleString() || 784521} */}
-              ₹784521
+              ₹{financialData?.totalRevenue?.toLocaleString() || 0}
             </p>
           </div>
         </div>
@@ -366,8 +362,7 @@ const Dashboard = () => {
           <div className="card p-3">
             <h5 className="card-title mb-2">Profit</h5>
             <p className="card-text display-6 text-success mb-0">
-              {/* ₹{dashboardData.monthlyRevenue?.currentMonthProfit?.toLocaleString() || 65302} */}
-              ₹65302
+            ₹{financialData?.totalProfit?.toLocaleString() || 0}
             </p>
           </div>
         </div>
@@ -379,24 +374,11 @@ const Dashboard = () => {
           <div className="card p-3">
              <div className="d-flex justify-content-between align-items-center">
               <h5 className="card-title mb-2">Stock Movement</h5>
-              <select style={{maxWidth: "15rem"}} className="form-select" aria-label="Default select example" name="warrantee_guarantee_duration" onChange={(e) => handleLowerPartChange(index, "warrantee_guarantee_duration", e.target.value)}>
+              <select style={{maxWidth: "15rem"}} className="form-select" aria-label="Default select example" value={itemName} name="itemName" onChange={(e) => handleStockMovement(e.target.value)}>
                   <option>--Select item--</option>
-                  <option value="1">1 Month</option>
-                  <option value="3">3 Months</option>
-                  <option value="6">6 Months</option>
-                  <option value="12">1 Year</option>
-                  <option value="24">2 Years</option>
-                  <option value="36">3 Years</option>
-                  <option value="48">4 Years</option>
-                  <option value="60">5 Years</option>
-                  <option value="72">6 Years</option>
-                  <option value="84">7 Years</option>
-                  <option value="96">8 Years</option>
-                  <option value="108">9 Years</option>
-                  <option value="120">10 Years</option>
-                  <option value="180">15 Years</option>
-                  <option value="240">20 Years</option>
-                  <option value="300">25 Years</option>
+                  {financialData?.stockMovement.map((item)=>(
+                    <option key={item.item} value={item.item}>{item.item}</option>
+                  ))}
               </select>
             </div> 
             <Bar 
@@ -412,9 +394,16 @@ const Dashboard = () => {
         </div>
         <div className="col-12 col-md-6">
           <div className="card p-3">
-            <h5 className="card-title mb-2">Revenue & Profit</h5>
-            <Line 
-              data={revenueGraphData}
+          <div className="d-flex justify-content-between align-items-center">
+          <h5 className="card-title mb-2">Revenue & Profit</h5>
+              <select style={{maxWidth: "15rem"}} className="form-select" aria-label="Default select example" value={chartType} name="chartType" onChange={(e) => setChartType(e.target.value)}>
+                  <option value="BAR">BAR Chart</option>
+                  <option value="LINE">LINE Chart</option>
+              </select>
+            </div> 
+            {chartType == "BAR" && 
+            <Bar 
+              data={profitRevenueGraphData}
               options={{
                 responsive: true,
                 plugins: {
@@ -422,6 +411,18 @@ const Dashboard = () => {
                 }
               }}
             />
+            }
+            {chartType == "LINE" && 
+            <Line 
+              data={profitRevenueGraphData}
+              options={{
+                responsive: true,
+                plugins: {
+                  legend: { position: 'bottom' },
+                }
+              }}
+            />
+            }
           </div>
         </div>
       </div>
@@ -493,42 +494,45 @@ const Dashboard = () => {
                 </CSVLink>
               </button>
             </div>
-            <table className="table table-bordered">
-              <thead>
-                <tr>
-                  <th>Bill No</th>
-                  <th>Customer</th>
-                  <th>Amount</th>
-                  <th>Due Date</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {dashboardData.metricsData?.pendingBillDetails?.map((bill) => (
-                  <tr key={bill._id}>
-                    <td>{bill.billNumber}</td>
-                    <td>{bill.customerName}</td>
-                    <td>₹{bill.amount.toLocaleString()}</td>
-                    <td>
-                      <span className={new Date(bill.dueDate) < new Date() ? 'badge bg-danger' : 'badge bg-secondary'}>
-                        {new Date(bill.dueDate).toLocaleDateString()}
-                      </span>
-                    </td>
-                    <td>
-                      <button 
-                        className="btn btn-outline-secondary btn-sm"
-                        onClick={() => setSelectedBill(bill)}
-                      >
-                        <svg width="16" height="16" fill="currentColor" className="bi bi-eye" viewBox="0 0 16 16">
-                          <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.134 13.134 0 0 1 1.172 8z"/>
-                          <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"/>
-                        </svg>
-                      </button>
-                    </td>
+            <div style={{overflow: "scroll"}}>
+              <table className="table table-bordered">
+                <thead>
+                  <tr>
+                    <th>Bill No</th>
+                    <th>Amount</th>
+                    <th>Customer</th>
+                    <th>Date</th>
+                    <th>Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {matricsData?.bills?.map((bill) => (
+                    <tr key={bill._id}>
+                      <td>{bill.billNo}</td>
+                      <td>₹{bill.remaining_amount.toLocaleString()}</td>
+                      <td style={{textWrap: "nowrap"}}>{bill.buyer_name}</td>
+                      <td>{bill.date}</td>
+                      {/* <td>
+                        <span className={new Date(bill.date) < new Date() ? 'badge bg-danger' : 'badge bg-secondary'}>
+                          {bill.date}
+                        </span>
+                      </td> */}
+                      <td>
+                        <button 
+                          className="btn btn-outline-secondary btn-sm"
+                          onClick={() => setSelectedBill(bill)}
+                        >
+                          <svg width="16" height="16" fill="currentColor" className="bi bi-eye" viewBox="0 0 16 16">
+                            <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.134 13.134 0 0 1 1.172 8z"/>
+                            <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"/>
+                          </svg>
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>

@@ -31,7 +31,6 @@ function StockDetails() {
 
       const result = await response.json();
       if (response.ok) {
-        // console.log("result.docs", result.docs)
         setData(result.docs);
       } else {
         toastr.error(result.msg);
@@ -386,18 +385,18 @@ function StockDetails() {
     <div className="container my-2">
       <div className="row">
         <div className="col-7">
-          <input disabled={data.length<=0} value={globalFilter || ""} onChange={(e) => setGlobalFilter(e.target.value)} placeholder="Search by any field of table..." className="form-control my-3"/>
+          <input value={globalFilter || ""} onChange={(e) => setGlobalFilter(e.target.value)} placeholder="Search by any field of table..." className="form-control my-3"/>
         </div>
         <div className="col-3 d-flex align-items-center">
           <label className="form-label me-2 text-nowrap">Sold Status :</label>
-          <select  disabled={data.length<=0} className="form-select" aria-label="Default select example" name="sold_status" value={filters.sold_status} onChange={(e) => changeFilter(e.target.value, "sold_status")}>
+          <select className="form-select" aria-label="Default select example" name="sold_status" value={filters.sold_status} onChange={(e) => changeFilter(e.target.value, "sold_status")}>
               <option value="UNSOLD">Unsold</option>
               <option value="SOLD">Sold</option>
               <option value="ALL">All</option>
           </select> 
         </div>
         <div className="col-2 d-flex align-items-center justify-content-end">
-          {!editableTable && <button disabled={data.length<=0} className="btn btn-secondary" onClick={() => editableStatus(true)}>Bulk Edit</button>}
+          {!editableTable && <button className="btn btn-secondary" disabled={data.length<=0} onClick={() => editableStatus(true)}>Bulk Edit</button>}
           {editableTable && <button className="btn btn-secondary" onClick={() => editableStatus(false)}>Save</button>}
         </div>
       </div>
@@ -447,7 +446,7 @@ function StockDetails() {
           </div>
         </div>
       </div>}
-      {data.length<=0 && <div className="text-center mt-5">Your stock is empty. Add items from "Add Stock" to see details here.</div>}
+      {data.length<=0 && <div className="text-center mt-5">Your stock list is empty. Add items from "Add Stock" to see details here.</div>}
     </div>
   );
 }

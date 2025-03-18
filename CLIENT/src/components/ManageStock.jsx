@@ -144,23 +144,25 @@ function StockDetails() {
 
   const bill = (type) => {
     if(type == "ALL"){
-        setBuyerDetails({buyer_phone: "", buyer_name: "", buyer_address: "", buyer_pin: "", buyer_email: "", buyer_aadhar: ""})
         setBillListDiv(false)
-        const tempObj = {}
-        tempObj.billingData = billingData;
-        tempObj.total = 0
+        const billObj = {}
+        billObj.billingData = billingData;
+        billObj.total = 0
         for(let i=0; i<billingData.length; i++){
-            tempObj.total = tempObj.total + billingData[i].total_item_sell_price;
+            billObj.total = billObj.total + billingData[i].total_item_sell_price;
         }
-        tempObj.grandTotal = tempObj.total;
+        billObj.grandTotal = billObj.total;
         const rightNow = new Date();
-        tempObj.date = moment(rightNow).format('DD/MM/YYYY');
-        paymentDetails.payment_type = "CASH";
-        paymentDetails.paid_amount = tempObj.grandTotal;
-        paymentDetails.ramaining_amount = 0;
-        paymentDetails.info = "";
-        console.log("tempObj", tempObj)
-        setFinalBillingData(tempObj)
+        billObj.date = moment(rightNow).format('DD/MM/YYYY');
+        const paymentObj = {}
+        paymentObj.grandTotal = billObj.grandTotal;
+        paymentObj.payment_type = "CASH";
+        paymentObj.paid_amount = billObj.grandTotal;
+        paymentObj.remaining_amount = 0;
+        paymentObj.info = "";
+        setFinalBillingData(billObj)
+        setPaymentDetails(paymentObj)
+        setBuyerDetails({buyer_phone: "", buyer_name: "", buyer_address: "", buyer_pin: "", buyer_email: "", buyer_aadhar: ""})
     }
   }
 
@@ -185,9 +187,11 @@ function StockDetails() {
             }
         }
     }
-    paymentDetails.paid_amount = tempObj.grandTotal;
-    paymentDetails.total_amount = tempObj.grandTotal;
-    changePaymentDetails(tempObj.grandTotal, "paid_amount")
+    const paymentpObj = {...paymentDetails};
+    // paymentpObj.paid_amount = (tempObj.grandTotal - paymentpObj.remaining_amount);
+    paymentpObj.grandTotal = tempObj.grandTotal;
+    paymentpObj.remaining_amount = (tempObj.grandTotal - paymentpObj.paid_amount);
+    setPaymentDetails(paymentpObj)
     setFinalBillingData(tempObj)
   }
 
@@ -196,8 +200,8 @@ const changePaymentDetails = (value, type) => {
     if(type == "payment_type"){
         tempObj.payment_type = value;
     } else if (type == "paid_amount"){
-        tempObj.paid_amount = value;
-        tempObj.ramaining_amount = tempObj.total_amount - value;
+        tempObj.paid_amount = Number(value);
+        tempObj.remaining_amount = tempObj.grandTotal - value;
     } else if (type == "info"){
         tempObj.info = value;
     }else if (type == "pending_installation"){
@@ -248,7 +252,6 @@ const changePaymentDetails = (value, type) => {
 
   const submitBill = async () =>{
     const billingItemDetails = [];
-    console.log("finalBillingData.billingData",finalBillingData.billingData)
     for(let i=0; i<finalBillingData.billingData.length; i++){
         const ref = {
             item_id: finalBillingData.billingData[i]._id,
@@ -259,7 +262,7 @@ const changePaymentDetails = (value, type) => {
         billingItemDetails.push(ref);
     }
     const billData = {company_id: company_details._id , items: billingItemDetails, total: finalBillingData.total, additional_charges: finalBillingData.additional_charges, discount: finalBillingData.discount, grandTotal: finalBillingData.grandTotal,
-        payment_type: paymentDetails.payment_type, paid_amount:paymentDetails.paid_amount, ramaining_amount: paymentDetails.ramaining_amount, pending_installation: paymentDetails.pending_installation, info: paymentDetails.info,
+        payment_type: paymentDetails.payment_type, paid_amount:paymentDetails.paid_amount, remaining_amount: paymentDetails.remaining_amount, pending_installation: paymentDetails.pending_installation, info: paymentDetails.info,
         buyer_id: buyerDetails._id, buyer_phone: buyerDetails.buyer_phone, buyer_name: buyerDetails.buyer_name, buyer_email: buyerDetails.buyer_email, buyer_address: buyerDetails.buyer_address, buyer_pin: buyerDetails.buyer_pin, buyer_aadhar: buyerDetails.buyer_aadhar };
     if (!billData || !billData.company_id ){
       toastr.error("We are facing some problem in submission. Please try again with fresh entry.");
@@ -516,7 +519,7 @@ const changePaymentDetails = (value, type) => {
                     </div>
                     <div className="col d-flex flex-row align-items-center flex-nowrap">
                         <label className="form-label me-2 text-nowrap">Remaining amount :</label>
-                        <input disabled name="ramaining_amount" placeholder="Remaining amount"  type="text" maxLength={70} className="form-control text-end " aria-describedby="emailHelp" value={paymentDetails.ramaining_amount}/>
+                        <input disabled name="remaining_amount" placeholder="Remaining amount"  type="text" maxLength={70} className="form-control text-end " aria-describedby="emailHelp" value={paymentDetails.remaining_amount}/>
                     </div>
                     <div className="col d-flex flex-row align-items-center flex-nowrap">
                         <label className="form-label me-2 text-nowrap">Installation :</label>
