@@ -61,7 +61,7 @@ function Login() {
         <div className="log-in-buttons">
           <button type="submit" className="btn btn-primary my-2">Log In</button>
           <Link to="/"><button className="btn btn-primary my-2">Forgot Login Id</button></Link>
-          <Link to="/"><button className="btn btn-primary my-2">Forgot Password</button></Link>
+          <Link to="/forgot-user-password"><button className="btn btn-primary my-2">Forgot Password</button></Link>
         </div>
       </form>
     </div>

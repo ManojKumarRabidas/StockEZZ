@@ -293,6 +293,69 @@ module.exports = {
     }
   },
 
+  outerForgotPasswordSendOtp: async(req, res)=>{
+    try{
+      const {user_code, user_email} = req.body;
+      console.log(user_code, user_email)
+      if(!user_code || !user_email){return res.status(400).json({ msg: "Missing parameters." });}
+      
+      // const newOtp = Math.floor(Math.random() * (999999 - 100000 + 1)) + 100000;
+      // const otpDetails={otp: newOtp, generateAt: new Date(), expireAt: new Date()}
+      // const setOtp = await authModel.findOneAndUpdate({user_id: userId}, {$set: {otpDetails: otpDetails}}, {upsert: true, returnNewDocument: true});
+      // if (!setOtp._id){
+      //     res.status(400).json({ msg: "Fail to generate and set otp! Please try again later." });
+      //     return;
+      // }
+    
+      // const auth = nodemailer.createTransport({
+      //     service: "gmail",
+      //     secure : true,
+      //     port : 465,
+      //     auth: {
+      //         user: "manojkumarrabidas367@gmail.com",
+      //         pass: "owdl prwv scof wzdf"
+  
+      //     }
+      // });
+      // let model;
+      // if(userType == "COMPANY"){
+      //   model = require("../models/companies");
+      // } else{
+      //   model = require("../models/user");
+      // }
+      //  const user = await model.findById(userId);
+      // if(!user || !user.email){
+      //     res.status(400).json({ msg: "Email Id not found!" });
+      // }
+      // const receiver = {
+      //     from : "manojkumarrabidas367@gmail.com",
+      //     to : user.email,
+      //     subject : "StockEZZ Support Team : OTP for Forgot Password",
+      //     text : `Dear ${req.user.name}. 
+
+      //             Your One Time Password (OTP) for verify is: ${newOtp}.
+
+      //             OTP is valid only for 05:00 mins. Do not share this OTP with anyone.
+
+      //             If you did not request this OTP, please connect with us immediately at complaint.support@stockezz.in.
+                  
+      //             Regards,
+      //             Team StockEZZ`,
+      // };
+  
+      // auth.sendMail(receiver, (error, emailResponse) => {
+      //     if(error)
+      //         res.status(200).json({status: false, msg: "Fail to send OTP, Please check your email id or try again later"});
+      //     // throw error;
+      //     response.end();
+      // });
+  
+      // res.status(200).json({status: true, msg: "OTP sent to your registered email id"});
+  } catch(err){
+    res.status(500).json({status: false, msg: "Failed to send mail due to some technical problem. Please try again later." });
+  }
+  },
+
   forgotPasswordCheckOtp: async(req, res)=>{
       try{
           if(!req.body || !req.body.otp){

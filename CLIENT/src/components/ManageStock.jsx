@@ -144,11 +144,11 @@ function StockDetails() {
 
   const bill = (type) => {
     if(type == "ALL"){
-        setBillListDiv(false)
         const billObj = {}
         billObj.billingData = billingData;
         billObj.total = 0
         for(let i=0; i<billingData.length; i++){
+            if(isNaN(billingData[i].total_item_sell_price)){return toastr.error("Invalid price amount !")}
             billObj.total = billObj.total + billingData[i].total_item_sell_price;
         }
         billObj.grandTotal = billObj.total;
@@ -160,6 +160,7 @@ function StockDetails() {
         paymentObj.paid_amount = billObj.grandTotal;
         paymentObj.remaining_amount = 0;
         paymentObj.info = "";
+        setBillListDiv(false)
         setFinalBillingData(billObj)
         setPaymentDetails(paymentObj)
         setBuyerDetails({buyer_phone: "", buyer_name: "", buyer_address: "", buyer_pin: "", buyer_email: "", buyer_aadhar: ""})

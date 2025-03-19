@@ -365,7 +365,7 @@ function AddStock() {
     event.preventDefault();
     const data = {sl_no, date, time, sub_category, item, item_id, seller, seller_id, total_quantity, batch_no, item_status, return_reason, remarks, stock_details: lowerPartEntries};
     const additionalData = {batch_brand, batch_brand_id, batch_color, batch_capacity, batch_height, batch_power, batch_description, batch_model, batch_buy_price, batch_sell_price, per_peace_buy_price, per_peace_sell_price, batch_mfg_date, batch_exp_date, batch_warrantee_guarantee, batch_warrantee_guarantee_duration}
-    if(!data.date || !data.item || !data.total_quantity || !additionalData.per_peace_buy_price || !data.item_status){
+    if(!data.date || !data.item || !data.total_quantity || !additionalData.batch_buy_price || !data.item_status){
       toastr.error("Please enter all required field.");
       return;
     }
@@ -722,7 +722,7 @@ function AddStock() {
     if (stockStructure.batch_buy_price) {
       fields.push(
         <div className="col mb-3" key="batch_buy_price">
-          <label className="form-label mx-3">Batch Buy Price</label>
+          <label className="form-label mx-3">Batch Buy Price <span className="ei-col-red">*</span></label>
           <input
             placeholder="Enter batch buy price"
             name="batch_buy_price"
@@ -756,7 +756,7 @@ function AddStock() {
     if (stockStructure.per_peace_buy_price) {
       fields.push(
         <div className="col mb-3" key="per_peace_buy_price">
-          <label className="form-label mx-3">Per Piece Buy Price <span className="ei-col-red">*</span></label>
+          <label className="form-label mx-3">Per Piece Buy Price</label>
           <input
             required
             placeholder="Enter item buy price"

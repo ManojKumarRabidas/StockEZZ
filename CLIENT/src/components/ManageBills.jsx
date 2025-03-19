@@ -56,6 +56,7 @@ function ManageBills() {
 
       const result = await response.json();
       if (response.ok) {
+        console.log("result.doc", result.doc)
         setDetailsBill(result.doc)
         setDetailsBillDiv(true)
         setBillEditingStatus(false)
@@ -77,11 +78,12 @@ function ManageBills() {
     }else if (type == "pending_installation"){
         tempObj.pending_installation = value;
     }
+    console.log("tempObj", tempObj);
     setDetailsBill(tempObj)
   }
 
   const updateBillDetails = async(id)=>{
-    const updatedBillDetails  = {paid_amount: detailsBill.paid_amount, remaining_amount: detailsBill.remaining_amount, info: detailsBill.info, pending_installation: detailsBill.pending_installation };
+    const updatedBillDetails  = {profit: detailsBill.profit, paid_amount: detailsBill.paid_amount, remaining_amount: detailsBill.remaining_amount, info: detailsBill.info, pending_installation: detailsBill.pending_installation };
     if (updatedBillDetails.paid_amount == "" ){
       toastr.error("There must be some 'Paid amount'");
       return;

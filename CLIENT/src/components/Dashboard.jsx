@@ -46,6 +46,7 @@ const Dashboard = () => {
   const [matricsData, setMatricsData] = useState({});
   const [financialData, setFinancialData] = useState({stockMovement: []});
   const [stockMovementData, setStockMovementData] = useState({});
+  const [lowStockData, setlowStockData] = useState([]);
 
   const formatDate = (date) => {
     const day = String(date.getDate()).padStart(2, "0");
@@ -105,17 +106,31 @@ const Dashboard = () => {
   // Function to fetch low stock items
   const fetchLowStockItems = async () => {
     try {
+      if(!stockFilter){
+        return;
+      } else if(typeof(stockFilter) == "NaN"){
+        return;
+      } else if(typeof(stockFilter) != "number"){
+        toastr.error("Invalid number to filter.")
+        return;
+      }
       const response = await fetch(
         `${HOST}:${PORT}/server/stock/low?threshold=${stockFilter}`,
         {
           headers: { 'Authorization': `Bearer ${token}` }
         }
       );
-      const data = await response.json();
-      setDashboardData(prev => ({
-        ...prev,
-        lowStockItems: data.filter(item => item.quantity > 0 && item.quantity < stockFilter)
-      }));
+      const result = await response.json();
+      if (response.ok) {
+        setlowStockData(result.docs)
+        console.log("result.doc", result.docs)
+      } else {
+        toastr.error(result.msg);
+      }
+      // setDashboardData(prev => ({
+      //   ...prev,
+      //   lowStockItems: data.filter(item => item.quantity > 0 && item.quantity < stockFilter)
+      // }));
     } catch (err) {
       toastr.error('Failed to fetch low stock items');
     }
@@ -128,7 +143,7 @@ const Dashboard = () => {
       await Promise.all([
         fetchFinancialData(),
         fetchMetricsData(),
-        // fetchLowStockItems()
+        fetchLowStockItems()
       ]);
       setLoading(false)
     };
@@ -141,7 +156,7 @@ const Dashboard = () => {
   }, [dateRange, stockFilter]);
 
   useEffect(() => {
-    // fetchLowStockItems();
+    fetchLowStockItems();
   }, [stockFilter]);
 
   const handleReorder = async (item) => {
@@ -202,17 +217,53 @@ const Dashboard = () => {
   };
 
   // CSV Export Data
-  const lowStockCSVData = dashboardData.lowStockItems?.map(item => ({
-    name: item.name,
-    quantity: item.quantity,
-    status: item.quantity === 0 ? 'Out of Stock' : 'Low Stock'
-  }));
+  const lowStockCSVData = lowStockData?.flatMap(item => 
+    item.stocks.length > 0 
+        ? item.stocks.map(stock => ({
+            "Item Code": item.code,
+            "Item Name": item.name,
+            "Batch Id": stock.batch_id,
+            "Quantity": stock.quantity,
+            "Brand": stock.brand,
+            "Color": stock.color,
+            "Capacity": stock.capacity,
+            "Height/Width": stock.height,
+            "Power/Watt": stock.power,
+            "Model": stock.model,
+            "Entry Date": stock.entry_date,
+            "Seller": stock.seller,
+            "Description": stock.description,
+            "Status": stock.quantity === 0 ? 'Out of Stock' : 'Low Stock'
+        }))
+        : [{
+            "Item Code": item.code,
+            "Item Name": item.name,
+            "Batch Id": "N/A",
+            "Quantity": 0,
+            "Brand": "N/A",
+            "Color": "N/A",
+            "Capacity": "N/A",
+            "Height/Width": "N/A",
+            "Power/Watt": "N/A",
+            "Model": "N/A",
+            "Entry Date": "N/A",
+            "Seller": "N/A",
+            "Description": "N/A",
+            "Status": 'Out of Stock'
+        }]
+);
 
-  const pendingBillsCSVData = dashboardData.metricsData?.pendingBillDetails?.map(bill => ({
-    billNumber: bill.billNumber,
-    customerName: bill.customerName,
-    amount: bill.amount,
-    dueDate: new Date(bill.dueDate).toLocaleDateString()
+  const pendingBillsCSVData = matricsData?.bills?.map(bill => ({
+    "Date": bill.date,
+    "Bill Number": bill.billNo,
+    "Total Amount": bill.grandTotal,
+    "Pending Amount": bill.remaining_amount,
+    "Installation": bill.pending_installation,
+    "Customer Name": bill.buyer_name,
+    "Customer Phone": bill.buyer_phone,
+    "Customer Email Id": bill.buyer_email,
+    "Customer Address": bill.buyer_address,
+    "Customer PIN Code": bill.buyer_pin,
   })) || [];
 
   if (loading) {
@@ -438,7 +489,7 @@ const Dashboard = () => {
                   placeholder="Threshold"
                   type="number"
                   value={stockFilter}
-                  onChange={(e) => setStockFilter(parseInt(e.target.value) || 10)}
+                  onChange={(e) => setStockFilter(parseInt(e.target.value))}
                   className="form-control form-control-sm me-2"
                   style={{ width: '100px' }}
                 />
@@ -449,39 +500,39 @@ const Dashboard = () => {
                 </button>
               </div>
             </div>
-            <table className="table table-bordered">
-              <thead>
-                <tr>
-                  <th>Item</th>
-                  <th>Quantity</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {dashboardData.lowStockItems?.map((item) => (
-                  <tr key={item._id}>
-                    <td>{item.name}</td>
-                    <td>{item.quantity}</td>
-                    <td>
-                      <span className={`badge ${item.quantity === 0 ? 'bg-danger' : 'bg-warning'}`}>
-                        {item.quantity === 0 ? 'Out of Stock' : 'Low Stock'}
-                      </span>
-                    </td>
-                    <td>
-                      <button 
-                        className="btn btn-outline-secondary btn-sm"
-                        onClick={() => setSelectedItem(item)}
-                      >
-                        <svg width="16" height="16" fill="currentColor" className="bi bi-pencil" viewBox="0 0 16 16">
-                          <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707v2.828l2.828-2.828L11.793 6.5z"/>
-                        </svg>
-                      </button>
-                    </td>
+            <div className="overflow-scroll" style={{maxHeight: "25rem", minHeight: "25rem", overflowY: "auto",scrollbarWidth: "none", "-ms-overflow-style": "none"}}>
+              <table className="table table-bordered">
+                <thead>
+                  <tr>
+                    <th>Item</th>
+                    <th>Total Available</th>
+                    <th>Status</th>
+                    <th>Details</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {lowStockData?.map((item) => (
+                    <tr key={item._id}>
+                      <td>{item.name}</td>
+                      <td>{item.total_available}</td>
+                      <td>
+                        <span className={`badge ${item.total_available === 0 ? 'bg-danger' : 'bg-warning'}`}>
+                          {item.total_available === 0 ? 'Out of Stock' : 'Low Stock'}
+                        </span>
+                      </td>
+                      <td className="d-flex align-items-center justify-content-center">
+                        <button className="btn btn-outline-secondary btn-sm" onClick={() => setSelectedItem(item)}>
+                          <svg width="16" height="16" fill="currentColor" className="bi bi-eye" viewBox="0 0 16 16">
+                            <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.134 13.134 0 0 1 1.172 8z"/>
+                            <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"/>
+                          </svg>
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
         <div className="col-12 col-md-6">
@@ -494,7 +545,7 @@ const Dashboard = () => {
                 </CSVLink>
               </button>
             </div>
-            <div style={{overflow: "scroll"}}>
+            <div className="overflow-scroll" style={{maxHeight: "25rem", minHeight: "25rem", overflowY: "auto",scrollbarWidth: "none", "-ms-overflow-style": "none"}}>
               <table className="table table-bordered">
                 <thead>
                   <tr>
@@ -502,7 +553,7 @@ const Dashboard = () => {
                     <th>Amount</th>
                     <th>Customer</th>
                     <th>Date</th>
-                    <th>Actions</th>
+                    <th>Details</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -517,11 +568,8 @@ const Dashboard = () => {
                           {bill.date}
                         </span>
                       </td> */}
-                      <td>
-                        <button 
-                          className="btn btn-outline-secondary btn-sm"
-                          onClick={() => setSelectedBill(bill)}
-                        >
+                      <td className="d-flex align-items-center justify-content-center">
+                        <button className="btn btn-outline-secondary btn-sm" onClick={() => setSelectedBill(bill)}>
                           <svg width="16" height="16" fill="currentColor" className="bi bi-eye" viewBox="0 0 16 16">
                             <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.134 13.134 0 0 1 1.172 8z"/>
                             <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"/>
@@ -543,30 +591,79 @@ const Dashboard = () => {
           <div className="modal-dialog">
             <div className="modal-content">
               <div className="modal-header">
-                <h5 className="modal-title">Reorder {selectedItem.name}</h5>
+                <h5 className="modal-title">Stock Details of {selectedItem.name}</h5>
                 <button type="button" className="btn-close" onClick={() => setSelectedItem(null)}></button>
               </div>
               <div className="modal-body">
-                <input
+                {/* <input
                   type="number"
                   value={reorderQuantity}
                   onChange={(e) => setReorderQuantity(parseInt(e.target.value))}
                   className="form-control mb-2"
                   placeholder="Reorder Quantity"
-                />
-                <p className="mb-1">Current Stock: {selectedItem.quantity}</p>
-                <p className="mb-0">Minimum Stock Level: {selectedItem.minStockLevel || 'Not set'}</p>
+                /> */}
+                <table className="table table-striped">
+                  <tbody>
+                    <tr>
+                      <td>Item</td>
+                      <td>: {selectedItem.name}</td>
+                    </tr>
+                    <tr>
+                      <td>Current Stock</td>
+                      <td>: {selectedItem.total_available}</td>
+                    </tr>
+                    <tr>
+                      <td>Minimum Stock Level</td>
+                      <td>: {selectedItem.minStockLevel || 'Not set'}</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <hr />
+                {selectedItem.stocks.length>0 && <table className="table table-striped">
+                  <thead>
+                    <tr>
+                      <th>Batch Id</th>
+                      <th>Quantity</th>
+                      <th>Brand</th>
+                      <th>Color</th>
+                      <th>Capacity</th>
+                      <th>Height</th>
+                      <th>Power</th>
+                      <th>Model</th>
+                      <th>Entry Date</th>
+                      <th>Seller</th>
+                      <th>Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedItem.stocks.map((item)=>(
+                    <tr>
+                      <td>{item.batch_id}</td>
+                      <td>{item.quantity}</td>
+                      <td>{item.brand}</td>
+                      <td>{item.color}</td>
+                      <td>{item.capacity}</td>
+                      <td>{item.height}</td>
+                      <td>{item.power}</td>
+                      <td>{item.model}</td>
+                      <td>{item.entry_date}</td>
+                      <td>{item.seller}</td>
+                      <td>{item.description}</td>
+                    </tr>
+                    ))}
+                  </tbody>
+                </table>}
               </div>
               <div className="modal-footer">
                 <button type="button" className="btn btn-secondary" onClick={() => setSelectedItem(null)}>Cancel</button>
-                <button
+                {/* <button
                   type="button"
                   className="btn btn-primary"
                   onClick={() => handleReorder(selectedItem)}
                   disabled={reorderQuantity <= 0}
                 >
                   Reorder
-                </button>
+                </button> */}
               </div>
             </div>
           </div>
@@ -579,14 +676,50 @@ const Dashboard = () => {
           <div className="modal-dialog">
             <div className="modal-content">
               <div className="modal-header">
-                <h5 className="modal-title">Bill Details - {selectedBill.billNumber}</h5>
+                <h5 className="modal-title"> <strong>Bill Details of - {selectedBill.billNo}</strong></h5>
                 <button type="button" className="btn-close" onClick={() => setSelectedBill(null)}></button>
               </div>
               <div className="modal-body">
-                <p className="mb-1">Customer: {selectedBill.customerName}</p>
-                <p className="mb-1">Amount: ₹{selectedBill.amount?.toLocaleString()}</p>
-                <p className="mb-1">Due Date: {selectedBill.dueDate && new Date(selectedBill.dueDate).toLocaleDateString()}</p>
-                <p className="mb-0">Status: {selectedBill.status}</p>
+                <table className="table table-striped">
+                  <tbody>
+                    <tr>
+                      <td>Billing Date</td>
+                      <td>: {selectedBill.date}</td>
+                    </tr>
+                    <tr>
+                      <td>Customer Name</td>
+                      <td>: {selectedBill.buyer_name}</td>
+                    </tr>
+                    <tr>
+                      <td>Customer Phone</td>
+                      <td>: {selectedBill.buyer_phone}</td>
+                    </tr>
+                    <tr>
+                      <td>Customer Email</td>
+                      <td>: {selectedBill.buyer_email}</td>
+                    </tr>
+                    <tr>
+                      <td>Customer PIN</td>
+                      <td>: {selectedBill.buyer_pin}</td>
+                    </tr>
+                    <tr>
+                      <td>Customer Address</td>
+                      <td>: {selectedBill.buyer_address}</td>
+                    </tr>
+                    <tr>
+                      <td>Total Amount</td>
+                      <td>: ₹{selectedBill.grandTotal?.toLocaleString()}</td>
+                    </tr>
+                    <tr>
+                      <td>Pending Amount</td>
+                      <td>: ₹{selectedBill.remaining_amount?.toLocaleString()}</td>
+                    </tr>
+                    <tr>
+                      <td>Installation</td>
+                      <td>: {selectedBill.pending_installation}</td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
               <div className="modal-footer">
                 <button type="button" className="btn btn-secondary" onClick={() => setSelectedBill(null)}>Close</button>

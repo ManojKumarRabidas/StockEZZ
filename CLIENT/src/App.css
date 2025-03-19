@@ -1,3 +1,8 @@
+/* Bootstrap overrides  */
+.modal-dialog{
+  max-width: fit-content !important;
+  min-width: var(--bs-modal-width) !important;
+}
 .title-class {
   position: relative;
   cursor: pointer;
@@ -365,10 +370,6 @@ button, button a{
 }
 .main-section-registration {
   margin-top: 4rem !important;
-}
-.main-section-registration input,.main-section-registration select{
-  max-width: 25vw !important;
-  min-width: 25vw !important;
 }
 .teacher-registration-row, .teacher-registration-row select, .teacher-registration-row input{
   max-width: 18.5vw !important;
