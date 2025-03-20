@@ -10,6 +10,9 @@ const { authorizeRole } = require('../middleware/authMiddleware');
 router.post('/login', userController.userLogin);
 router.post('/logout', userController.userLogout);
 router.get("/auth/user", userController.getUser);
+router.post("/outer-forgot-password-send-otp", userController.outerForgotPasswordSendOtp);
+router.post("/outer-forgot-password-check-otp", userController.outerForgotPasswordCheckOtp);
+router.post("/outer-forgot-password-change-password", userController.outerForgotPasswordChangePassword);
 router.get("/get-profile-details",authorizeRole(['SUPPORTADMIN', 'COMPANY', 'OPERATOR']), userController.profileDetails);
 
 router.post("/change-password", authorizeRole(['ADMIN', 'SUPPORTADMIN', 'COMPANY', 'OPERATOR']), userController.changePassword);
@@ -17,7 +20,6 @@ router.post("/forgot-password-send-otp", authorizeRole(['ADMIN', 'SUPPORTADMIN',
 router.post("/forgot-password-check-otp", authorizeRole(['ADMIN', 'SUPPORTADMIN', 'COMPANY', 'OPERATOR']), userController.forgotPasswordCheckOtp);
 router.post("/forgot-password-change-password", authorizeRole(['ADMIN', 'SUPPORTADMIN', 'COMPANY', 'OPERATOR']), userController.forgotPasswordChangePassword);
 
-// router.post("/outer-forgot-password-send-otp", userController.outerForgotPasswordSendOtp);
 
 router.get("/get-companies",utilController.getCompanyNames);
 

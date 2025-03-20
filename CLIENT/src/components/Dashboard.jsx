@@ -10,19 +10,13 @@ import toastr from 'toastr';
 const token = sessionStorage.getItem('token');
 const HOST = import.meta.env.VITE_HOST;
 const PORT = import.meta.env.VITE_PORT;
+const userType = sessionStorage.getItem('seUserType');
 
 // Register ChartJS components
 ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend);
 
 const Dashboard = () => {
-  const [dashboardData, setDashboardData] = useState({
-    lowStockItems: [],
-    pendingBills: [],
-    stockInOutData: null,
-    monthlyRevenue: null,
-    metricsData: null,
-    // loading: true
-  });
+  const [dashboardContent, setDashboardContent] = useState(true);
   const [loading, setLoading] = useState(true)
   const [stockFilter, setStockFilter] = useState(10);
   const [itemName, setItemName] = useState("");
@@ -47,13 +41,6 @@ const Dashboard = () => {
   const [financialData, setFinancialData] = useState({stockMovement: []});
   const [stockMovementData, setStockMovementData] = useState({});
   const [lowStockData, setlowStockData] = useState([]);
-
-  const formatDate = (date) => {
-    const day = String(date.getDate()).padStart(2, "0");
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const year = date.getFullYear();
-    return `${day}/${month}/${year}`;
-  };
 
   const handleStockMovement = (item, data) => {
     let temp;
@@ -123,61 +110,45 @@ const Dashboard = () => {
       const result = await response.json();
       if (response.ok) {
         setlowStockData(result.docs)
-        console.log("result.doc", result.docs)
       } else {
         toastr.error(result.msg);
       }
-      // setDashboardData(prev => ({
-      //   ...prev,
-      //   lowStockItems: data.filter(item => item.quantity > 0 && item.quantity < stockFilter)
-      // }));
     } catch (err) {
       toastr.error('Failed to fetch low stock items');
     }
   };
 
   // Initial page load effect
+  const fetchInitialData = async () => {
+    setLoading(true)
+    await Promise.all([
+      fetchFinancialData(),
+      fetchMetricsData(),
+      fetchLowStockItems()
+    ]);
+    setLoading(false)
+  };
   useEffect(() => {
-    const fetchInitialData = async () => {
-      setLoading(true)
-      await Promise.all([
-        fetchFinancialData(),
-        fetchMetricsData(),
-        fetchLowStockItems()
-      ]);
+    if(userType == "ADMIN" || userType == "SUPPORTADMIN"){
+      setDashboardContent(false)
       setLoading(false)
-    };
-    fetchInitialData();
+    } else {
+      setDashboardContent(true)
+      fetchInitialData();
+      setLoading(false)
+    }
   }, []);
 
   // Effect for date range and stock filter changes
   useEffect(() => {
-    fetchFinancialData();
+    if(!(userType == "ADMIN" || userType == "SUPPORTADMIN")){fetchFinancialData();}
+    
   }, [dateRange, stockFilter]);
 
   useEffect(() => {
-    fetchLowStockItems();
+    if(!(userType == "ADMIN" || userType == "SUPPORTADMIN")){fetchLowStockItems();}
   }, [stockFilter]);
 
-  const handleReorder = async (item) => {
-    try {
-      await fetch(`${HOST}:${PORT}/server/stock/reorder`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ itemId: item._id, quantity: reorderQuantity })
-      });
-      await fetchLowStockItems();
-      setSelectedItem(null);
-      setReorderQuantity(0);
-      toastr.success('Item reordered successfully');
-    } catch (error) {
-      console.error('Error reordering:', error);
-      toastr.error('Failed to reorder item');
-    }
-  };
 
 
   // Stock In/Out Graph Data
@@ -343,393 +314,402 @@ const Dashboard = () => {
     );
   }
 
-  return (
-    <div className="container-fluid p-3" style={{ backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
-      {/* Header Section */}
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        <div>
-          <h2 className="mb-0">StockEZZ</h2>
-          <p className="text-muted mb-0">You focus on managing your life. Let us manage your stock. 😊</p>
+  if(!dashboardContent){
+    return (
+      <div className="container-fluid p-3" style={{ backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
+        Welcome Admin / Support Admin
         </div>
-        <div className="d-flex align-items-center">
-          <div className="mx-2">
-            <DatePicker 
-              dateFormat="dd/MM/yyyy" 
-              required 
-              name="startDate" 
-              selected={dateRange.start} 
-              className="form-control" 
-              onChange={(date) => setDateRange({ ...dateRange, start: date })}
-            />
-          </div>
+    )
+  }
+  if(dashboardContent){
+    return (
+      <div className="container-fluid p-3" style={{ backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
+        {/* Header Section */}
+        <div className="d-flex justify-content-between align-items-center mb-3">
           <div>
-            <DatePicker 
-              dateFormat="dd/MM/yyyy" 
-              required 
-              name="endDate" 
-              selected={dateRange.end} 
-              className="form-control" 
-              onChange={(date) => setDateRange({ ...dateRange, end: date })}
-            />
+            <h2 className="mb-0">StockEZZ</h2>
+            <p className="text-muted mb-0">You focus on managing your life. Let us manage your stock. 😊</p>
+          </div>
+          <div className="d-flex align-items-center">
+            <div className="mx-2">
+              <DatePicker 
+                dateFormat="dd/MM/yyyy" 
+                required 
+                name="startDate" 
+                selected={dateRange.start} 
+                className="form-control" 
+                onChange={(date) => setDateRange({ ...dateRange, start: date })}
+              />
+            </div>
+            <div>
+              <DatePicker 
+                dateFormat="dd/MM/yyyy" 
+                required 
+                name="endDate" 
+                selected={dateRange.end} 
+                className="form-control" 
+                onChange={(date) => setDateRange({ ...dateRange, end: date })}
+              />
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="row g-3">
-        {/* Row 1: Key Metrics */}
-        <div className="col">
-          <div className="card p-3">
-            <h5 className="card-title mb-2">Total Stock Value</h5>
-            <p className="card-text display-6 text-primary mb-0">
-              ₹{matricsData?.totalStockValue?.toLocaleString() || 0}
-            </p>
+        <div className="row g-3">
+          {/* Row 1: Key Metrics */}
+          <div className="col">
+            <div className="card p-3">
+              <h5 className="card-title mb-2">Total Stock Value</h5>
+              <p className="card-text display-6 text-primary mb-0">
+                ₹{matricsData?.totalStockValue?.toLocaleString() || 0}
+              </p>
+            </div>
+          </div>
+          <div className="col">
+            <div className="card p-3">
+              <h5 className="card-title mb-2">Total Pending Bills</h5>
+              <p className="card-text display-6 text-danger mb-0">
+                ₹{matricsData?.totalPendingBills?.toLocaleString() || 0}
+              </p>
+            </div>
+          </div>
+          <div className="col">
+            <div className="card p-3">
+              <h5 className="card-title mb-2 d-flex align-items-center">Total Install <p style={{fontSize:"0.9rem", margin: "0", padding: "0"}}> (Pending)</p></h5>
+              <p className="card-text display-6 text-warning mb-0">
+                {matricsData?.totalPendingInstallation || 0}
+              </p>
+            </div>
+          </div>
+          <div className="col">
+            <div className="card p-3">
+              <h5 className="card-title mb-2">Revenue</h5>
+              <p className="card-text display-6 text-info mb-0">
+                ₹{financialData?.totalRevenue?.toLocaleString() || 0}
+              </p>
+            </div>
+          </div>
+          <div className="col">
+            <div className="card p-3">
+              <h5 className="card-title mb-2">Profit</h5>
+              <p className="card-text display-6 text-success mb-0">
+              ₹{financialData?.totalProfit?.toLocaleString() || 0}
+              </p>
+            </div>
           </div>
         </div>
-        <div className="col">
-          <div className="card p-3">
-            <h5 className="card-title mb-2">Total Pending Bills</h5>
-            <p className="card-text display-6 text-danger mb-0">
-              ₹{matricsData?.totalPendingBills?.toLocaleString() || 0}
-            </p>
-          </div>
-        </div>
-        <div className="col">
-          <div className="card p-3">
-            <h5 className="card-title mb-2 d-flex align-items-center">Total Install <p style={{fontSize:"0.9rem", margin: "0", padding: "0"}}> (Pending)</p></h5>
-            <p className="card-text display-6 text-warning mb-0">
-              {matricsData?.totalPendingInstallation || 0}
-            </p>
-          </div>
-        </div>
-        <div className="col">
-          <div className="card p-3">
-            <h5 className="card-title mb-2">Revenue</h5>
-            <p className="card-text display-6 text-info mb-0">
-              ₹{financialData?.totalRevenue?.toLocaleString() || 0}
-            </p>
-          </div>
-        </div>
-        <div className="col">
-          <div className="card p-3">
-            <h5 className="card-title mb-2">Profit</h5>
-            <p className="card-text display-6 text-success mb-0">
-            ₹{financialData?.totalProfit?.toLocaleString() || 0}
-            </p>
-          </div>
-        </div>
-      </div>
 
-      <div className="row g-3 mt-3">
-        {/* Row 2: Graphs */}
-        <div className="col-12 col-md-6">
-          <div className="card p-3">
-             <div className="d-flex justify-content-between align-items-center">
-              <h5 className="card-title mb-2">Stock Movement</h5>
-              <select style={{maxWidth: "15rem"}} className="form-select" aria-label="Default select example" value={itemName} name="itemName" onChange={(e) => handleStockMovement(e.target.value)}>
-                  <option>--Select item--</option>
-                  {financialData?.stockMovement.map((item)=>(
-                    <option key={item.item} value={item.item}>{item.item}</option>
-                  ))}
-              </select>
-            </div> 
-            <Bar 
-              data={stockGraphData}
-              options={{
-                responsive: true,
-                plugins: {
-                  legend: { position: 'bottom' },
-                }
-              }}
-            />
+        <div className="row g-3 mt-3">
+          {/* Row 2: Graphs */}
+          <div className="col-12 col-md-6">
+            <div className="card p-3">
+              <div className="d-flex justify-content-between align-items-center">
+                <h5 className="card-title mb-2">Stock Movement</h5>
+                <select style={{maxWidth: "15rem"}} className="form-select" aria-label="Default select example" value={itemName} name="itemName" onChange={(e) => handleStockMovement(e.target.value)}>
+                    <option>--Select item--</option>
+                    {financialData?.stockMovement.map((item)=>(
+                      <option key={item.item} value={item.item}>{item.item}</option>
+                    ))}
+                </select>
+              </div> 
+              <Bar 
+                data={stockGraphData}
+                options={{
+                  responsive: true,
+                  plugins: {
+                    legend: { position: 'bottom' },
+                  }
+                }}
+              />
+            </div>
+          </div>
+          <div className="col-12 col-md-6">
+            <div className="card p-3">
+            <div className="d-flex justify-content-between align-items-center">
+            <h5 className="card-title mb-2">Revenue & Profit</h5>
+                <select style={{maxWidth: "15rem"}} className="form-select" aria-label="Default select example" value={chartType} name="chartType" onChange={(e) => setChartType(e.target.value)}>
+                    <option value="BAR">BAR Chart</option>
+                    <option value="LINE">LINE Chart</option>
+                </select>
+              </div> 
+              {chartType == "BAR" && 
+              <Bar 
+                data={profitRevenueGraphData}
+                options={{
+                  responsive: true,
+                  plugins: {
+                    legend: { position: 'bottom' },
+                  }
+                }}
+              />
+              }
+              {chartType == "LINE" && 
+              <Line 
+                data={profitRevenueGraphData}
+                options={{
+                  responsive: true,
+                  plugins: {
+                    legend: { position: 'bottom' },
+                  }
+                }}
+              />
+              }
+            </div>
           </div>
         </div>
-        <div className="col-12 col-md-6">
-          <div className="card p-3">
-          <div className="d-flex justify-content-between align-items-center">
-          <h5 className="card-title mb-2">Revenue & Profit</h5>
-              <select style={{maxWidth: "15rem"}} className="form-select" aria-label="Default select example" value={chartType} name="chartType" onChange={(e) => setChartType(e.target.value)}>
-                  <option value="BAR">BAR Chart</option>
-                  <option value="LINE">LINE Chart</option>
-              </select>
-            </div> 
-            {chartType == "BAR" && 
-            <Bar 
-              data={profitRevenueGraphData}
-              options={{
-                responsive: true,
-                plugins: {
-                  legend: { position: 'bottom' },
-                }
-              }}
-            />
-            }
-            {chartType == "LINE" && 
-            <Line 
-              data={profitRevenueGraphData}
-              options={{
-                responsive: true,
-                plugins: {
-                  legend: { position: 'bottom' },
-                }
-              }}
-            />
-            }
-          </div>
-        </div>
-      </div>
 
-      <div className="row g-3 mt-3">
-        {/* Row 3: Tables */}
-        <div className="col-12 col-md-6">
-          <div className="card p-3">
-            <div className="d-flex justify-content-between align-items-center mb-2">
-              <h5 className="card-title mb-0">Low Stock Items</h5>
-              <div className="d-flex">
-                <input
-                  placeholder="Threshold"
-                  type="number"
-                  value={stockFilter}
-                  onChange={(e) => setStockFilter(parseInt(e.target.value))}
-                  className="form-control form-control-sm me-2"
-                  style={{ width: '100px' }}
-                />
+        <div className="row g-3 mt-3">
+          {/* Row 3: Tables */}
+          <div className="col-12 col-md-6">
+            <div className="card p-3">
+              <div className="d-flex justify-content-between align-items-center mb-2">
+                <h5 className="card-title mb-0">Low Stock Items</h5>
+                <div className="d-flex">
+                  <input
+                    placeholder="Threshold"
+                    type="number"
+                    value={stockFilter}
+                    onChange={(e) => setStockFilter(parseInt(e.target.value))}
+                    className="form-control form-control-sm me-2"
+                    style={{ width: '100px' }}
+                  />
+                  <button className="btn btn-dark btn-sm">
+                    <CSVLink data={lowStockCSVData} filename="low-stock-items.csv" className="text-white text-decoration-none">
+                      Export
+                    </CSVLink>
+                  </button>
+                </div>
+              </div>
+              <div className="overflow-scroll" style={{maxHeight: "25rem", minHeight: "25rem", overflowY: "auto",scrollbarWidth: "none", "-ms-overflow-style": "none"}}>
+                <table className="table table-bordered">
+                  <thead>
+                    <tr>
+                      <th>Item</th>
+                      <th>Total Available</th>
+                      <th>Status</th>
+                      <th>Details</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {lowStockData?.map((item) => (
+                      <tr key={item._id}>
+                        <td>{item.name}</td>
+                        <td>{item.total_available}</td>
+                        <td>
+                          <span className={`badge ${item.total_available === 0 ? 'bg-danger' : 'bg-warning'}`}>
+                            {item.total_available === 0 ? 'Out of Stock' : 'Low Stock'}
+                          </span>
+                        </td>
+                        <td className="d-flex align-items-center justify-content-center">
+                          <button className="btn btn-outline-secondary btn-sm" onClick={() => setSelectedItem(item)}>
+                            <svg width="16" height="16" fill="currentColor" className="bi bi-eye" viewBox="0 0 16 16">
+                              <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.134 13.134 0 0 1 1.172 8z"/>
+                              <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"/>
+                            </svg>
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <div className="col-12 col-md-6">
+            <div className="card p-3">
+              <div className="d-flex justify-content-between align-items-center mb-2">
+                <h5 className="card-title mb-0">Pending Bills</h5>
                 <button className="btn btn-dark btn-sm">
-                  <CSVLink data={lowStockCSVData} filename="low-stock-items.csv" className="text-white text-decoration-none">
+                  <CSVLink data={pendingBillsCSVData} filename="pending-bills.csv" className="text-white text-decoration-none">
                     Export
                   </CSVLink>
                 </button>
               </div>
-            </div>
-            <div className="overflow-scroll" style={{maxHeight: "25rem", minHeight: "25rem", overflowY: "auto",scrollbarWidth: "none", "-ms-overflow-style": "none"}}>
-              <table className="table table-bordered">
-                <thead>
-                  <tr>
-                    <th>Item</th>
-                    <th>Total Available</th>
-                    <th>Status</th>
-                    <th>Details</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {lowStockData?.map((item) => (
-                    <tr key={item._id}>
-                      <td>{item.name}</td>
-                      <td>{item.total_available}</td>
-                      <td>
-                        <span className={`badge ${item.total_available === 0 ? 'bg-danger' : 'bg-warning'}`}>
-                          {item.total_available === 0 ? 'Out of Stock' : 'Low Stock'}
-                        </span>
-                      </td>
-                      <td className="d-flex align-items-center justify-content-center">
-                        <button className="btn btn-outline-secondary btn-sm" onClick={() => setSelectedItem(item)}>
-                          <svg width="16" height="16" fill="currentColor" className="bi bi-eye" viewBox="0 0 16 16">
-                            <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.134 13.134 0 0 1 1.172 8z"/>
-                            <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"/>
-                          </svg>
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-        <div className="col-12 col-md-6">
-          <div className="card p-3">
-            <div className="d-flex justify-content-between align-items-center mb-2">
-              <h5 className="card-title mb-0">Pending Bills</h5>
-              <button className="btn btn-dark btn-sm">
-                <CSVLink data={pendingBillsCSVData} filename="pending-bills.csv" className="text-white text-decoration-none">
-                  Export
-                </CSVLink>
-              </button>
-            </div>
-            <div className="overflow-scroll" style={{maxHeight: "25rem", minHeight: "25rem", overflowY: "auto",scrollbarWidth: "none", "-ms-overflow-style": "none"}}>
-              <table className="table table-bordered">
-                <thead>
-                  <tr>
-                    <th>Bill No</th>
-                    <th>Amount</th>
-                    <th>Customer</th>
-                    <th>Date</th>
-                    <th>Details</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {matricsData?.bills?.map((bill) => (
-                    <tr key={bill._id}>
-                      <td>{bill.billNo}</td>
-                      <td>₹{bill.remaining_amount.toLocaleString()}</td>
-                      <td style={{textWrap: "nowrap"}}>{bill.buyer_name}</td>
-                      <td>{bill.date}</td>
-                      {/* <td>
-                        <span className={new Date(bill.date) < new Date() ? 'badge bg-danger' : 'badge bg-secondary'}>
-                          {bill.date}
-                        </span>
-                      </td> */}
-                      <td className="d-flex align-items-center justify-content-center">
-                        <button className="btn btn-outline-secondary btn-sm" onClick={() => setSelectedBill(bill)}>
-                          <svg width="16" height="16" fill="currentColor" className="bi bi-eye" viewBox="0 0 16 16">
-                            <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.134 13.134 0 0 1 1.172 8z"/>
-                            <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"/>
-                          </svg>
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Reorder Dialog */}
-      {selectedItem && (
-        <div className="modal" tabIndex="-1" style={{ display: 'block', backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
-          <div className="modal-dialog">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Stock Details of {selectedItem.name}</h5>
-                <button type="button" className="btn-close" onClick={() => setSelectedItem(null)}></button>
-              </div>
-              <div className="modal-body">
-                {/* <input
-                  type="number"
-                  value={reorderQuantity}
-                  onChange={(e) => setReorderQuantity(parseInt(e.target.value))}
-                  className="form-control mb-2"
-                  placeholder="Reorder Quantity"
-                /> */}
-                <table className="table table-striped">
-                  <tbody>
-                    <tr>
-                      <td>Item</td>
-                      <td>: {selectedItem.name}</td>
-                    </tr>
-                    <tr>
-                      <td>Current Stock</td>
-                      <td>: {selectedItem.total_available}</td>
-                    </tr>
-                    <tr>
-                      <td>Minimum Stock Level</td>
-                      <td>: {selectedItem.minStockLevel || 'Not set'}</td>
-                    </tr>
-                  </tbody>
-                </table>
-                <hr />
-                {selectedItem.stocks.length>0 && <table className="table table-striped">
+              <div className="overflow-scroll" style={{maxHeight: "25rem", minHeight: "25rem", overflowY: "auto",scrollbarWidth: "none", "-ms-overflow-style": "none"}}>
+                <table className="table table-bordered">
                   <thead>
                     <tr>
-                      <th>Batch Id</th>
-                      <th>Quantity</th>
-                      <th>Brand</th>
-                      <th>Color</th>
-                      <th>Capacity</th>
-                      <th>Height</th>
-                      <th>Power</th>
-                      <th>Model</th>
-                      <th>Entry Date</th>
-                      <th>Seller</th>
-                      <th>Description</th>
+                      <th>Bill No</th>
+                      <th>Amount</th>
+                      <th>Customer</th>
+                      <th>Date</th>
+                      <th>Details</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {selectedItem.stocks.map((item)=>(
-                    <tr>
-                      <td>{item.batch_id}</td>
-                      <td>{item.quantity}</td>
-                      <td>{item.brand}</td>
-                      <td>{item.color}</td>
-                      <td>{item.capacity}</td>
-                      <td>{item.height}</td>
-                      <td>{item.power}</td>
-                      <td>{item.model}</td>
-                      <td>{item.entry_date}</td>
-                      <td>{item.seller}</td>
-                      <td>{item.description}</td>
-                    </tr>
+                    {matricsData?.bills?.map((bill) => (
+                      <tr key={bill._id}>
+                        <td>{bill.billNo}</td>
+                        <td>₹{bill.remaining_amount.toLocaleString()}</td>
+                        <td style={{textWrap: "nowrap"}}>{bill.buyer_name}</td>
+                        <td>{bill.date}</td>
+                        {/* <td>
+                          <span className={new Date(bill.date) < new Date() ? 'badge bg-danger' : 'badge bg-secondary'}>
+                            {bill.date}
+                          </span>
+                        </td> */}
+                        <td className="d-flex align-items-center justify-content-center">
+                          <button className="btn btn-outline-secondary btn-sm" onClick={() => setSelectedBill(bill)}>
+                            <svg width="16" height="16" fill="currentColor" className="bi bi-eye" viewBox="0 0 16 16">
+                              <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.134 13.134 0 0 1 1.172 8z"/>
+                              <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"/>
+                            </svg>
+                          </button>
+                        </td>
+                      </tr>
                     ))}
-                  </tbody>
-                </table>}
-              </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setSelectedItem(null)}>Cancel</button>
-                {/* <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={() => handleReorder(selectedItem)}
-                  disabled={reorderQuantity <= 0}
-                >
-                  Reorder
-                </button> */}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Bill Details Dialog */}
-      {selectedBill && (
-        <div className="modal" tabIndex="-1" style={{ display: 'block', backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
-          <div className="modal-dialog">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title"> <strong>Bill Details of - {selectedBill.billNo}</strong></h5>
-                <button type="button" className="btn-close" onClick={() => setSelectedBill(null)}></button>
-              </div>
-              <div className="modal-body">
-                <table className="table table-striped">
-                  <tbody>
-                    <tr>
-                      <td>Billing Date</td>
-                      <td>: {selectedBill.date}</td>
-                    </tr>
-                    <tr>
-                      <td>Customer Name</td>
-                      <td>: {selectedBill.buyer_name}</td>
-                    </tr>
-                    <tr>
-                      <td>Customer Phone</td>
-                      <td>: {selectedBill.buyer_phone}</td>
-                    </tr>
-                    <tr>
-                      <td>Customer Email</td>
-                      <td>: {selectedBill.buyer_email}</td>
-                    </tr>
-                    <tr>
-                      <td>Customer PIN</td>
-                      <td>: {selectedBill.buyer_pin}</td>
-                    </tr>
-                    <tr>
-                      <td>Customer Address</td>
-                      <td>: {selectedBill.buyer_address}</td>
-                    </tr>
-                    <tr>
-                      <td>Total Amount</td>
-                      <td>: ₹{selectedBill.grandTotal?.toLocaleString()}</td>
-                    </tr>
-                    <tr>
-                      <td>Pending Amount</td>
-                      <td>: ₹{selectedBill.remaining_amount?.toLocaleString()}</td>
-                    </tr>
-                    <tr>
-                      <td>Installation</td>
-                      <td>: {selectedBill.pending_installation}</td>
-                    </tr>
                   </tbody>
                 </table>
               </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setSelectedBill(null)}>Close</button>
-              </div>
             </div>
           </div>
         </div>
-      )}
-    </div>
-  );
+
+        {/* Reorder Dialog */}
+        {selectedItem && (
+          <div className="modal" tabIndex="-1" style={{ display: 'block', backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
+            <div className="modal-dialog">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">Stock Details of {selectedItem.name}</h5>
+                  <button type="button" className="btn-close" onClick={() => setSelectedItem(null)}></button>
+                </div>
+                <div className="modal-body">
+                  {/* <input
+                    type="number"
+                    value={reorderQuantity}
+                    onChange={(e) => setReorderQuantity(parseInt(e.target.value))}
+                    className="form-control mb-2"
+                    placeholder="Reorder Quantity"
+                  /> */}
+                  <table className="table table-striped">
+                    <tbody>
+                      <tr>
+                        <td>Item</td>
+                        <td>: {selectedItem.name}</td>
+                      </tr>
+                      <tr>
+                        <td>Current Stock</td>
+                        <td>: {selectedItem.total_available}</td>
+                      </tr>
+                      <tr>
+                        <td>Minimum Stock Level</td>
+                        <td>: {selectedItem.minStockLevel || 'Not set'}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <hr />
+                  {selectedItem.stocks.length>0 && <table className="table table-striped">
+                    <thead>
+                      <tr>
+                        <th>Batch Id</th>
+                        <th>Quantity</th>
+                        <th>Brand</th>
+                        <th>Color</th>
+                        <th>Capacity</th>
+                        <th>Height</th>
+                        <th>Power</th>
+                        <th>Model</th>
+                        <th>Entry Date</th>
+                        <th>Seller</th>
+                        <th>Description</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {selectedItem.stocks.map((item)=>(
+                      <tr>
+                        <td>{item.batch_id}</td>
+                        <td>{item.quantity}</td>
+                        <td>{item.brand}</td>
+                        <td>{item.color}</td>
+                        <td>{item.capacity}</td>
+                        <td>{item.height}</td>
+                        <td>{item.power}</td>
+                        <td>{item.model}</td>
+                        <td>{item.entry_date}</td>
+                        <td>{item.seller}</td>
+                        <td>{item.description}</td>
+                      </tr>
+                      ))}
+                    </tbody>
+                  </table>}
+                </div>
+                <div className="modal-footer">
+                  <button type="button" className="btn btn-secondary" onClick={() => setSelectedItem(null)}>Cancel</button>
+                  {/* <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={() => handleReorder(selectedItem)}
+                    disabled={reorderQuantity <= 0}
+                  >
+                    Reorder
+                  </button> */}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Bill Details Dialog */}
+        {selectedBill && (
+          <div className="modal" tabIndex="-1" style={{ display: 'block', backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
+            <div className="modal-dialog">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title"> <strong>Bill Details of - {selectedBill.billNo}</strong></h5>
+                  <button type="button" className="btn-close" onClick={() => setSelectedBill(null)}></button>
+                </div>
+                <div className="modal-body">
+                  <table className="table table-striped">
+                    <tbody>
+                      <tr>
+                        <td>Billing Date</td>
+                        <td>: {selectedBill.date}</td>
+                      </tr>
+                      <tr>
+                        <td>Customer Name</td>
+                        <td>: {selectedBill.buyer_name}</td>
+                      </tr>
+                      <tr>
+                        <td>Customer Phone</td>
+                        <td>: {selectedBill.buyer_phone}</td>
+                      </tr>
+                      <tr>
+                        <td>Customer Email</td>
+                        <td>: {selectedBill.buyer_email}</td>
+                      </tr>
+                      <tr>
+                        <td>Customer PIN</td>
+                        <td>: {selectedBill.buyer_pin}</td>
+                      </tr>
+                      <tr>
+                        <td>Customer Address</td>
+                        <td>: {selectedBill.buyer_address}</td>
+                      </tr>
+                      <tr>
+                        <td>Total Amount</td>
+                        <td>: ₹{selectedBill.grandTotal?.toLocaleString()}</td>
+                      </tr>
+                      <tr>
+                        <td>Pending Amount</td>
+                        <td>: ₹{selectedBill.remaining_amount?.toLocaleString()}</td>
+                      </tr>
+                      <tr>
+                        <td>Installation</td>
+                        <td>: {selectedBill.pending_installation}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div className="modal-footer">
+                  <button type="button" className="btn btn-secondary" onClick={() => setSelectedBill(null)}>Close</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
 };
 
 export default Dashboard;

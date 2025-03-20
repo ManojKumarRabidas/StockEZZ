@@ -22,8 +22,8 @@ function CustomizeAddStock() {
   const [batch_no, setBatchNo] = useState(true);
   const [batch_buy_price, setBatchBuyPrice] = useState(true);
   const [batch_sell_price, setBatchSellPrice] = useState(true);
-  const [per_peace_buy_price, setPerPeaceBuyPrice] = useState(true);
-  const [per_peace_sell_price, setPerPeaceSellPrice] = useState(true);
+  const [per_piece_buy_price, setPerPeaceBuyPrice] = useState(true);
+  const [per_piece_sell_price, setPerPeaceSellPrice] = useState(true);
   const [batch_mfg_date, setBatchMfgDate] = useState(true);
   const [batch_exp_date, setBatchExpDate] = useState(true);
   const [batch_warrantee_guarantee, setBatchWarranteeGuarente] = useState(true)
@@ -75,8 +75,8 @@ function CustomizeAddStock() {
                     setBatchNo(result.stockStructure.batch_no);
                     setBatchBuyPrice(result.stockStructure.batch_buy_price);
                     setBatchSellPrice(result.stockStructure.batch_sell_price);
-                    setPerPeaceBuyPrice(result.stockStructure.per_peace_buy_price);
-                    setPerPeaceSellPrice(result.stockStructure.per_peace_sell_price);
+                    setPerPeaceBuyPrice(result.stockStructure.per_piece_buy_price);
+                    setPerPeaceSellPrice(result.stockStructure.per_piece_sell_price);
                     setBatchMfgDate(result.stockStructure.batch_mfg_date);
                     setBatchExpDate(result.stockStructure.batch_exp_date);
                     setBatchWarranteeGuarente(result.stockStructure.batch_warrantee_guarantee);
@@ -161,7 +161,7 @@ function CustomizeAddStock() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    const data = {sl_no, date, time, sub_category, item, batch_brand, batch_color, batch_capacity, batch_height, batch_power, batch_description, batch_model, total_quantity, unique_code, seller, quantity, batch_no, batch_buy_price, batch_sell_price, per_peace_buy_price, per_peace_sell_price, batch_mfg_date, batch_exp_date, batch_warrantee_guarantee, batch_warrantee_guarantee_duration, item_status, return_reason, remarks, model, brand, color, capacity, height, power, description, mfg_date, exp_date, item_buy_price, item_sell_price, warrantee_guarantee, warrantee_guarantee_duration};
+    const data = {sl_no, date, time, sub_category, item, batch_brand, batch_color, batch_capacity, batch_height, batch_power, batch_description, batch_model, total_quantity, unique_code, seller, quantity, batch_no, batch_buy_price, batch_sell_price, per_piece_buy_price, per_piece_sell_price, batch_mfg_date, batch_exp_date, batch_warrantee_guarantee, batch_warrantee_guarantee_duration, item_status, return_reason, remarks, model, brand, color, capacity, height, power, description, mfg_date, exp_date, item_buy_price, item_sell_price, warrantee_guarantee, warrantee_guarantee_duration};
     const response = await fetch(`${HOST}:${PORT}/server/save-customize-add-stock-details`, {
       method: "POST",
       body: JSON.stringify(data),
@@ -330,7 +330,7 @@ function CustomizeAddStock() {
                 <div className="mb-3 form-switch d-flex justify-content-between vrrl" style={{paddingLeft: "0"}}>
                     <label className="form-label mx-2">Batch Buy Price</label>
                     <div>
-                        <input className="form-check-input cursor-pointer" style={{ marginLeft: "0" }} type="checkbox" role="switch" id="batch_buy_priceSwitch" checked={batch_buy_price} onChange={(e) => setBatchBuyPrice(e.target.checked)}/>
+                        <input disabled className="form-check-input cursor-pointer" style={{ marginLeft: "0" }} type="checkbox" role="switch" id="batch_buy_priceSwitch" checked={batch_buy_price} onChange={(e) => setBatchBuyPrice(e.target.checked)}/>
                         <label className="form-check-label mx-3" htmlFor="batch_buy_priceSwitch">{batch_buy_price ? <span style={{color: "green"}}>Enabled</span> : <span style={{color: "red"}}>Disabled</span>}</label>
                     </div>
                 </div>
@@ -357,19 +357,19 @@ function CustomizeAddStock() {
             </div>
             <div className="col mb-3">
                 <div className="mb-3 form-switch d-flex justify-content-between vrrl" style={{paddingLeft: "0"}}>
-                    <label className="form-label mx-2">Per Peace Buy Price</label>
+                    <label className="form-label mx-2">Per Piece Buy Price</label>
                     <div title="This can't be changed">
-                        <input disabled className="form-check-input cursor-pointer" style={{ marginLeft: "0" }} type="checkbox" role="switch" id="per_peace_buy_priceSwitch" checked={per_peace_buy_price} onChange={(e) => setPerPeaceBuyPrice(e.target.checked)}/>
-                        <label className="form-check-label mx-3" htmlFor="per_peace_buy_priceSwitch">{per_peace_buy_price ? <span style={{color: "green"}}>Enabled</span> : <span style={{color: "red"}}>Disabled</span>}</label>
+                        <input className="form-check-input cursor-pointer" style={{ marginLeft: "0" }} type="checkbox" role="switch" id="per_peace_buy_priceSwitch" checked={per_piece_buy_price} onChange={(e) => setPerPeaceBuyPrice(e.target.checked)}/>
+                        <label className="form-check-label mx-3" htmlFor="per_peace_buy_priceSwitch">{per_piece_buy_price ? <span style={{color: "green"}}>Enabled</span> : <span style={{color: "red"}}>Disabled</span>}</label>
                     </div>
                 </div>
             </div>
             <div className="col mb-3">
                 <div className="mb-3 form-switch d-flex justify-content-between vrrl" style={{paddingLeft: "0"}}>
-                    <label className="form-label mx-2">Per Peace Sell Price</label>
+                    <label className="form-label mx-2">Per Piece Sell Price</label>
                     <div>
-                        <input className="form-check-input cursor-pointer" style={{ marginLeft: "0" }} type="checkbox" role="switch" id="per_peace_sell_priceSwitch" checked={per_peace_sell_price} onChange={(e) => setPerPeaceSellPrice(e.target.checked)}/>
-                        <label className="form-check-label mx-3" htmlFor="per_peace_sell_priceSwitch">{per_peace_sell_price ? <span style={{color: "green"}}>Enabled</span> : <span style={{color: "red"}}>Disabled</span>}</label>
+                        <input className="form-check-input cursor-pointer" style={{ marginLeft: "0" }} type="checkbox" role="switch" id="per_peace_sell_priceSwitch" checked={per_piece_sell_price} onChange={(e) => setPerPeaceSellPrice(e.target.checked)}/>
+                        <label className="form-check-label mx-3" htmlFor="per_peace_sell_priceSwitch">{per_piece_sell_price ? <span style={{color: "green"}}>Enabled</span> : <span style={{color: "red"}}>Disabled</span>}</label>
                     </div>
                 </div>
             </div>

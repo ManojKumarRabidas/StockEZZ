@@ -1,7 +1,6 @@
 import './App.css';
 import Login from "./components/Login";
 import Error404 from "./components/Error404";
-import ForgotPasswordOuter from './components/ForgotPasswordOuter';
 import Unauthorized from "./components/Unauthorized";
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
@@ -224,9 +223,8 @@ function AppContent({ isAuthenticated, userType }) {
   const location = useLocation();
   const isLoginPage = location.pathname === '/login';
   const error404Page = location.pathname === '/error-404';
-  const isForgotPasswordPage = location.pathname === '/forgot-user-password';
 
-  if (!isAuthenticated && !isLoginPage && !isForgotPasswordPage) {
+  if (!isAuthenticated && !isLoginPage) {
     return <Navigate to='/login' replace />;
   }
 
@@ -240,16 +238,15 @@ function AppContent({ isAuthenticated, userType }) {
 
   return (
     <>
-      {isAuthenticated && !isLoginPage && !error404Page && !isForgotPasswordPage && <Navbar />}
+      {isAuthenticated && !isLoginPage && !error404Page && <Navbar />}
       <div className="container-fluid">
-        <div className={`${isLoginPage || error404Page || isForgotPasswordPage ? 'row ei-row-unrestricted' : 'row ei-row'}`}>
-          {isAuthenticated && !isLoginPage && !error404Page && !isForgotPasswordPage && <Sidebar />}
-          <main className={`${error404Page ? 'col-12 main-section-registration' : ((isLoginPage || isForgotPasswordPage) ? 'col-12 main-section-log-in' : 'col-12 main-section')}`}>
+        <div className={`${isLoginPage || error404Page ? 'row ei-row-unrestricted' : 'row ei-row'}`}>
+          {isAuthenticated && !isLoginPage && !error404Page && <Sidebar />}
+          <main className={`${error404Page ? 'col-12 main-section-registration' : (isLoginPage ? 'col-12 main-section-log-in' : 'col-12 main-section')}`}>
             <Routes>
               <Route path='/' element={<Navigate to={isAuthenticated ? '/dashboard' : '/login'} replace />} />
               <Route path='/login' element={<Login />} />
               <Route path='/error-404' element={<Error404 />} />
-              <Route path='/forgot-user-password' element={<ForgotPasswordOuter />} />
               <Route path='/profile' element={user_type !== 'ADMIN' ? <Profile /> : <Unauthorized />} />
               <Route path='/user-manual' element={<UserManual />} />
               <Route path='/updates' element={<Updates />} />

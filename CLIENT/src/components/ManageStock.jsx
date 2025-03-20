@@ -330,7 +330,6 @@ const changePaymentDetails = (value, type) => {
         }
   
       } catch (error) {
-        console.error('Error printing bill:', error);
         toastr.error(error.message || 'Failed to download bill PDF');
       }
     }, []);

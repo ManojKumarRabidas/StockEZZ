@@ -292,8 +292,17 @@ button, button a{
   align-items: center !important;
   justify-content: center !important;
   background-color:  #f2f2f2;
-  height: 100vh;
+  height: 100vh !important;
+  width: 100vw !important;
+  position: relative;
+  top: 0;
+  left: 0;
+  background-size: cover; /* Scales image to cover container */
+  background-position: center; /* Centers the image */
+  opacity: 1; /* Low opacity (0 = fully transparent, 1 = fully opaque) */
+  z-index: 1; /* Places it behind content */
 }
+
 /* Sidebar styles */
 .sidebar {
   position: fixed;

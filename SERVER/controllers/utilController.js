@@ -132,7 +132,7 @@ module.exports = {
             body.date = true;
             body.item = true;
             body.total_quantity = true;
-            body.per_peace_buy_price = true;
+            body.batch_buy_price = true;
             body.item_status = true;
             if(body.unique_code || body.model || body.brand || body.color || body.capacity || body.height || body.power || body.description || body.mfg_date || body.exp_date || body.item_buy_price || body.item_sell_price || body.warrantee_guarantee || body.warrantee_guarantee_duration){
                 body.quantity = true;
@@ -664,7 +664,6 @@ module.exports = {
                 company_id = new ObjectId(operator.company)
             }
             let {threshold} = req.query;
-            console.log(threshold)
             if(!threshold){return res.status(400).json({ msg: "Missing Parameters!" });}
             threshold = Number(threshold);
             const docs = await itemModel.aggregate([
@@ -790,7 +789,6 @@ module.exports = {
             }
             res.status(200).json({status: true, docs: docs})
         } catch(err){
-            console.log(err)
             res.status(400).json({ msg: err.message });
         }
     },

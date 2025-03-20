@@ -27,8 +27,8 @@ function AddStock() {
   const [batch_no, setBatchNo] = useState("");
   const [batch_buy_price, setBatchBuyPrice] = useState("");
   const [batch_sell_price, setBatchSellPrice] = useState("");
-  const [per_peace_buy_price, setPerPeaceBuyPrice] = useState("");
-  const [per_peace_sell_price, setPerPeaceSellPrice] = useState("");
+  const [per_piece_buy_price, setPerPeaceBuyPrice] = useState("");
+  const [per_piece_sell_price, setPerPeaceSellPrice] = useState("");
   const [batch_mfg_date, setBatchMfgDate] = useState("");
   const [batch_exp_date, setBatchExpDate] = useState("");
   const [batch_warrantee_guarantee, setBatchWarranteeGuarente] = useState("")
@@ -286,8 +286,8 @@ function AddStock() {
       if(batch_buy_price && value != "" && value != 0){
         temp = batch_buy_price/value
         setPerPeaceBuyPrice(temp);
-      } else if(per_peace_buy_price && value != "" && value != 0){
-        temp = per_peace_buy_price*value
+      } else if(per_piece_buy_price && value != "" && value != 0){
+        temp = per_piece_buy_price*value
         setBatchBuyPrice(temp);
       }
     } else if(type == "BATCHBUYPRICE"){
@@ -295,8 +295,8 @@ function AddStock() {
       if(total_quantity && value != "" && value != 0){
         temp = value/total_quantity
         setPerPeaceBuyPrice(temp);
-      } else if(per_peace_buy_price && value != "" && value != 0){
-        temp = value/per_peace_buy_price
+      } else if(per_piece_buy_price && value != "" && value != 0){
+        temp = value/per_piece_buy_price
         setTotalQuantity(temp);
       }
     } else if(type == "PERPEACEBUYPRICE"){
@@ -364,7 +364,7 @@ function AddStock() {
   const handleSubmit = async (event) => {
     event.preventDefault();
     const data = {sl_no, date, time, sub_category, item, item_id, seller, seller_id, total_quantity, batch_no, item_status, return_reason, remarks, stock_details: lowerPartEntries};
-    const additionalData = {batch_brand, batch_brand_id, batch_color, batch_capacity, batch_height, batch_power, batch_description, batch_model, batch_buy_price, batch_sell_price, per_peace_buy_price, per_peace_sell_price, batch_mfg_date, batch_exp_date, batch_warrantee_guarantee, batch_warrantee_guarantee_duration}
+    const additionalData = {batch_brand, batch_brand_id, batch_color, batch_capacity, batch_height, batch_power, batch_description, batch_model, batch_buy_price, batch_sell_price, per_piece_buy_price, per_piece_sell_price, batch_mfg_date, batch_exp_date, batch_warrantee_guarantee, batch_warrantee_guarantee_duration}
     if(!data.date || !data.item || !data.total_quantity || !additionalData.batch_buy_price || !data.item_status){
       toastr.error("Please enter all required field.");
       return;
@@ -455,6 +455,7 @@ function AddStock() {
             aria-describedby="emailHelp"
             value={sub_category}
             onChange={(e) => handleDropValueChange(e.target.value, "SUBCATEGORY")}
+            onBlur={() => setTimeout(() => setSubCategories([]), 100)}
           />
           {sub_categories.length > 0 && (
             <ul style={{ border: "1px solid #ccc", padding: "5px", marginTop: "2px", listStyleType: "none", maxHeight: "150px", overflowY: "auto", position: "absolute", background: "white", width: "25%" }}>
@@ -502,6 +503,7 @@ function AddStock() {
             aria-describedby="emailHelp"
             value={item}
             onChange={(e) => handleDropValueChange(e.target.value, "ITEM")}
+            onBlur={() => setTimeout(() => setItems([]), 100)}
           />
           <input hidden name="item_id" type="text" maxLength={244} className="form-control" aria-describedby="emailHelp" value={item_id} />
           {items.length > 0 && (
@@ -531,6 +533,7 @@ function AddStock() {
             aria-describedby="emailHelp"
             value={batch_brand}
             onChange={(e) => handleDropValueChange(e.target.value, "BATCHBRAND")}
+            onBlur={() => setTimeout(() => setBrands([]), 100)}
           />
           <input hidden name="batch_brand_id" type="text" maxLength={244} className="form-control" aria-describedby="emailHelp" value={batch_brand_id} />
           {brandIndex === -1 && brands.length > 0 && (
@@ -668,6 +671,7 @@ function AddStock() {
             aria-describedby="emailHelp"
             value={seller}
             onChange={(e) => handleDropValueChange(e.target.value, "SELLER")}
+            onBlur={() => setTimeout(() => setSellers([]), 100)}
           />
           <input hidden name="seller_id" type="text" maxLength={244} className="form-control" aria-describedby="emailHelp" value={seller_id} />
           {sellers.length > 0 && (
@@ -753,35 +757,35 @@ function AddStock() {
       );
     }
 
-    if (stockStructure.per_peace_buy_price) {
+    if (stockStructure.per_piece_buy_price) {
       fields.push(
-        <div className="col mb-3" key="per_peace_buy_price">
+        <div className="col mb-3" key="per_piece_buy_price">
           <label className="form-label mx-3">Per Piece Buy Price</label>
           <input
             required
             placeholder="Enter item buy price"
-            name="per_peace_buy_price"
+            name="per_piece_buy_price"
             type="number"
             className="form-control"
             aria-describedby="emailHelp"
-            value={per_peace_buy_price}
+            value={per_piece_buy_price}
             onChange={(e) => handleBuyPrice(e.target.value, "PERPEACEBUYPRICE")}
           />
         </div>
       );
     }
 
-    if (stockStructure.per_peace_sell_price) {
+    if (stockStructure.per_piece_sell_price) {
       fields.push(
-        <div className="col mb-3" key="per_peace_sell_price">
+        <div className="col mb-3" key="per_piece_sell_price">
           <label className="form-label mx-3">Per Piece Sell Price </label>
           <input
             placeholder="Enter item sell price"
-            name="per_peace_sell_price"
+            name="per_piece_sell_price"
             type="number"
             className="form-control"
             aria-describedby="emailHelp"
-            value={per_peace_sell_price}
+            value={per_piece_sell_price}
             onChange={(e) => setPerPeaceSellPrice(e.target.value)}
           />
         </div>
@@ -969,6 +973,7 @@ function AddStock() {
             aria-describedby="emailHelp"
             value={entry.brand}
             onChange={(e) => handleDropValueChange(e.target.value, "brand", index)}
+            onBlur={() => setTimeout(() => setBrands([]), 100)}
           />
           <input hidden name="brand_id" type="text" maxLength={244} className="form-control" aria-describedby="emailHelp" value={entry.brand_id} />
           {brandIndex === index && brands.length > 0 && (

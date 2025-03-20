@@ -116,7 +116,7 @@ module.exports = {
       authUser.last_log_in = new Date();
       await authUser.save();
       const token = jwt.sign({ id: authUser.user_id, user_type: authUser.user_type, name: authUser.name, code: authUser.user_code }, process.env.JWT_SECRET, { expiresIn: '12h' });
-      res.cookie('token', token, { httpOnly: true }).json({ token, userName:authUser.name, code: authUser.user_code, msg: 'User Logged in successfully' });
+      res.cookie('token', token, { httpOnly: true }).json({ token, userType: authUser.user_type, userName:authUser.name, code: authUser.user_code, msg: 'User Logged in successfully' });
     } catch (err) {
       res.status(500).json({ msg: 'Server error', error: err.message });
     }
@@ -295,66 +295,87 @@ module.exports = {
 
   outerForgotPasswordSendOtp: async(req, res)=>{
     try{
-      const {user_code, user_email} = req.body;
-      console.log(user_code, user_email)
-      if(!user_code || !user_email){return res.status(400).json({ msg: "Missing parameters." });}
-      
-      // const newOtp = Math.floor(Math.random() * (999999 - 100000 + 1)) + 100000;
-      // const otpDetails={otp: newOtp, generateAt: new Date(), expireAt: new Date()}
-      // const setOtp = await authModel.findOneAndUpdate({user_id: userId}, {$set: {otpDetails: otpDetails}}, {upsert: true, returnNewDocument: true});
-      // if (!setOtp._id){
-      //     res.status(400).json({ msg: "Fail to generate and set otp! Please try again later." });
-      //     return;
-      // }
-    
-      // const auth = nodemailer.createTransport({
-      //     service: "gmail",
-      //     secure : true,
-      //     port : 465,
-      //     auth: {
-      //         user: "manojkumarrabidas367@gmail.com",
-      //         pass: "owdl prwv scof wzdf"
-  
-      //     }
-      // });
-      // let model;
-      // if(userType == "COMPANY"){
-      //   model = require("../models/companies");
-      // } else{
-      //   model = require("../models/user");
-      // }
-      //  const user = await model.findById(userId);
-      // if(!user || !user.email){
-      //     res.status(400).json({ msg: "Email Id not found!" });
-      // }
-      // const receiver = {
-      //     from : "manojkumarrabidas367@gmail.com",
-      //     to : user.email,
-      //     subject : "StockEZZ Support Team : OTP for Forgot Password",
-      //     text : `Dear ${req.user.name}. 
-
-      //             Your One Time Password (OTP) for verify is: ${newOtp}.
-
-      //             OTP is valid only for 05:00 mins. Do not share this OTP with anyone.
-
-      //             If you did not request this OTP, please connect with us immediately at complaint.support@stockezz.in.
-                  
-      //             Regards,
-      //             Team StockEZZ`,
-      // };
-  
-      // auth.sendMail(receiver, (error, emailResponse) => {
-      //     if(error)
-      //         res.status(200).json({status: false, msg: "Fail to send OTP, Please check your email id or try again later"});
-      //     // throw error;
-      //     response.end();
-      // });
-  
-      // res.status(200).json({status: true, msg: "OTP sent to your registered email id"});
+      const {user_type, user_code, user_email} = req.body;
+      console.log(user_type, user_code, user_email)
+      if(!user_type || !user_code || !user_email){return res.status(400).json({ msg: "Missing parameters." });}
+      let model;
+        if(user_type == "COMPANY"){
+          model = require("../models/companies");
+        } else{
+          model = require("../models/user");
+        }
+        const user = await model.findOne({code: user_code, email: user_email});
+        console.log("user", user)
+        if(!user){
+            return res.status(400).json({ msg: "User not found! Recheck the details." });
+        }
+        const newOtp = Math.floor(Math.random() * (999999 - 100000 + 1)) + 100000;
+        const otpDetails={otp: newOtp, generateAt: new Date(), expireAt: new Date()}
+        const setOtp = await authModel.findOneAndUpdate({user_id: user._id}, {$set: {otpDetails: otpDetails}}, {upsert: true, returnNewDocument: true});
+        console.log("setOtp", setOtp)
+        if (!setOtp._id){
+          return res.status(400).json({ msg: "Fail to generate and set otp! Please try again later." });
+        }
+      const sendMailStatus = require("../services/mailService").sendMail(user_email, newOtp, user.name, user_code)
+      console.log("sendMailStatus", sendMailStatus)
+      if(sendMailStatus){
+        return res.status(200).json({status: true, msg: "OTP sent to your registered email id", doc: {_id: user._id}});
+      } else{
+        return res.status(500).json({status: false, msg: sendMailStatus.msg });
+      }
   } catch(err){
+    console.log(err)
     res.status(500).json({status: false, msg: "Failed to send mail due to some technical problem. Please try again later." });
   }
   },
+
+  outerForgotPasswordCheckOtp: async(req, res)=>{
+      try{
+        console.log("req.body", req.body)
+          if(!req.body || !req.body.otp|| !req.body.user_id){
+              res.status(400).json({ msg: "Missing Parameters!!" });
+              return;
+          }
+          req.body.otp = parseInt(req.body.otp)
+          if(_.isNaN(req.body.otp)){
+              res.status(400).json({ msg: "Invalid type input for OTP." });
+              return;
+          }
+          const userId = new ObjectId(req.body.user_id);
+          const doc= await authModel.findOne({user_id: userId},{otpDetails: 1});
+          if(!doc || !doc.otpDetails){
+              res.status(400).json({ status: false, msg: "Unable to check otp due to some technocal problem! Please resend OTP and try again." });
+              return;
+          }
+          if(doc.otpDetails.otp != req.body.otp){
+              res.status(400).json({ status: false, msg: "Invalid OTP! Please try again." });
+              return;
+          }
+          res.status(200).json({status: true, msg: "Validation sucessfull. Please set a new password."});
+      }catch(err){
+          res.status(500).json({status: false, msg: "Failed to send mail due to some technical problem. Please try again later." });
+      }
+  },
+
+  outerForgotPasswordChangePassword: async(req, res)=>{
+    try{
+      console.log("req.body", req.body)
+        if(!req.body || !req.body.password|| !req.body.user_id){
+            res.status(400).json({ msg: "Please enter password." });
+            return;
+        }
+        req.body.password = await bcrypt.hash(req.body.password, 10);
+        const userId = new ObjectId(req.body.user_id);
+        const doc = await authModel.findOneAndUpdate({user_id: userId}, {$set: {password: req.body.password}}, {upsert: true, returnNewDocument: true});
+        if(!doc || !doc._id){
+            res.status(500).json({status: false, msg: "Failed to update password due to some technical problem. Please try again later." });
+        }
+        res.status(200).json({status: true, msg: "Password changed successfully."});
+    }catch(err){
+      console.log("err", err)
+        res.status(500).json({status: false, msg: "Failed to update password due to some technical problem. Please try again later." });
+    }
+},
 
   forgotPasswordCheckOtp: async(req, res)=>{
       try{

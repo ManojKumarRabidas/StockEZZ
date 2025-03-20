@@ -56,7 +56,6 @@ function ManageBills() {
 
       const result = await response.json();
       if (response.ok) {
-        console.log("result.doc", result.doc)
         setDetailsBill(result.doc)
         setDetailsBillDiv(true)
         setBillEditingStatus(false)
@@ -78,7 +77,6 @@ function ManageBills() {
     }else if (type == "pending_installation"){
         tempObj.pending_installation = value;
     }
-    console.log("tempObj", tempObj);
     setDetailsBill(tempObj)
   }
 
@@ -148,7 +146,6 @@ function ManageBills() {
       }
 
     } catch (error) {
-      console.error('Error printing bill:', error);
       toastr.error(error.message || 'Failed to download bill PDF');
     }
   }, []);

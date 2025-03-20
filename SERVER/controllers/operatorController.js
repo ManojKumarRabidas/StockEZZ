@@ -16,7 +16,7 @@ module.exports = {
         try{
             const body = req.body.data;
             const additionalData = req.body.additionalData;
-            if(!req.body || !req.body.data || !body.date || !body.item || !body.total_quantity || !req.body.additionalData || !additionalData.per_peace_buy_price){
+            if(!req.body || !req.body.data || !body.date || !body.item || !body.total_quantity || !req.body.additionalData || !additionalData.per_piece_buy_price){
                 res.status(400).json({ msg: "Missing Parameters!" });
                 return;
             }
@@ -68,17 +68,17 @@ module.exports = {
                 }
                 const codeGenerator = await require("../controllers/utilController").createCode("ITEM");
                 newItem.code = codeGenerator.code
-                const doc = await itemModel.updateOne(
+                const doc = await itemModel.findOneAndUpdate(
                     { name: { $regex: `^${newItem.name}$`, $options: "i" } },  // Case-insensitive match
                     { $setOnInsert: newItem }, 
-                    { upsert: true }
+                    { upsert: true , returnDocument: 'after'}
                 );
-                
-                if (doc.matchedCount === 0 && doc.upsertedCount === 0) {
+
+                if (!doc._id) {
                     res.status(400).json({ msg: "We are facing some technical error! Please try again later." });
                     return;
                 }
-                body.item_id = doc.upsertedId;
+                body.item_id = doc._id;
             }
             if(additionalData.batch_brand_id){
                 body.brand_id = new ObjectId(additionalData.batch_brand_id);
@@ -88,17 +88,17 @@ module.exports = {
                     companyId : body.company_id,
                     active: true
                 }
-                const doc = await brandModel.updateOne(
+                const doc = await brandModel.findOneAndUpdate(
                     { name: { $regex: `^${newBrand.name}$`, $options: "i" } },  // Case-insensitive match
                     { $setOnInsert: newBrand }, 
-                    { upsert: true }
+                    { upsert: true , returnDocument: 'after'}
                 );
                 
-                if (doc.matchedCount === 0 && doc.upsertedCount === 0) {
+                if (!doc._id) {
                     res.status(400).json({ msg: "We are facing some technical error! Please try again later." });
                     return;
                 }
-                body.brand_id = doc.upsertedId;
+                body.brand_id = doc._id;
             }
             if(body.seller_id){
                 
@@ -111,17 +111,17 @@ module.exports = {
                 }
                 const codeGenerator = await require("../controllers/utilController").createCode("SELLER");
                 newSeller.code = codeGenerator.code
-                const doc = await sellerModel.updateOne(
+                const doc = await sellerModel.findOneAndUpdate(
                     { name: { $regex: `^${newSeller.name}$`, $options: "i" } },  // Case-insensitive match
                     { $setOnInsert: newSeller }, 
-                    { upsert: true }
+                    { upsert: true , returnDocument: 'after'}
                 );
                 
-                if (doc.matchedCount === 0 && doc.upsertedCount === 0) {
+                if (!doc._id) {
                     res.status(400).json({ msg: "We are facing some technical error! Please try again later." });
                     return;
                 }
-                body.seller_id = doc.upsertedId;
+                body.seller_id = doc._id;
             } else{
                 body.seller_id = null;
             }
@@ -138,8 +138,8 @@ module.exports = {
                 body.model = additionalData.batch_model ? additionalData.batch_model: null;
                 body.mfg_date = additionalData.batch_mfg_date ? new Date(additionalData.batch_mfg_date): null;
                 body.exp_date = additionalData.batch_exp_date ? new Date(additionalData.batch_exp_date): null;
-                body.item_buy_price = additionalData.per_peace_buy_price ? Number(additionalData.per_peace_buy_price): null;
-                body.item_sell_price = additionalData.per_peace_sell_price ? Number(additionalData.per_peace_sell_price): null;
+                body.item_buy_price = additionalData.per_piece_buy_price ? Number(additionalData.per_piece_buy_price): null;
+                body.item_sell_price = additionalData.per_piece_sell_price ? Number(additionalData.per_piece_sell_price): null;
                 body.warrantee_guarantee = additionalData.batch_warrantee_guarantee ? additionalData.batch_warrantee_guarantee: null;
                 body.warrantee_guarantee_duration = additionalData.batch_warrantee_guarantee_duration ? Number(additionalData.batch_warrantee_guarantee_duration): null;
                 body.quantity = itemQuantity - detailsBodyTotalQuantity;
@@ -160,17 +160,17 @@ module.exports = {
                             companyId : body.company_id,
                             active: true
                         }
-                        const doc = await brandModel.updateOne(
+                        const doc = await brandModel.findOneAndUpdate(
                             { name: { $regex: `^${newBrand.name}$`, $options: "i" } },  // Case-insensitive match
                             { $setOnInsert: newBrand }, 
-                            { upsert: true }
+                            { upsert: true , returnDocument: 'after'}
                         );
                         
-                        if (doc.matchedCount === 0 && doc.upsertedCount === 0) {
+                        if (!doc._id) {
                             res.status(400).json({ msg: "We are facing some technical error! Please try again later." });
                             return;
                         }
-                        newBody.brand_id = doc.upsertedId;
+                        newBody.brand_id = doc._id;
                     } else{
                         newBody.brand_id = additionalData.batch_brand_id ? additionalData.batch_brand_id: null;
                     }
@@ -184,8 +184,8 @@ module.exports = {
                     newBody.unique_code = ref.unique_code ? ref.unique_code : "";
                     newBody.mfg_date = ref.mfg_date ? new Date(ref.mfg_date) : (additionalData.batch_mfg_date ? new Date(additionalData.batch_mfg_date): null);
                     newBody.exp_date = ref.exp_date ? new Date(ref.exp_date) : (additionalData.batch_exp_date ? new Date(additionalData.batch_exp_date): null);
-                    newBody.item_buy_price = ref.item_buy_price ? Number(ref.item_buy_price) : (additionalData.per_peace_buy_price ? Number(additionalData.per_peace_buy_price): null);
-                    newBody.item_sell_price = ref.item_sell_price ? Number(ref.item_sell_price) : (additionalData.per_peace_sell_price ? Number(additionalData.per_peace_sell_price): null);
+                    newBody.item_buy_price = ref.item_buy_price ? Number(ref.item_buy_price) : (additionalData.per_piece_buy_price ? Number(additionalData.per_piece_buy_price): null);
+                    newBody.item_sell_price = ref.item_sell_price ? Number(ref.item_sell_price) : (additionalData.per_piece_sell_price ? Number(additionalData.per_piece_sell_price): null);
                     newBody.warrantee_guarantee = ref.warrantee_guarantee ? ref.warrantee_guarantee : ((additionalData.batch_warrantee_guarantee ? additionalData.batch_warrantee_guarantee: null));
                     newBody.warrantee_guarantee_duration = ref.warrantee_guarantee_duration ? Number(ref.warrantee_guarantee_duration) : (((additionalData.batch_warrantee_guarantee_duration ? Number(additionalData.batch_warrantee_guarantee_duration): null)));
                     finalStockBody.push(newBody);
