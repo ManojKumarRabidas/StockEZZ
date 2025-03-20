@@ -155,7 +155,6 @@ function Login() {
         setError("We are unable to process now. Please try again later.")
       }
       }catch(err){
-        console.log(err)
         setError("We are unable to process now. Please try again later.")
       }
   }
