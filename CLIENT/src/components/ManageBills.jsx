@@ -71,7 +71,7 @@ function ManageBills() {
     const tempObj = {...detailsBill};
     if (type == "paid_amount"){
         tempObj.paid_amount = value;
-        tempObj.ramaining_amount = Number(tempObj.grandTotal) - value;
+        tempObj.remaining_amount = Number(tempObj.grandTotal) - value;
     } else if (type == "info"){
         tempObj.info = value;
     }else if (type == "pending_installation"){
@@ -81,7 +81,7 @@ function ManageBills() {
   }
 
   const updateBillDetails = async(id)=>{
-    const updatedBillDetails  = {paid_amount: detailsBill.paid_amount, ramaining_amount: detailsBill.ramaining_amount, info: detailsBill.info, pending_installation: detailsBill.pending_installation };
+    const updatedBillDetails  = {profit: detailsBill.profit, paid_amount: detailsBill.paid_amount, remaining_amount: detailsBill.remaining_amount, info: detailsBill.info, pending_installation: detailsBill.pending_installation };
     if (updatedBillDetails.paid_amount == "" ){
       toastr.error("There must be some 'Paid amount'");
       return;
@@ -146,7 +146,6 @@ function ManageBills() {
       }
 
     } catch (error) {
-      console.error('Error printing bill:', error);
       toastr.error(error.message || 'Failed to download bill PDF');
     }
   }, []);
@@ -222,7 +221,7 @@ function ManageBills() {
       },
       {
         header: "Remaining Amount",
-        accessorKey: "ramaining_amount",
+        accessorKey: "remaining_amount",
         sortingFn: "alphanumeric",
         enableSorting: true,
       },
@@ -324,51 +323,54 @@ function ManageBills() {
     <div className="container my-2">
       {!detailsBillDiv && <div>
         <input value={globalFilter || ""} onChange={(e) => setGlobalFilter(e.target.value)} placeholder="Search by any field of table..." className="form-control my-3"/>
-        <div className="scroll-hidden">
-          <table className="table table-striped shadow-sm p-3 bg-body-tertiary rounded" style={{ fontSize: "smaller", margin: "0" }}>
-            <thead style={{textWrap: "nowrap"}}>
-              {table.getHeaderGroups().map((headerGroup) => (
-                <tr key={headerGroup.id} className="text-center">
-                  {headerGroup.headers.map((header) => (
-                    <th key={header.id} onClick={header.column.getToggleSortingHandler()} className={header.column.columnDef.headerClassName} >
-                      {flexRender(header.column.columnDef.header,header.getContext())}{{asc: " 🔼", desc: " 🔽", }[header.column.getIsSorted()] ?? null}
-                    </th>
-                  ))}
-                </tr>
-              ))}
-            </thead>
-            <tbody>
-              {table.getRowModel().rows.map((row) => (
-                <tr key={row.id} className="text-center">
-                  {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>
-                  ))}
-                </tr>
-              ))}
-              {table.getRowModel().rows.length === 0 && (
-                <tr>
-                  <td colSpan="11" className="text-center">No data available </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-        <div className="d-flex justify-content-between my-3">
-          <select className="form-select mx-2" style={{maxWidth: "fit-content"}}  value={pageSize} onChange={(e) => setPageSize(Number(e.target.value))} >
-            {[5, 10, 15, 20, 25, 30].map((size) => (
-              <option key={size} value={size}> Show {size} </option>
-            ))}
-          </select>
-          <span className="text-nowrap mx-2 text-center">
-            Page{" "}
-            <strong> {pageIndex + 1} of {table.getPageCount()} </strong>
-          </span>
-          <div className="btn-group mx-2">
-            <button className="btn btn-secondary" onClick={() => table.previousPage()}disabled={!table.getCanPreviousPage()} >Previous</button>
-            <button className="btn btn-secondary" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}> Next </button>
+        {data.length>0 && <>   
+          <div className="scroll-hidden">
+            <table className="table table-striped shadow-sm p-3 bg-body-tertiary rounded" style={{ fontSize: "smaller", margin: "0" }}>
+              <thead style={{textWrap: "nowrap"}}>
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <tr key={headerGroup.id} className="text-center">
+                    {headerGroup.headers.map((header) => (
+                      <th key={header.id} onClick={header.column.getToggleSortingHandler()} className={header.column.columnDef.headerClassName} >
+                        {flexRender(header.column.columnDef.header,header.getContext())}{{asc: " 🔼", desc: " 🔽", }[header.column.getIsSorted()] ?? null}
+                      </th>
+                    ))}
+                  </tr>
+                ))}
+              </thead>
+              <tbody>
+                {table.getRowModel().rows.map((row) => (
+                  <tr key={row.id} className="text-center">
+                    {row.getVisibleCells().map((cell) => (
+                      <td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>
+                    ))}
+                  </tr>
+                ))}
+                {table.getRowModel().rows.length === 0 && (
+                  <tr>
+                    <td colSpan="11" className="text-center">No data available </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
-        </div>
+          <div className="d-flex justify-content-between my-3">
+            <select className="form-select mx-2" style={{maxWidth: "fit-content"}}  value={pageSize} onChange={(e) => setPageSize(Number(e.target.value))} >
+              {[5, 10, 15, 20, 25, 30].map((size) => (
+                <option key={size} value={size}> Show {size} </option>
+              ))}
+            </select>
+            <span className="text-nowrap mx-2 text-center">
+              Page{" "}
+              <strong> {pageIndex + 1} of {table.getPageCount()} </strong>
+            </span>
+            <div className="btn-group mx-2">
+              <button className="btn btn-secondary" onClick={() => table.previousPage()}disabled={!table.getCanPreviousPage()} >Previous</button>
+              <button className="btn btn-secondary" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}> Next </button>
+            </div>
+          </div>
+        </>}
       </div>}
+      {data.length<=0 && <div className="d-flex flex-column justify-content-center align-items-center text-center"  style={{minHeight: "87vh"}}> <div> No bills available. <br /> Generate bill from 'Manage Stock' to see bills here.</div></div> }
       {detailsBillDiv &&<div>
             <div className="text-center bg-body-tertiary p-3">
                 {(detailsBill.items.length > 0) && <div className="mt-3">
@@ -474,7 +476,7 @@ function ManageBills() {
                         {billEditingStatus && <label className="form-label me-2 text-nowrap d-flex align-items-center">Paid amount : <input name="paid_amount" placeholder="Paid amount"  type="text" maxLength={70} className="form-control text-end ms-2" aria-describedby="emailHelp" value={detailsBill.paid_amount} onChange={(e) => changeDetails(e.target.value, "paid_amount")}/></label>}
                     </div>
                     <div className="col d-flex flex-row align-items-center flex-nowrap">
-                        <label className="form-label me-2 text-nowrap">Remaining amount : {detailsBill.ramaining_amount}</label>
+                        <label className="form-label me-2 text-nowrap">Remaining amount : {detailsBill.remaining_amount}</label>
                     </div>
                     <div className="col d-flex flex-row align-items-center flex-nowrap">
                       {!billEditingStatus && <label className="form-label me-2 text-nowrap">Installation : {detailsBill.pending_installation}</label>}

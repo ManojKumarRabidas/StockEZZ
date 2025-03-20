@@ -16,22 +16,32 @@ module.exports = {
         try{
             const body = req.body.data;
             const additionalData = req.body.additionalData;
-            if(!req.body || !req.body.data || !body.date || !body.item || !body.quantity || !req.body.additionalData || !additionalData.per_peace_buy_price){
+            if(!req.body || !req.body.data || !body.date || !body.item || !body.total_quantity || !req.body.additionalData || !additionalData.per_piece_buy_price){
                 res.status(400).json({ msg: "Missing Parameters!" });
                 return;
             }
             let stockDetailsBody = body.stock_details;
-            if(!(stockDetailsBody[0].unique_code || stockDetailsBody[0].mfg_date || stockDetailsBody[0].exp_date || stockDetailsBody[0].item_buy_price || stockDetailsBody[0].item_sell_price || stockDetailsBody[0].warrantee_guarantee || stockDetailsBody[0].warrantee_guarantee_duration)){
+            if(!(stockDetailsBody[0].unique_code || stockDetailsBody[0].model || stockDetailsBody[0].brand || stockDetailsBody[0].color || stockDetailsBody[0].capacity || stockDetailsBody[0].height || stockDetailsBody[0].power || stockDetailsBody[0].description || stockDetailsBody[0].quantity || stockDetailsBody[0].mfg_date || stockDetailsBody[0].exp_date || stockDetailsBody[0].item_buy_price || stockDetailsBody[0].item_sell_price || stockDetailsBody[0].warrantee_guarantee || stockDetailsBody[0].warrantee_guarantee_duration)){
                 stockDetailsBody = []
+            }
+            let detailsBodyTotalQuantity = 0
+            if(stockDetailsBody.length>0){
+                for(let i=0; i<stockDetailsBody.length; i++){
+                    if(!stockDetailsBody[i].quantity){
+                        res.status(400).json({ msg: "Missing quantity! Please re-check the entry." });
+                        return;
+                    }
+                    detailsBodyTotalQuantity = detailsBodyTotalQuantity + Number(stockDetailsBody[i].quantity)
+                }
             }
             delete body.stock_details;
             const finalStockBody = []
             const userId = new ObjectId(req.user.id);
             const company = req.body.company;
-            body.companyId = new ObjectId(company._id);
-            body.categoryId = new ObjectId(company.company_type_id);
-            body.createdBy = new ObjectId(userId);
-            body.updatedBy = new ObjectId(userId);
+            body.company_id = new ObjectId(company._id);
+            body.category_id = new ObjectId(company.company_type_id);
+            body.created_by = new ObjectId(userId);
+            body.updated_by = new ObjectId(userId);
             body.date = new Date(body.date);
             body.time = body.time? new Date(body.time): null;
             if(body.sub_category){
@@ -46,95 +56,136 @@ module.exports = {
                     }
                 }
             }
-            if(body.itemId){
-                body.itemId = new ObjectId(body.itemId);
+            if(body.item_id){
+                body.item_id = new ObjectId(body.item_id);
             } else if(body.item){
                 const newItem = {
                     name: body.item,
                     category : company.company_type_id,
                     sub_category : body.sub_category,
-                    companyId : body.companyId,
+                    companyId : body.company_id,
                     active: true
                 }
                 const codeGenerator = await require("../controllers/utilController").createCode("ITEM");
                 newItem.code = codeGenerator.code
-                const doc = await itemModel.updateOne(
+                const doc = await itemModel.findOneAndUpdate(
                     { name: { $regex: `^${newItem.name}$`, $options: "i" } },  // Case-insensitive match
                     { $setOnInsert: newItem }, 
-                    { upsert: true }
+                    { upsert: true , returnDocument: 'after'}
                 );
-                
-                if (doc.matchedCount === 0 && doc.upsertedCount === 0) {
+
+                if (!doc._id) {
                     res.status(400).json({ msg: "We are facing some technical error! Please try again later." });
                     return;
                 }
-                body.itemId = doc.upsertedId;
+                body.item_id = doc._id;
             }
-            if(body.brandId){
-                body.brandId = new ObjectId(body.brandId);
-            } else if(body.brand){
+            if(additionalData.batch_brand_id){
+                body.brand_id = new ObjectId(additionalData.batch_brand_id);
+            } else if(additionalData.batch_brand){
                 const newBrand = {
-                    name: body.brand,
-                    companyId : body.companyId,
+                    name: additionalData.batch_brand,
+                    companyId : body.company_id,
                     active: true
                 }
-                const doc = await brandModel.updateOne(
+                const doc = await brandModel.findOneAndUpdate(
                     { name: { $regex: `^${newBrand.name}$`, $options: "i" } },  // Case-insensitive match
                     { $setOnInsert: newBrand }, 
-                    { upsert: true }
+                    { upsert: true , returnDocument: 'after'}
                 );
                 
-                if (doc.matchedCount === 0 && doc.upsertedCount === 0) {
+                if (!doc._id) {
                     res.status(400).json({ msg: "We are facing some technical error! Please try again later." });
                     return;
                 }
-                body.brandId = doc.upsertedId;
+                body.brand_id = doc._id;
             }
-            if(body.sellerId){
-                body.sellerId = new ObjectId(body.sellerId);
+            if(body.seller_id){
+                
+                body.seller_id = new ObjectId(body.seller_id);
             } else if(body.seller){
                 const newSeller = {
                     name: body.seller,
-                    companyId : body.companyId,
+                    companyId : body.company_id,
                     active: true
                 }
                 const codeGenerator = await require("../controllers/utilController").createCode("SELLER");
                 newSeller.code = codeGenerator.code
-                const doc = await sellerModel.updateOne(
+                const doc = await sellerModel.findOneAndUpdate(
                     { name: { $regex: `^${newSeller.name}$`, $options: "i" } },  // Case-insensitive match
                     { $setOnInsert: newSeller }, 
-                    { upsert: true }
+                    { upsert: true , returnDocument: 'after'}
                 );
                 
-                if (doc.matchedCount === 0 && doc.upsertedCount === 0) {
+                if (!doc._id) {
                     res.status(400).json({ msg: "We are facing some technical error! Please try again later." });
                     return;
                 }
-                body.sellerId = doc.upsertedId;
+                body.seller_id = doc._id;
+            } else{
+                body.seller_id = null;
             }
-            const itemQuantity = body.quantity ? Number(body.quantity): 0;
-            delete body.quantity;
-            body.batchId = uuidv4().replace(/-/g, '').substring(0, 12);
-            if(stockDetailsBody.length < itemQuantity){
+            const itemQuantity = body.total_quantity ? Number(body.total_quantity): 0;
+            delete body.total_quantity;
+            body.batch_id = uuidv4().replace(/-/g, '').substring(0, 12);
+            if(detailsBodyTotalQuantity < itemQuantity){
+                // body.brand_id = body.brand_id ? additionalData.batch_brand_id: null;
+                body.color = additionalData.batch_color ? additionalData.batch_color: null;
+                body.capacity = additionalData.batch_capacity ? additionalData.batch_capacity: null;
+                body.height = additionalData.batch_height ? additionalData.batch_height: null;
+                body.power = additionalData.batch_power ? additionalData.batch_power: null;
+                body.description = additionalData.batch_description ? additionalData.batch_description: null;
+                body.model = additionalData.batch_model ? additionalData.batch_model: null;
                 body.mfg_date = additionalData.batch_mfg_date ? new Date(additionalData.batch_mfg_date): null;
                 body.exp_date = additionalData.batch_exp_date ? new Date(additionalData.batch_exp_date): null;
-                body.item_buy_price = additionalData.per_peace_buy_price ? Number(additionalData.per_peace_buy_price): null;
-                body.item_sell_price = additionalData.per_peace_sell_price ? Number(additionalData.per_peace_sell_price): null;
+                body.item_buy_price = additionalData.per_piece_buy_price ? Number(additionalData.per_piece_buy_price): null;
+                body.item_sell_price = additionalData.per_piece_sell_price ? Number(additionalData.per_piece_sell_price): null;
                 body.warrantee_guarantee = additionalData.batch_warrantee_guarantee ? additionalData.batch_warrantee_guarantee: null;
                 body.warrantee_guarantee_duration = additionalData.batch_warrantee_guarantee_duration ? Number(additionalData.batch_warrantee_guarantee_duration): null;
-                body.quantity = itemQuantity - stockDetailsBody.length;
+                body.quantity = itemQuantity - detailsBodyTotalQuantity;
+                body.total_quantity = itemQuantity - detailsBodyTotalQuantity;
                 finalStockBody.push(body);
             }
-            if(stockDetailsBody.length > 0){
+            if(detailsBodyTotalQuantity > 0){
                 for(let i=0; i<stockDetailsBody.length; i++){
                     const ref = stockDetailsBody[i];
                     const newBody = Object.assign({}, body);
-                    body.quantity = 1;
+                    newBody.quantity = ref.quantity;
+                    newBody.total_quantity = ref.quantity;
+                    if(ref.brand_id){
+                        newBody.brand_id = new ObjectId(ref.brand_id);
+                    } else if(ref.brand){
+                        const newBrand = {
+                            name: ref.brand,
+                            companyId : body.company_id,
+                            active: true
+                        }
+                        const doc = await brandModel.findOneAndUpdate(
+                            { name: { $regex: `^${newBrand.name}$`, $options: "i" } },  // Case-insensitive match
+                            { $setOnInsert: newBrand }, 
+                            { upsert: true , returnDocument: 'after'}
+                        );
+                        
+                        if (!doc._id) {
+                            res.status(400).json({ msg: "We are facing some technical error! Please try again later." });
+                            return;
+                        }
+                        newBody.brand_id = doc._id;
+                    } else{
+                        newBody.brand_id = additionalData.batch_brand_id ? additionalData.batch_brand_id: null;
+                    }
+
+                    newBody.color = ref.color ? ref.color: additionalData.batch_color;
+                    newBody.capacity = ref.capacity ? ref.capacity: additionalData.batch_capacity;
+                    newBody.height = ref.height ? ref.height: additionalData.batch_height;
+                    newBody.power = ref.power ? ref.power: additionalData.batch_power;
+                    newBody.description = ref.description ? ref.description: additionalData.batch_description;
+                    newBody.model = ref.model ? ref.model: additionalData.batch_model;
                     newBody.unique_code = ref.unique_code ? ref.unique_code : "";
                     newBody.mfg_date = ref.mfg_date ? new Date(ref.mfg_date) : (additionalData.batch_mfg_date ? new Date(additionalData.batch_mfg_date): null);
                     newBody.exp_date = ref.exp_date ? new Date(ref.exp_date) : (additionalData.batch_exp_date ? new Date(additionalData.batch_exp_date): null);
-                    newBody.item_buy_price = ref.item_buy_price ? Number(ref.item_buy_price) : (additionalData.per_peace_buy_price ? Number(additionalData.per_peace_buy_price): null);
-                    newBody.item_sell_price = ref.item_sell_price ? Number(ref.item_sell_price) : (additionalData.per_peace_sell_price ? Number(additionalData.per_peace_sell_price): null);
+                    newBody.item_buy_price = ref.item_buy_price ? Number(ref.item_buy_price) : (additionalData.per_piece_buy_price ? Number(additionalData.per_piece_buy_price): null);
+                    newBody.item_sell_price = ref.item_sell_price ? Number(ref.item_sell_price) : (additionalData.per_piece_sell_price ? Number(additionalData.per_piece_sell_price): null);
                     newBody.warrantee_guarantee = ref.warrantee_guarantee ? ref.warrantee_guarantee : ((additionalData.batch_warrantee_guarantee ? additionalData.batch_warrantee_guarantee: null));
                     newBody.warrantee_guarantee_duration = ref.warrantee_guarantee_duration ? Number(ref.warrantee_guarantee_duration) : (((additionalData.batch_warrantee_guarantee_duration ? Number(additionalData.batch_warrantee_guarantee_duration): null)));
                     finalStockBody.push(newBody);
@@ -210,6 +261,7 @@ module.exports = {
                     body.buyer_id = buyerDoc._id;
                 }
             }
+            let total_profit = 0
             for(let i=0; i<body.items.length; i++){
                 body.items[i].item_id = new ObjectId(body.items[i].item_id)
                 const ref = body.items[i];
@@ -227,7 +279,9 @@ module.exports = {
                 if (!Array.isArray(stock.sell_details)) {
                     stock.sell_details = [];
                   }
-                stock.sell_details.push({ buyer_id: body.buyer_id, sell_price: Number(ref.sell_price), quantity: Number(ref.quantity) });
+                const profit = (Number(ref.sell_price) - Number(ref.buy_price)) * Number(ref.quantity);
+                total_profit = total_profit + profit;
+                stock.sell_details.push({ buyer_id: body.buyer_id, sell_price: Number(ref.sell_price), quantity: Number(ref.quantity), profit: profit });
                 await stock.save();
             }
             delete body.buyer_name
@@ -242,7 +296,9 @@ module.exports = {
             body.discount = body.discount ? Number(body.discount): 0;
             body.grandTotal = Number(body.grandTotal);
             body.paid_amount = body.paid_amount ? Number(body.paid_amount): 0;
-            body.ramaining_amount = body.ramaining_amount ? Number(body.ramaining_amount): 0;
+            body.remaining_amount = body.remaining_amount ? Number(body.remaining_amount): 0;
+            body.profit = (total_profit+body.additional_charges-body.discount);
+            body.total_profit = body.profit - body.remaining_amount;
             const doc = await billModel.create(body)
             res.status(201).json({ status: true, msg: "Bill created successfully.", doc:doc});
         } catch(err){
@@ -258,6 +314,7 @@ module.exports = {
                 res.status(400).json({ msg: "Missing Parameters!" });
                 return;
             }
+            body.total_profit = body.profit - body.remaining_amount;
             const doc = await billModel.findByIdAndUpdate(params.id, body, {new: true});
             res.status(200).json({ message: "Details updated successfully", doc: doc });
         } catch (err) {
@@ -287,7 +344,7 @@ module.exports = {
                     grandTotal: 1,
                     payment_type: 1,
                     paid_amount: 1,
-                    ramaining_amount: 1,
+                    remaining_amount: 1,
                     info: 1,
                     pending_installation: 1
                 }
@@ -319,9 +376,9 @@ module.exports = {
                                                             as: "detail",
                                                             cond: { $eq: ["$$detail._id", "$$item.item_id"] }}},
                                                     as: "filteredItem",
-                                                    in: {item_id: "$$filteredItem.itemId",
-                                                        brand_id: "$$filteredItem.brandId",
-                                                        batch_id: "$$filteredItem.batchId",
+                                                    in: {item_id: "$$filteredItem.item_id",
+                                                        brand_id: "$$filteredItem.brand_id",
+                                                        batch_id: "$$filteredItem.batch_id",
                                                         sub_category: "$$filteredItem.sub_category",
                                                         color: "$$filteredItem.color",
                                                         capacity: "$$filteredItem.capacity",
@@ -407,7 +464,6 @@ module.exports = {
 
             pdfDoc.end();
         } catch(err){
-            console.log(err)
             res.status(500).json({ status: false, msg: err.message });
         }
     },

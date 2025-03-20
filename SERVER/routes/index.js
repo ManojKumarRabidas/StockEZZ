@@ -10,12 +10,16 @@ const { authorizeRole } = require('../middleware/authMiddleware');
 router.post('/login', userController.userLogin);
 router.post('/logout', userController.userLogout);
 router.get("/auth/user", userController.getUser);
+router.post("/outer-forgot-password-send-otp", userController.outerForgotPasswordSendOtp);
+router.post("/outer-forgot-password-check-otp", userController.outerForgotPasswordCheckOtp);
+router.post("/outer-forgot-password-change-password", userController.outerForgotPasswordChangePassword);
 router.get("/get-profile-details",authorizeRole(['SUPPORTADMIN', 'COMPANY', 'OPERATOR']), userController.profileDetails);
 
 router.post("/change-password", authorizeRole(['ADMIN', 'SUPPORTADMIN', 'COMPANY', 'OPERATOR']), userController.changePassword);
 router.post("/forgot-password-send-otp", authorizeRole(['ADMIN', 'SUPPORTADMIN', 'COMPANY', 'OPERATOR']), userController.forgotPasswordSendOtp);
 router.post("/forgot-password-check-otp", authorizeRole(['ADMIN', 'SUPPORTADMIN', 'COMPANY', 'OPERATOR']), userController.forgotPasswordCheckOtp);
 router.post("/forgot-password-change-password", authorizeRole(['ADMIN', 'SUPPORTADMIN', 'COMPANY', 'OPERATOR']), userController.forgotPasswordChangePassword);
+
 
 router.get("/get-companies",utilController.getCompanyNames);
 
@@ -33,7 +37,7 @@ router.patch("/company-update/:id", authorizeRole(['ADMIN', 'SUPPORTADMIN']), ad
 router.delete("/company-delete/:id", authorizeRole(['ADMIN', 'SUPPORTADMIN']), adminController.companyDelete);
 router.put("/company-update-active/:id", authorizeRole(['ADMIN', 'SUPPORTADMIN']), adminController.companyUpdateActive);
 
-router.get("/category-list", authorizeRole(['ADMIN', 'SUPPORTADMIN', 'OPERATOR']), adminController.categoryList);
+router.get("/category-list", authorizeRole(['ADMIN', 'SUPPORTADMIN','COMPANY', 'OPERATOR']), adminController.categoryList);
 router.post("/category-create", authorizeRole(['ADMIN', 'SUPPORTADMIN']), adminController.categoryCreate);
 router.get("/category-details/:id", authorizeRole(['ADMIN', 'SUPPORTADMIN']), adminController.categoryDetails);
 router.patch("/category-update/:id", authorizeRole(['ADMIN', 'SUPPORTADMIN']), adminController.categoryUpdate);
@@ -83,5 +87,9 @@ router.post("/generate-bill-pdf/:id", authorizeRole(['OPERATOR']), operatorContr
 
 router.get("/bill-list", authorizeRole(['COMPANY','OPERATOR']), utilController.billList);
 router.get("/bill-details/:id", authorizeRole(['COMPANY','OPERATOR']), utilController.billDetails);
+
+router.get("/financials", authorizeRole(['COMPANY','OPERATOR']), utilController.dashboardFinancials);
+router.get("/metrics", authorizeRole(['COMPANY','OPERATOR']), utilController.dashboardMetrics);
+router.get("/stock/low", authorizeRole(['COMPANY','OPERATOR']), utilController.dashboardLowStock);
 
 module.exports = router;

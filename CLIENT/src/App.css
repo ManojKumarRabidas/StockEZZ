@@ -1,3 +1,38 @@
+/* Bootstrap overrides  */
+.modal-dialog{
+  max-width: fit-content !important;
+  min-width: var(--bs-modal-width) !important;
+}
+.title-class {
+  position: relative;
+  cursor: pointer;
+}
+
+/* Style for the custom tooltip */
+.title-class::after {
+  content: attr(data-tooltip); /* Use data-tooltip instead of title */
+  position: absolute;
+  bottom: 120%; /* Position above the element */
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #d3d3d3; /* Light gray background */
+  color: #333333; /* Very dark gray text */
+  /* font-weight: bold; Bold text */
+  padding: 5px 10px;
+  border-radius: 4px;
+  white-space: nowrap;
+  font-size: 14px;
+  opacity: 0; /* Hidden by default */
+  visibility: hidden;
+  transition: opacity 0.3s, visibility 0.3s;
+  z-index: 10;
+}
+
+/* Show the tooltip on hover */
+.title-class:hover::after {
+  opacity: 1;
+  visibility: visible;
+}
 .shimmer {
   position: relative;
   background: #e0e0e0;
@@ -257,15 +292,24 @@ button, button a{
   align-items: center !important;
   justify-content: center !important;
   background-color:  #f2f2f2;
-  height: 100vh;
+  height: 100vh !important;
+  width: 100vw !important;
+  position: relative;
+  top: 0;
+  left: 0;
+  background-size: cover; /* Scales image to cover container */
+  background-position: center; /* Centers the image */
+  opacity: 1; /* Low opacity (0 = fully transparent, 1 = fully opaque) */
+  z-index: 1; /* Places it behind content */
 }
+
 /* Sidebar styles */
 .sidebar {
   position: fixed;
   top: 0;
   left: 0;
   height: 100%;
-  width: 242px !important;
+  width: 243px !important;
   /* background-color: #D1FAE5; */
   background-color: #E0E0E0;
   border-right: 1px solid #e7e7e7;
@@ -335,10 +379,6 @@ button, button a{
 }
 .main-section-registration {
   margin-top: 4rem !important;
-}
-.main-section-registration input,.main-section-registration select{
-  max-width: 25vw !important;
-  min-width: 25vw !important;
 }
 .teacher-registration-row, .teacher-registration-row select, .teacher-registration-row input{
   max-width: 18.5vw !important;

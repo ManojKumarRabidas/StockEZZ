@@ -1,136 +1,243 @@
 import "../App.css";
-
-// export default function Dashboard(){
-//     return(
-//         <div className="d-flex flex-column justify-content-between" style={{minHeight: "90vh"}}>
-//             <div>   
-//                 <div className="text-center">
-//                     Coming soon...
-//                 </div>
-//             </div>
-//         </div>
-//     )
-// }
 import React, { useState, useEffect } from 'react';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend } from 'chart.js';
 import { Bar, Line } from 'react-chartjs-2';
 import { CSVLink } from 'react-csv';
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import toastr from 'toastr';
+
+const token = sessionStorage.getItem('token');
+const HOST = import.meta.env.VITE_HOST;
+const PORT = import.meta.env.VITE_PORT;
+const userType = sessionStorage.getItem('seUserType');
 
 // Register ChartJS components
 ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend);
 
 const Dashboard = () => {
-  const [dashboardData, setDashboardData] = useState({
-    lowStockItems: [],
-    pendingBills: [],
-    stockInOutData: null,
-    monthlyRevenue: null,
-    loading: true
-  });
+  const [dashboardContent, setDashboardContent] = useState(true);
+  const [loading, setLoading] = useState(true)
   const [stockFilter, setStockFilter] = useState(10);
-  const [dateRange, setDateRange] = useState({
-    start: new Date(new Date().getMonth() - 1),
-    end: new Date()
+  const [itemName, setItemName] = useState("");
+  const [chartType, setChartType] = useState("BAR");
+  const [dateRange, setDateRange] = useState(() => {
+    const today = new Date();
+    const sixMonthsAgo = new Date(today);
+    sixMonthsAgo.setMonth(today.getMonth() - 6);
+    // Adjust the date to match today's date exactly
+    sixMonthsAgo.setDate(today.getDate());
+
+    return {
+      start: sixMonthsAgo,
+      end: today,
+    };
   });
   const [selectedItem, setSelectedItem] = useState(null);
   const [selectedBill, setSelectedBill] = useState(null);
   const [reorderQuantity, setReorderQuantity] = useState(0);
 
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        const [lowStockRes, pendingBillsRes, stockStatsRes, revenueRes] = await Promise.all([
-          fetch(`/api/stock/low?threshold=${stockFilter}`),
-          fetch(`/api/bills/pending?start=${dateRange.start.toISOString()}&end=${dateRange.end.toISOString()}`),
-          fetch(`/api/stock/stats?start=${dateRange.start.toISOString()}&end=${dateRange.end.toISOString()}`),
-          fetch(`/api/revenue/monthly?start=${dateRange.start.toISOString()}&end=${dateRange.end.toISOString()}`)
-        ]);
+  const [matricsData, setMatricsData] = useState({});
+  const [financialData, setFinancialData] = useState({stockMovement: []});
+  const [stockMovementData, setStockMovementData] = useState({});
+  const [lowStockData, setlowStockData] = useState([]);
 
-        const lowStockData = await lowStockRes.json();
-        const pendingBillsData = await pendingBillsRes.json();
-        const stockStatsData = await stockStatsRes.json();
-        const revenueData = await revenueRes.json();
-
-        setDashboardData({
-          lowStockItems: lowStockData,
-          pendingBills: pendingBillsData,
-          stockInOutData: stockStatsData,
-          monthlyRevenue: revenueData,
-          loading: false
-        });
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error);
-        setDashboardData({ ...dashboardData, loading: false });
-      }
-    };
-
-    fetchDashboardData();
-  }, [stockFilter, dateRange]);
-
-  const handleReorder = async (item) => {
+  const handleStockMovement = (item, data) => {
+    let temp;
+    if(data){
+      temp = data.find((elem)=> elem.item == item)
+    } else{
+      temp = financialData.stockMovement.find((elem)=> elem.item == item)
+    }
+    setItemName(item);
+    setStockMovementData(temp);
+  }
+  // Function to fetch financial data (Revenue, Profit, Stock Movement)
+  const fetchFinancialData = async () => {
     try {
-      await fetch('/api/stock/reorder', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ itemId: item._id, quantity: reorderQuantity })
-      });
-      const lowStockRes = await fetch(`/api/stock/low?threshold=${stockFilter}`);
-      const lowStockData = await lowStockRes.json();
-      setDashboardData({ ...dashboardData, lowStockItems: lowStockData });
-      setSelectedItem(null);
-      setReorderQuantity(0);
-    } catch (error) {
-      console.error('Error reordering:', error);
+      const response = await fetch(`${HOST}:${PORT}/server/financials?start=${dateRange.start.toISOString()}&end=${dateRange.end.toISOString()}`,
+        {headers: { 'Authorization': `Bearer ${token}`}}
+      );
+      const result = await response.json();
+      if (response.ok) {
+        setFinancialData(result.doc);
+        handleStockMovement(result.doc.stockMovement[0] ? result.doc.stockMovement[0].item: "", result.doc.stockMovement) 
+      } else {
+        toastr.error(result.msg);
+      }
+    } catch (err) {
+      toastr.error('Failed to fetch financial data ');
     }
   };
 
+  // Function to fetch metrics data (called only on page load)
+  const fetchMetricsData = async () => {
+    try {
+      const response = await fetch(
+        `${HOST}:${PORT}/server/metrics`,
+        {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }
+      );
+      const result = await response.json();
+      if (response.ok) {
+        setMatricsData(result.doc);
+      } else {
+        toastr.error(result.msg);
+      }
+    } catch (err) {
+      toastr.error('Failed to fetch metrics data');
+    }
+  };
+
+  // Function to fetch low stock items
+  const fetchLowStockItems = async () => {
+    try {
+      if(!stockFilter){
+        return;
+      } else if(typeof(stockFilter) == "NaN"){
+        return;
+      } else if(typeof(stockFilter) != "number"){
+        toastr.error("Invalid number to filter.")
+        return;
+      }
+      const response = await fetch(
+        `${HOST}:${PORT}/server/stock/low?threshold=${stockFilter}`,
+        {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }
+      );
+      const result = await response.json();
+      if (response.ok) {
+        setlowStockData(result.docs)
+      } else {
+        toastr.error(result.msg);
+      }
+    } catch (err) {
+      toastr.error('Failed to fetch low stock items');
+    }
+  };
+
+  // Initial page load effect
+  const fetchInitialData = async () => {
+    setLoading(true)
+    await Promise.all([
+      fetchFinancialData(),
+      fetchMetricsData(),
+      fetchLowStockItems()
+    ]);
+    setLoading(false)
+  };
+  useEffect(() => {
+    if(userType == "ADMIN" || userType == "SUPPORTADMIN"){
+      setDashboardContent(false)
+      setLoading(false)
+    } else {
+      setDashboardContent(true)
+      fetchInitialData();
+      setLoading(false)
+    }
+  }, []);
+
+  // Effect for date range and stock filter changes
+  useEffect(() => {
+    if(!(userType == "ADMIN" || userType == "SUPPORTADMIN")){fetchFinancialData();}
+    
+  }, [dateRange, stockFilter]);
+
+  useEffect(() => {
+    if(!(userType == "ADMIN" || userType == "SUPPORTADMIN")){fetchLowStockItems();}
+  }, [stockFilter]);
+
+
+
   // Stock In/Out Graph Data
   const stockGraphData = {
-    labels: dashboardData.stockInOutData?.labels || [],
+    labels: (stockMovementData?.stockInOut ? stockMovementData?.stockInOut.map(item => item.month): []) || [],
     datasets: [
       {
         label: 'Stock In',
-        data: dashboardData.stockInOutData?.stockIn || [],
+        data: (stockMovementData?.stockInOut ? stockMovementData?.stockInOut.map(item => item.stockIn): []) || [],
         backgroundColor: 'rgba(75, 192, 192, 0.5)',
       },
       {
         label: 'Stock Out',
-        data: dashboardData.stockInOutData?.stockOut || [],
+        data: (stockMovementData?.stockInOut ? stockMovementData?.stockInOut.map(item => item.stockOut): []) || [],
         backgroundColor: 'rgba(255, 99, 132, 0.5)',
       }
     ]
   };
 
-  // Revenue Graph Data
-  const revenueGraphData = {
-    labels: dashboardData.monthlyRevenue?.labels || [],
+  // Revenue & Profit Graph Data
+  const profitRevenueGraphData = {
+    labels: (financialData?.profitRevenue ? financialData?.profitRevenue.map(item => item.month): []) || [],
     datasets: [
       {
         label: 'Revenue',
-        data: dashboardData.monthlyRevenue?.values || [],
+        data: (financialData?.profitRevenue? financialData?.profitRevenue.map(item => item.Revenue): []) || [],
         borderColor: 'rgb(53, 162, 235)',
         backgroundColor: 'rgba(53, 162, 235, 0.5)',
+      },
+      {
+        label: 'Profit',
+        data: (financialData?.profitRevenue? financialData?.profitRevenue.map(item => item.Profit): []) || [],
+        borderColor: 'rgb(75, 192, 192)',
+        backgroundColor: 'rgba(75, 192, 192, 0.5)',
       }
     ]
   };
 
   // CSV Export Data
-  const lowStockCSVData = dashboardData.lowStockItems?.map(item => ({
-    name: item.name,
-    quantity: item.quantity,
-    status: item.quantity === 0 ? 'Out of Stock' : 'Low Stock'
-  }));
+  const lowStockCSVData = lowStockData?.flatMap(item => 
+    item.stocks.length > 0 
+        ? item.stocks.map(stock => ({
+            "Item Code": item.code,
+            "Item Name": item.name,
+            "Batch Id": stock.batch_id,
+            "Quantity": stock.quantity,
+            "Brand": stock.brand,
+            "Color": stock.color,
+            "Capacity": stock.capacity,
+            "Height/Width": stock.height,
+            "Power/Watt": stock.power,
+            "Model": stock.model,
+            "Entry Date": stock.entry_date,
+            "Seller": stock.seller,
+            "Description": stock.description,
+            "Status": stock.quantity === 0 ? 'Out of Stock' : 'Low Stock'
+        }))
+        : [{
+            "Item Code": item.code,
+            "Item Name": item.name,
+            "Batch Id": "N/A",
+            "Quantity": 0,
+            "Brand": "N/A",
+            "Color": "N/A",
+            "Capacity": "N/A",
+            "Height/Width": "N/A",
+            "Power/Watt": "N/A",
+            "Model": "N/A",
+            "Entry Date": "N/A",
+            "Seller": "N/A",
+            "Description": "N/A",
+            "Status": 'Out of Stock'
+        }]
+);
 
-  const pendingBillsCSVData = dashboardData.pendingBills?.map(bill => ({
-    billNumber: bill.billNumber,
-    customerName: bill.customerName,
-    amount: bill.amount,
-    dueDate: new Date(bill.dueDate).toLocaleDateString()
-  }));
+  const pendingBillsCSVData = matricsData?.bills?.map(bill => ({
+    "Date": bill.date,
+    "Bill Number": bill.billNo,
+    "Total Amount": bill.grandTotal,
+    "Pending Amount": bill.remaining_amount,
+    "Installation": bill.pending_installation,
+    "Customer Name": bill.buyer_name,
+    "Customer Phone": bill.buyer_phone,
+    "Customer Email Id": bill.buyer_email,
+    "Customer Address": bill.buyer_address,
+    "Customer PIN Code": bill.buyer_pin,
+  })) || [];
 
-  if (dashboardData.loading) {
+  if (loading) {
     return (
       <div className="container-fluid p-3" style={{ backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
         <style>
@@ -149,7 +256,6 @@ const Dashboard = () => {
             }
   
             .shimmer-container {
-            //   background: #e0e0e0;
               border-radius: 8px;
               overflow: hidden;
               height: 150px;
@@ -167,7 +273,6 @@ const Dashboard = () => {
   
             .shimmer-table-row {
               height: 40px;
-            //   background: #e0e0e0;
               margin-bottom: 10px;
               border-radius: 4px;
             }
@@ -209,271 +314,402 @@ const Dashboard = () => {
     );
   }
 
-  return (
-    <div className="container-fluid p-3" style={{ backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
-      {/* Header Section */}
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        <div>
-          <h2 className="mb-0">StockEZZ</h2>
-          <p className="text-muted mb-0">You focus on managing your life. Let us manage your stock. 😊</p>
+  if(!dashboardContent){
+    return (
+      <div className="container-fluid p-3" style={{ backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
+        Welcome Admin / Support Admin
         </div>
-        <div className="d-flex align-items-center">
-          {/* <input
-            type="date"
-            value={dateRange.start.toISOString().split('T')[0]}
-            onChange={(e) => setDateRange({ ...dateRange, start: new Date(e.target.value) })}
-            className="form-control form-control-sm me-2"
-          />
-          <input
-            type="date"
-            value={dateRange.end.toISOString().split('T')[0]}
-            onChange={(e) => setDateRange({ ...dateRange, end: new Date(e.target.value) })}
-            className="form-control form-control-sm"
-          /> */}
-          Date Range: 
-          <div className="mx-2" >
-            <DatePicker dateFormat="yyyy/MM/dd" required name="date" selected={dateRange.start.toISOString().split('T')[0]} className="form-control" aria-describedby="emailHelp" value={dateRange.start.toISOString().split('T')[0]}  onChange={(e) => setDateRange({ ...dateRange, start: new Date(e.target.value) })}/>
-          </div>
+    )
+  }
+  if(dashboardContent){
+    return (
+      <div className="container-fluid p-3" style={{ backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
+        {/* Header Section */}
+        <div className="d-flex justify-content-between align-items-center mb-3">
           <div>
-            <DatePicker dateFormat="yyyy/MM/dd" required name="date" selected={dateRange.end.toISOString().split('T')[0]} className="form-control" aria-describedby="emailHelp" value={dateRange.end.toISOString().split('T')[0]} onChange={(e) => setDateRange({ ...dateRange, end: new Date(e.target.value) })}/>
+            <h2 className="mb-0">StockEZZ</h2>
+            <p className="text-muted mb-0">You focus on managing your life. Let us manage your stock. 😊</p>
+          </div>
+          <div className="d-flex align-items-center">
+            <div className="mx-2">
+              <DatePicker 
+                dateFormat="dd/MM/yyyy" 
+                required 
+                name="startDate" 
+                selected={dateRange.start} 
+                className="form-control" 
+                onChange={(date) => setDateRange({ ...dateRange, start: date })}
+              />
+            </div>
+            <div>
+              <DatePicker 
+                dateFormat="dd/MM/yyyy" 
+                required 
+                name="endDate" 
+                selected={dateRange.end} 
+                className="form-control" 
+                onChange={(date) => setDateRange({ ...dateRange, end: date })}
+              />
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="row g-3">
-        {/* Row 1: Key Metrics */}
-        <div className="col-12 col-md-3">
-          <div className="card p-3">
-            <h5 className="card-title mb-2">Total Stock Value</h5>
-            <p className="card-text display-6 text-primary mb-0">
-              ${dashboardData.stockInOutData?.totalValue?.toLocaleString() || 0}
-            </p>
+        <div className="row g-3">
+          {/* Row 1: Key Metrics */}
+          <div className="col">
+            <div className="card p-3">
+              <h5 className="card-title mb-2">Total Stock Value</h5>
+              <p className="card-text display-6 text-primary mb-0">
+                ₹{matricsData?.totalStockValue?.toLocaleString() || 0}
+              </p>
+            </div>
+          </div>
+          <div className="col">
+            <div className="card p-3">
+              <h5 className="card-title mb-2">Total Pending Bills</h5>
+              <p className="card-text display-6 text-danger mb-0">
+                ₹{matricsData?.totalPendingBills?.toLocaleString() || 0}
+              </p>
+            </div>
+          </div>
+          <div className="col">
+            <div className="card p-3">
+              <h5 className="card-title mb-2 d-flex align-items-center">Total Install <p style={{fontSize:"0.9rem", margin: "0", padding: "0"}}> (Pending)</p></h5>
+              <p className="card-text display-6 text-warning mb-0">
+                {matricsData?.totalPendingInstallation || 0}
+              </p>
+            </div>
+          </div>
+          <div className="col">
+            <div className="card p-3">
+              <h5 className="card-title mb-2">Revenue</h5>
+              <p className="card-text display-6 text-info mb-0">
+                ₹{financialData?.totalRevenue?.toLocaleString() || 0}
+              </p>
+            </div>
+          </div>
+          <div className="col">
+            <div className="card p-3">
+              <h5 className="card-title mb-2">Profit</h5>
+              <p className="card-text display-6 text-success mb-0">
+              ₹{financialData?.totalProfit?.toLocaleString() || 0}
+              </p>
+            </div>
           </div>
         </div>
-        <div className="col-12 col-md-3">
-          <div className="card p-3">
-            <h5 className="card-title mb-2">Pending Bills</h5>
-            <p className="card-text display-6 text-danger mb-0">
-              ${dashboardData.pendingBills?.reduce((sum, bill) => sum + bill.amount, 0)?.toLocaleString() || 0}
-            </p>
-          </div>
-        </div>
-        <div className="col-12 col-md-3">
-          <div className="card p-3">
-            <h5 className="card-title mb-2">Low Stock Items</h5>
-            <p className="card-text display-6 text-warning mb-0">
-              {dashboardData.lowStockItems?.length || 0}
-            </p>
-          </div>
-        </div>
-        <div className="col-12 col-md-3">
-          <div className="card p-3">
-            <h5 className="card-title mb-2">Monthly Revenue</h5>
-            <p className="card-text display-6 text-success mb-0">
-              ${dashboardData.monthlyRevenue?.currentMonth?.toLocaleString() || 0}
-            </p>
-          </div>
-        </div>
-      </div>
 
-      <div className="row g-3 mt-3">
-        {/* Row 2: Graphs */}
-        <div className="col-12 col-md-6">
-          <div className="card p-3">
-            <h5 className="card-title mb-2">Stock Movement</h5>
-            <Bar 
-              data={stockGraphData}
-              options={{
-                responsive: true,
-                plugins: {
-                  legend: { position: 'bottom' },
-                }
-              }}
-            />
+        <div className="row g-3 mt-3">
+          {/* Row 2: Graphs */}
+          <div className="col-12 col-md-6">
+            <div className="card p-3">
+              <div className="d-flex justify-content-between align-items-center">
+                <h5 className="card-title mb-2">Stock Movement</h5>
+                <select style={{maxWidth: "15rem"}} className="form-select" aria-label="Default select example" value={itemName} name="itemName" onChange={(e) => handleStockMovement(e.target.value)}>
+                    <option>--Select item--</option>
+                    {financialData?.stockMovement.map((item)=>(
+                      <option key={item.item} value={item.item}>{item.item}</option>
+                    ))}
+                </select>
+              </div> 
+              <Bar 
+                data={stockGraphData}
+                options={{
+                  responsive: true,
+                  plugins: {
+                    legend: { position: 'bottom' },
+                  }
+                }}
+              />
+            </div>
+          </div>
+          <div className="col-12 col-md-6">
+            <div className="card p-3">
+            <div className="d-flex justify-content-between align-items-center">
+            <h5 className="card-title mb-2">Revenue & Profit</h5>
+                <select style={{maxWidth: "15rem"}} className="form-select" aria-label="Default select example" value={chartType} name="chartType" onChange={(e) => setChartType(e.target.value)}>
+                    <option value="BAR">BAR Chart</option>
+                    <option value="LINE">LINE Chart</option>
+                </select>
+              </div> 
+              {chartType == "BAR" && 
+              <Bar 
+                data={profitRevenueGraphData}
+                options={{
+                  responsive: true,
+                  plugins: {
+                    legend: { position: 'bottom' },
+                  }
+                }}
+              />
+              }
+              {chartType == "LINE" && 
+              <Line 
+                data={profitRevenueGraphData}
+                options={{
+                  responsive: true,
+                  plugins: {
+                    legend: { position: 'bottom' },
+                  }
+                }}
+              />
+              }
+            </div>
           </div>
         </div>
-        <div className="col-12 col-md-6">
-          <div className="card p-3">
-            <h5 className="card-title mb-2">Revenue Trend</h5>
-            <Line 
-              data={revenueGraphData}
-              options={{
-                responsive: true,
-                plugins: {
-                  legend: { position: 'bottom' },
-                }
-              }}
-            />
-          </div>
-        </div>
-      </div>
 
-      <div className="row g-3 mt-3">
-        {/* Row 3: Tables */}
-        <div className="col-12 col-md-6">
-          <div className="card p-3">
-            <div className="d-flex justify-content-between align-items-center mb-2">
-              <h5 className="card-title mb-0">Low Stock Items</h5>
-              <div className="d-flex">
-                <input
-                  type="number"
-                  value={stockFilter}
-                  onChange={(e) => setStockFilter(parseInt(e.target.value))}
-                  className="form-control form-control-sm me-2"
-                  style={{ width: '100px' }}
-                />
+        <div className="row g-3 mt-3">
+          {/* Row 3: Tables */}
+          <div className="col-12 col-md-6">
+            <div className="card p-3">
+              <div className="d-flex justify-content-between align-items-center mb-2">
+                <h5 className="card-title mb-0">Low Stock Items</h5>
+                <div className="d-flex">
+                  <input
+                    placeholder="Threshold"
+                    type="number"
+                    value={stockFilter}
+                    onChange={(e) => setStockFilter(parseInt(e.target.value))}
+                    className="form-control form-control-sm me-2"
+                    style={{ width: '100px' }}
+                  />
+                  <button className="btn btn-dark btn-sm">
+                    <CSVLink data={lowStockCSVData} filename="low-stock-items.csv" className="text-white text-decoration-none">
+                      Export
+                    </CSVLink>
+                  </button>
+                </div>
+              </div>
+              <div className="overflow-scroll" style={{maxHeight: "25rem", minHeight: "25rem", overflowY: "auto",scrollbarWidth: "none", "-ms-overflow-style": "none"}}>
+                <table className="table table-bordered">
+                  <thead>
+                    <tr>
+                      <th>Item</th>
+                      <th>Total Available</th>
+                      <th>Status</th>
+                      <th>Details</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {lowStockData?.map((item) => (
+                      <tr key={item._id}>
+                        <td>{item.name}</td>
+                        <td>{item.total_available}</td>
+                        <td>
+                          <span className={`badge ${item.total_available === 0 ? 'bg-danger' : 'bg-warning'}`}>
+                            {item.total_available === 0 ? 'Out of Stock' : 'Low Stock'}
+                          </span>
+                        </td>
+                        <td className="d-flex align-items-center justify-content-center">
+                          <button className="btn btn-outline-secondary btn-sm" onClick={() => setSelectedItem(item)}>
+                            <svg width="16" height="16" fill="currentColor" className="bi bi-eye" viewBox="0 0 16 16">
+                              <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.134 13.134 0 0 1 1.172 8z"/>
+                              <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"/>
+                            </svg>
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <div className="col-12 col-md-6">
+            <div className="card p-3">
+              <div className="d-flex justify-content-between align-items-center mb-2">
+                <h5 className="card-title mb-0">Pending Bills</h5>
                 <button className="btn btn-dark btn-sm">
-                  <CSVLink data={lowStockCSVData} filename="low-stock-items.csv" className="text-white text-decoration-none">
+                  <CSVLink data={pendingBillsCSVData} filename="pending-bills.csv" className="text-white text-decoration-none">
                     Export
                   </CSVLink>
                 </button>
               </div>
+              <div className="overflow-scroll" style={{maxHeight: "25rem", minHeight: "25rem", overflowY: "auto",scrollbarWidth: "none", "-ms-overflow-style": "none"}}>
+                <table className="table table-bordered">
+                  <thead>
+                    <tr>
+                      <th>Bill No</th>
+                      <th>Amount</th>
+                      <th>Customer</th>
+                      <th>Date</th>
+                      <th>Details</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {matricsData?.bills?.map((bill) => (
+                      <tr key={bill._id}>
+                        <td>{bill.billNo}</td>
+                        <td>₹{bill.remaining_amount.toLocaleString()}</td>
+                        <td style={{textWrap: "nowrap"}}>{bill.buyer_name}</td>
+                        <td>{bill.date}</td>
+                        {/* <td>
+                          <span className={new Date(bill.date) < new Date() ? 'badge bg-danger' : 'badge bg-secondary'}>
+                            {bill.date}
+                          </span>
+                        </td> */}
+                        <td className="d-flex align-items-center justify-content-center">
+                          <button className="btn btn-outline-secondary btn-sm" onClick={() => setSelectedBill(bill)}>
+                            <svg width="16" height="16" fill="currentColor" className="bi bi-eye" viewBox="0 0 16 16">
+                              <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.134 13.134 0 0 1 1.172 8z"/>
+                              <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"/>
+                            </svg>
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
-            <table className="table table-bordered">
-              <thead>
-                <tr>
-                  <th>Item</th>
-                  <th>Quantity</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {dashboardData.lowStockItems?.map((item) => (
-                  <tr key={item._id}>
-                    <td>{item.name}</td>
-                    <td>{item.quantity}</td>
-                    <td>
-                      <span className={`badge ${item.quantity === 0 ? 'bg-danger' : 'bg-warning'}`}>
-                        {item.quantity === 0 ? 'Out of Stock' : 'Low Stock'}
-                      </span>
-                    </td>
-                    <td>
-                      <button 
-                        className="btn btn-outline-secondary btn-sm"
-                        onClick={() => setSelectedItem(item)}
-                      >
-                        <svg width="16" height="16" fill="currentColor" className="bi bi-pencil" viewBox="0 0 16 16">
-                          <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707v2.828l2.828-2.828L11.793 6.5z"/>
-                        </svg>
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
           </div>
         </div>
-        <div className="col-12 col-md-6">
-          <div className="card p-3">
-            <div className="d-flex justify-content-between align-items-center mb-2">
-              <h5 className="card-title mb-0">Pending Bills</h5>
-              <button className="btn btn-dark btn-sm">
-                <CSVLink data={pendingBillsCSVData} filename="pending-bills.csv" className="text-white text-decoration-none">
-                  Export
-                </CSVLink>
-              </button>
+
+        {/* Reorder Dialog */}
+        {selectedItem && (
+          <div className="modal" tabIndex="-1" style={{ display: 'block', backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
+            <div className="modal-dialog">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">Stock Details of {selectedItem.name}</h5>
+                  <button type="button" className="btn-close" onClick={() => setSelectedItem(null)}></button>
+                </div>
+                <div className="modal-body">
+                  {/* <input
+                    type="number"
+                    value={reorderQuantity}
+                    onChange={(e) => setReorderQuantity(parseInt(e.target.value))}
+                    className="form-control mb-2"
+                    placeholder="Reorder Quantity"
+                  /> */}
+                  <table className="table table-striped">
+                    <tbody>
+                      <tr>
+                        <td>Item</td>
+                        <td>: {selectedItem.name}</td>
+                      </tr>
+                      <tr>
+                        <td>Current Stock</td>
+                        <td>: {selectedItem.total_available}</td>
+                      </tr>
+                      <tr>
+                        <td>Minimum Stock Level</td>
+                        <td>: {selectedItem.minStockLevel || 'Not set'}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <hr />
+                  {selectedItem.stocks.length>0 && <table className="table table-striped">
+                    <thead>
+                      <tr>
+                        <th>Batch Id</th>
+                        <th>Quantity</th>
+                        <th>Brand</th>
+                        <th>Color</th>
+                        <th>Capacity</th>
+                        <th>Height</th>
+                        <th>Power</th>
+                        <th>Model</th>
+                        <th>Entry Date</th>
+                        <th>Seller</th>
+                        <th>Description</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {selectedItem.stocks.map((item)=>(
+                      <tr>
+                        <td>{item.batch_id}</td>
+                        <td>{item.quantity}</td>
+                        <td>{item.brand}</td>
+                        <td>{item.color}</td>
+                        <td>{item.capacity}</td>
+                        <td>{item.height}</td>
+                        <td>{item.power}</td>
+                        <td>{item.model}</td>
+                        <td>{item.entry_date}</td>
+                        <td>{item.seller}</td>
+                        <td>{item.description}</td>
+                      </tr>
+                      ))}
+                    </tbody>
+                  </table>}
+                </div>
+                <div className="modal-footer">
+                  <button type="button" className="btn btn-secondary" onClick={() => setSelectedItem(null)}>Cancel</button>
+                  {/* <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={() => handleReorder(selectedItem)}
+                    disabled={reorderQuantity <= 0}
+                  >
+                    Reorder
+                  </button> */}
+                </div>
+              </div>
             </div>
-            <table className="table table-bordered">
-              <thead>
-                <tr>
-                  <th>Bill No</th>
-                  <th>Customer</th>
-                  <th>Amount</th>
-                  <th>Due Date</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {dashboardData.pendingBills?.map((bill) => (
-                  <tr key={bill._id}>
-                    <td>{bill.billNumber}</td>
-                    <td>{bill.customerName}</td>
-                    <td>${bill.amount.toLocaleString()}</td>
-                    <td>
-                      <span className={new Date(bill.dueDate) < new Date() ? 'badge bg-danger' : 'badge bg-secondary'}>
-                        {new Date(bill.dueDate).toLocaleDateString()}
-                      </span>
-                    </td>
-                    <td>
-                      <button 
-                        className="btn btn-outline-secondary btn-sm"
-                        onClick={() => setSelectedBill(bill)}
-                      >
-                        <svg width="16" height="16" fill="currentColor" className="bi bi-eye" viewBox="0 0 16 16">
-                          <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.134 13.134 0 0 1 1.172 8z"/>
-                          <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"/>
-                        </svg>
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
           </div>
-        </div>
+        )}
+
+        {/* Bill Details Dialog */}
+        {selectedBill && (
+          <div className="modal" tabIndex="-1" style={{ display: 'block', backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
+            <div className="modal-dialog">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title"> <strong>Bill Details of - {selectedBill.billNo}</strong></h5>
+                  <button type="button" className="btn-close" onClick={() => setSelectedBill(null)}></button>
+                </div>
+                <div className="modal-body">
+                  <table className="table table-striped">
+                    <tbody>
+                      <tr>
+                        <td>Billing Date</td>
+                        <td>: {selectedBill.date}</td>
+                      </tr>
+                      <tr>
+                        <td>Customer Name</td>
+                        <td>: {selectedBill.buyer_name}</td>
+                      </tr>
+                      <tr>
+                        <td>Customer Phone</td>
+                        <td>: {selectedBill.buyer_phone}</td>
+                      </tr>
+                      <tr>
+                        <td>Customer Email</td>
+                        <td>: {selectedBill.buyer_email}</td>
+                      </tr>
+                      <tr>
+                        <td>Customer PIN</td>
+                        <td>: {selectedBill.buyer_pin}</td>
+                      </tr>
+                      <tr>
+                        <td>Customer Address</td>
+                        <td>: {selectedBill.buyer_address}</td>
+                      </tr>
+                      <tr>
+                        <td>Total Amount</td>
+                        <td>: ₹{selectedBill.grandTotal?.toLocaleString()}</td>
+                      </tr>
+                      <tr>
+                        <td>Pending Amount</td>
+                        <td>: ₹{selectedBill.remaining_amount?.toLocaleString()}</td>
+                      </tr>
+                      <tr>
+                        <td>Installation</td>
+                        <td>: {selectedBill.pending_installation}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div className="modal-footer">
+                  <button type="button" className="btn btn-secondary" onClick={() => setSelectedBill(null)}>Close</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
-
-      {/* Reorder Dialog */}
-      {selectedItem && (
-        <div className="modal" tabIndex="-1" style={{ display: 'block', backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
-          <div className="modal-dialog">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Reorder {selectedItem.name}</h5>
-                <button type="button" className="btn-close" onClick={() => setSelectedItem(null)}></button>
-              </div>
-              <div className="modal-body">
-                <input
-                  type="number"
-                  value={reorderQuantity}
-                  onChange={(e) => setReorderQuantity(parseInt(e.target.value))}
-                  className="form-control mb-2"
-                  placeholder="Reorder Quantity"
-                />
-                <p className="mb-1">Current Stock: {selectedItem.quantity}</p>
-                <p className="mb-0">Minimum Stock Level: {selectedItem.minStockLevel || 'Not set'}</p>
-              </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setSelectedItem(null)}>Cancel</button>
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={() => handleReorder(selectedItem)}
-                  disabled={reorderQuantity <= 0}
-                >
-                  Reorder
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Bill Details Dialog */}
-      {selectedBill && (
-        <div className="modal" tabIndex="-1" style={{ display: 'block', backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
-          <div className="modal-dialog">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Bill Details - {selectedBill.billNumber}</h5>
-                <button type="button" className="btn-close" onClick={() => setSelectedBill(null)}></button>
-              </div>
-              <div className="modal-body">
-                <p className="mb-1">Customer: {selectedBill.customerName}</p>
-                <p className="mb-1">Amount: ${selectedBill.amount?.toLocaleString()}</p>
-                <p className="mb-1">Due Date: {selectedBill.dueDate && new Date(selectedBill.dueDate).toLocaleDateString()}</p>
-                <p className="mb-0">Status: {selectedBill.status}</p>
-              </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setSelectedBill(null)}>Close</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
+    );
+  }
 };
 
 export default Dashboard;

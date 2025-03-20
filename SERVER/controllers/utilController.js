@@ -131,9 +131,14 @@ module.exports = {
             body.sl_no = true;
             body.date = true;
             body.item = true;
-            body.quantity = true;
-            body.per_peace_buy_price = true;
+            body.total_quantity = true;
+            body.batch_buy_price = true;
             body.item_status = true;
+            if(body.unique_code || body.model || body.brand || body.color || body.capacity || body.height || body.power || body.description || body.mfg_date || body.exp_date || body.item_buy_price || body.item_sell_price || body.warrantee_guarantee || body.warrantee_guarantee_duration){
+                body.quantity = true;
+            } else{
+                body.quantity = false;
+            }
             body.updatedBy = new ObjectId(req.user.id);
             const doc = await stockStructureModel.updateOne({companyId: body.companyId},{$set: body}, {upsert: true, new: true});
             res.status(201).json({ status: true, msg: "Structure saved successfully.", doc:doc});
@@ -147,13 +152,12 @@ module.exports = {
             const userType = req.user.user_type;
             const value = req.headers.value;
             const sold_status = req.headers.sold_status;
-            // console.log("sold_status", sold_status)
             let cmpMatchStage ={}
             let matchStage ={}
             let projectionStage ={}
             if(value){
                 cmpMatchStage = {item: {$regex: value, $options: "i"}, quantity: {$gt: 0}} 
-                projectionStage = {item: "$item.name", brand: "$brand.name", model: 1,quantity: 1,item_sell_price: 1, color: 1, capacity: 1, height: 1, power: 1}
+                projectionStage = {item: "$item.name", brand: "$brand.name", model: 1,quantity: 1,item_sell_price: 1, item_buy_price: 1, color: 1, capacity: 1, height: 1, power: 1}
             } else if(sold_status){
                 if(sold_status == "UNSOLD"){
                     matchStage.quantity = {$gt: 0}
@@ -166,15 +170,15 @@ module.exports = {
                     sl_no: 1,
                     date: 1,
                     item: "$item.name",
-                    brand: "$brand.name",
-                    batchId: 1,
+                    brand_name: { $ifNull: ["$brand.name", "N/A"] },
+                    batch_id: 1,
                     description: 1,
                     model: 1,
                     color: 1,
                     capacity: 1,
                     height: 1,
                     power: 1,
-                    seller: "$seller.name",
+                    seller_name: { $ifNull: ["$seller.name", "N/A"] },
                     quantity: 1,
                     batch_no: 1,
                     item_status: 1,
@@ -189,28 +193,29 @@ module.exports = {
                 }
             }
             if (userType === "COMPANY") {
-                matchStage.companyId = userId;
+                matchStage.company_id = userId;
             } else if(userType === "OPERATOR"){
                 let operator = await userModel.findOne({_id: userId}, {company: 1});
-                matchStage.companyId = new ObjectId(operator.company)
+                matchStage.company_id = new ObjectId(operator.company)
             }
             const docs = await stockModel.aggregate([
                 {$match: matchStage},
                 {$lookup: {from: "items",
-                    localField: "itemId",
+                    localField: "item_id",
                     foreignField: "_id",
                     as: "item"}},
                 {$unwind: "$item"},
                 {$lookup: {from: "brands",
-                    localField: "brandId",
-                    foreignField: "_id",
-                    as: "brand"}},
-                {$unwind: "$brand"},
+                        let: { brand_id: "$brand_id" },
+                        pipeline: [{$match: {$expr: {$eq: ["$_id", "$$brand_id"]}}}],
+                        as: "brand"}},
+                { $unwind: { path: "$brand", preserveNullAndEmptyArrays: true}},
                 {$lookup: {from: "sellers",
-                    localField: "sellerId",
-                    foreignField: "_id",
-                    as: "seller"}},
-                {$unwind: "$seller"},
+                        let: { seller_id: "$seller_id" },
+                        pipeline: [{$match: {$expr: {$eq: ["$_id", "$$seller_id"]
+                                    }}}],
+                                    as: "seller"}},
+                {$unwind: {path: "$seller",preserveNullAndEmptyArrays: true}},
                 {$project: projectionStage},
                 {$match: cmpMatchStage},
                 
@@ -259,7 +264,7 @@ module.exports = {
                     grandTotal: 1,
                     payment_type: 1,
                     paid_amount: 1,
-                    ramaining_amount: 1,
+                    remaining_amount: 1,
                     info: 1,
                     pending_installation: 1
                 }
@@ -318,9 +323,11 @@ module.exports = {
                     grandTotal: 1,
                     payment_type: 1,
                     paid_amount: 1,
-                    ramaining_amount: 1,
+                    remaining_amount: 1,
                     info: 1,
-                    pending_installation: 1
+                    pending_installation: 1,
+                    profit: 1,
+                    total_profit: 1
                 }
             
             if (userType === "COMPANY") {
@@ -349,9 +356,9 @@ module.exports = {
                                                             as: "detail",
                                                             cond: { $eq: ["$$detail._id", "$$item.item_id"] }}},
                                                     as: "filteredItem",
-                                                    in: {item_id: "$$filteredItem.itemId",
-                                                        brand_id: "$$filteredItem.brandId",
-                                                        batch_id: "$$filteredItem.batchId",
+                                                    in: {item_id: "$$filteredItem.item_id",
+                                                        brand_id: "$$filteredItem.brand_id",
+                                                        batch_id: "$$filteredItem.batch_id",
                                                         sub_category: "$$filteredItem.sub_category",
                                                         color: "$$filteredItem.color",
                                                         capacity: "$$filteredItem.capacity",
@@ -364,7 +371,6 @@ module.exports = {
             ]);
             const brands = await brandModel.find(tempMatchStage, {name: 1});
             const items = await itemModel.find(tempMatchStage, {name: 1});
-        
             if(docs.length>0){
                 for(let i=0; i<docs.length; i++){
                   const outerRef = docs[i];
@@ -410,6 +416,382 @@ module.exports = {
         }
     },
 
+    dashboardMetrics: async(req, res)=>{
+        try{
+            const userId = new ObjectId(req.user.id);
+            const userType = req.user.user_type;
+            let company_id;
+            if (userType === "COMPANY") {
+                company_id = userId;
+            } else if(userType === "OPERATOR"){
+                let operator = await userModel.findOne({_id: userId}, {company: 1});
+                company_id = new ObjectId(operator.company)
+            }
+            const stocks = await stockModel.find({company_id: company_id, quantity: {$gt: 0}}, {quantity: 1, item_buy_price: 1});
+            let totalStockValue = 0;
+            for(let i=0; i<stocks.length; i++){
+                let temp = Number(stocks[i].quantity) * Number(stocks[i].item_buy_price);
+                totalStockValue = totalStockValue + temp
+            }
+            const bills = await billModel.aggregate([
+                    {$match: {
+                        company_id: company_id,
+                        $or: [
+                            {remaining_amount: {$gt: 0}},
+                            {pending_installation: "PENDING"}
+                        ]
+                    }},
+                    {$lookup: {
+                        from: "buyers",
+                        localField: "buyer_id",
+                        foreignField: "_id",
+                        as: "buyer_info"
+                    }},
+                    {$unwind: {path: "$buyer_info", preserveNullAndEmptyArrays: true}},
+                    {$project: {
+                        billNo: 1, date: 1, grandTotal: 1, remaining_amount: 1, pending_installation: 1, buyer_name: "$buyer_info.name", buyer_phone: "$buyer_info.phone", buyer_email: "$buyer_info.email", buyer_address: "$buyer_info.address",buyer_pin: "$buyer_info.pin"
+                    }}                     
+            ]);
+            let totalPendingInstallation = 0
+            let totalPendingBills = 0
+            const finalBills = []
+            for (let i=0; i<bills.length; i++){
+                totalPendingBills = totalPendingBills + bills[i].remaining_amount;
+                if(bills[i].pending_installation == "PENDING"){totalPendingInstallation++}
+                else if(!bills[i].pending_installation){bills[i].pending_installation = "N/A"}
+                bills[i].buyer_name = bills[i].buyer_name ? bills[i].buyer_name : "N/A";
+                bills[i].buyer_phone = bills[i].buyer_phone ? bills[i].buyer_phone : "N/A";
+                bills[i].buyer_email = bills[i].buyer_email ? bills[i].buyer_email : "N/A";
+                bills[i].buyer_address = bills[i].buyer_address ? bills[i].buyer_address : "N/A";
+                bills[i].buyer_pin = bills[i].buyer_pin ? bills[i].buyer_pin : "N/A";
+                bills[i].date = moment(bills[i].date).format('DD/MM/YYYY');
+                if(bills[i].remaining_amount != 0){
+                    finalBills.push(bills[i]);
+                }
+            }
+            res.status(200).json({status: true, doc:{totalPendingBills: totalPendingBills, totalStockValue: totalStockValue, totalPendingInstallation: totalPendingInstallation, bills: finalBills} });
+        } catch(err){
+            res.status(400).json({ msg: err.message });
+        }
+    },
+    dashboardFinancials: async(req, res)=>{
+        try{
+            const userId = new ObjectId(req.user.id);
+            const userType = req.user.user_type;
+            let company_id;
+            if (userType === "COMPANY") {
+                company_id = userId;
+            } else if(userType === "OPERATOR"){
+                let operator = await userModel.findOne({_id: userId}, {company: 1});
+                company_id = new ObjectId(operator.company)
+            }
+            const {start, end} = req.query;
+            if(!(start && end)){
+                res.status(400).json({ msg: "Missing Parameters!" });
+                return;
+            }
+            startDate = new Date(start);
+            startDate.setHours(0, 0, 0, 0);
+            endDate = new Date(end);
+            endDate.setHours(23, 59, 59, 999);
+            const revenueProfitResult = await billModel.aggregate([
+                {$match: {company_id: company_id, date: { $gte: startDate, $lte: endDate }}},
+                {$project: {paid_amount: 1, total_profit: 1, month: { $dateToString: { format: "%Y-%m", date: "$date" } }}},
+                {$group: {
+                    _id: "$month",
+                    totalRevenue: { $sum: "$paid_amount" },
+                    totalProfit: { $sum: "$total_profit" }
+                    }},
+                {$sort: { _id: 1 }}
+            ])
+            // **Processing the results**
+            let totalRevenue = 0;
+            let totalProfit = 0;
+            let profitRevenue = [];
+            revenueProfitResult.forEach((item) => {
+            totalRevenue += item.totalRevenue;
+            totalProfit += item.totalProfit;
+
+            profitRevenue.push({
+                month: new Date(item._id + "-01").toLocaleString("en-US", { month: "long" }),
+                Revenue: item.totalRevenue,
+                Profit: item.totalProfit
+            });
+            });
+            const stockInPipeline = [
+                {$match: {"date": { $gte: startDate, $lte: endDate }, "company_id": company_id}},
+                {$lookup: {from: "items",
+                    localField: "item_id",
+                    foreignField: "_id",
+                    as: "item"}},
+                {$unwind: "$item"},
+                {$project: {
+                    month: { $dateToString: { format: "%Y-%m", date: "$date" } },
+                    // stockIn: "$quantity",
+                    stockIn: "$total_quantity",
+                    sub_category: 1,
+                    item: "$item.name"}},
+                {$group: {
+                    _id: { month: "$month", sub_category: "$sub_category", item: "$item" },
+                    totalStockIn: { $sum: "$stockIn" }}},
+                {$sort: { "_id.month": 1 }}
+            ];
+            
+            const stockOutPipeline = [
+                {$unwind: "$sell_details"},
+                {$match: {"sell_details.sold_at": { $gte: startDate, $lte: endDate }, "company_id": company_id}},
+                {$lookup: {from: "items",
+                    localField: "item_id",
+                    foreignField: "_id",
+                    as: "item"}},
+                {$unwind: "$item"},
+                {$project: {
+                    month: { $dateToString: { format: "%Y-%m", date: "$sell_details.sold_at" } },
+                    sub_category: 1,
+                    stockOut: "$sell_details.quantity",
+                    item: "$item.name"}},
+                {$group: {
+                    _id: { month: "$month", sub_category: "$sub_category", item: "$item" },
+                    totalStockOut: { $sum: "$stockOut" }}},
+                {$sort: { "_id.month": 1}}
+            ];
+            
+            const stockInResult = await stockModel.aggregate(stockInPipeline)
+            const stockOutResult = await stockModel.aggregate(stockOutPipeline)
+            
+            const formatMonth = (monthStr) => {
+                const [year, monthNum] = monthStr.split('-');
+                const months = [
+                    'JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE',
+                    'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'
+                ];
+                return `${months[parseInt(monthNum) - 1]} ${year}`;
+            };
+        
+            // Helper function to parse month string back to Date for sorting
+            const parseMonthForSorting = (monthStr) => {
+                const [monthName, year] = monthStr.split(' ');
+                const monthIndex = [
+                    'JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE',
+                    'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'
+                ].indexOf(monthName);
+                return new Date(parseInt(year), monthIndex);
+            };
+        
+            // Create a Map to store combined data
+            const combinedMap = new Map();
+        
+            // Process stockInResult
+            stockInResult.forEach(stockIn => {
+                const key = `${stockIn._id.sub_category}-${stockIn._id.item}`;
+                const formattedMonth = formatMonth(stockIn._id.month);
+                const existing = combinedMap.get(key) || {
+                    item: stockIn._id.item,
+                    sub_category: stockIn._id.sub_category,
+                    stockInOut: []
+                };
+        
+                existing.stockInOut.push({
+                    month: formattedMonth,
+                    stockIn: stockIn.totalStockIn,
+                    stockOut: 0
+                });
+        
+                combinedMap.set(key, existing);
+            });
+        
+            // Process stockOutResult and merge with existing data
+            stockOutResult.forEach(stockOut => {
+                if (!stockOut.totalStockOut) return;
+        
+                const key = `${stockOut._id.sub_category}-${stockOut._id.item}`;
+                const formattedMonth = formatMonth(stockOut._id.month);
+                let existing = combinedMap.get(key);
+        
+                if (!existing) {
+                    existing = {
+                        item: stockOut._id.item,
+                        sub_category: stockOut._id.sub_category,
+                        stockInOut: []
+                    };
+                }
+        
+                const monthEntry = existing.stockInOut.find(
+                    entry => entry.month === formattedMonth
+                );
+        
+                if (monthEntry) {
+                    monthEntry.stockOut = stockOut.totalStockOut;
+                } else {
+                    existing.stockInOut.push({
+                        month: formattedMonth,
+                        stockIn: 0,
+                        stockOut: stockOut.totalStockOut
+                    });
+                }
+        
+                combinedMap.set(key, existing);
+            });
+        
+            // Convert Map to array and sort stockInOut arrays
+            const stockInOutResult = Array.from(combinedMap.values()).map(item => {
+                item.stockInOut.sort((a, b) => {
+                    return parseMonthForSorting(a.month) - parseMonthForSorting(b.month);
+                });
+                return item;
+            });
+            
+            const finalOutput = {
+                totalRevenue,
+                totalProfit,
+                profitRevenue,
+                stockMovement: stockInOutResult
+              };
+            res.status(200).json({status: true, doc: finalOutput})
+        } catch(err){
+            res.status(400).json({ msg: err.message });
+        }
+    },
+    dashboardLowStock: async(req, res)=>{
+        try{
+            const userId = new ObjectId(req.user.id);
+            const userType = req.user.user_type;
+            let company_id;
+            if (userType === "COMPANY") {
+                company_id = userId;
+            } else if(userType === "OPERATOR"){
+                let operator = await userModel.findOne({_id: userId}, {company: 1});
+                company_id = new ObjectId(operator.company)
+            }
+            let {threshold} = req.query;
+            if(!threshold){return res.status(400).json({ msg: "Missing Parameters!" });}
+            threshold = Number(threshold);
+            const docs = await itemModel.aggregate([
+                // Match items for the specific company
+                { $match: { companyId: company_id } },
+                
+                // Left join with stocks collection
+                { $lookup: {
+                    from: 'stocks',
+                    let: { item_id: '$_id' },
+                    pipeline: [
+                        { $match: { $expr: { $eq: ['$item_id', '$$item_id'] } } },
+                        // Lookup brands
+                        { $lookup: {
+                            from: 'brands',
+                            localField: 'brand_id',
+                            foreignField: '_id',
+                            as: 'brand'
+                        }},
+                        { $unwind: { path: "$brand", preserveNullAndEmptyArrays: true } },
+                        // Lookup sellers
+                        { $lookup: {
+                            from: 'sellers',
+                            localField: 'seller_id',
+                            foreignField: '_id',
+                            as: 'seller'
+                        }},
+                        { $unwind: { path: "$seller", preserveNullAndEmptyArrays: true } },
+                        // Project stock fields
+                        { $project: {
+                            batch_id: 1,
+                            quantity: 1,
+                            brand: '$brand.name',
+                            color: 1,
+                            capacity: 1,
+                            height: 1,
+                            power: 1,
+                            model: 1,
+                            date: 1,
+                            seller: '$seller.name',
+                            description: 1,
+                            _id: 0
+                        }}
+                    ],
+                    as: 'stocks'
+                }},
+                
+                // Add a field to check if all quantities exceed threshold
+                { $addFields: {
+                    allStocksExceedThreshold: {
+                        $cond: {
+                            if: { $eq: [{ $size: '$stocks' }, 0] },  // If no stocks
+                            then: false,                             // Don't exclude (will show as 0)
+                            else: {
+                                $eq: [
+                                    { $size: '$stocks' },
+                                    { $size: { $filter: {
+                                        input: '$stocks',
+                                        cond: { $gt: ['$$this.quantity', threshold] }
+                                    }}}
+                                ]
+                            }
+                        }
+                    }
+                }},
+                
+                // Filter out items where all stocks exceed threshold
+                { $match: { allStocksExceedThreshold: false } },
+                
+                // Filter stocks to only show quantities <= threshold
+                { $project: {
+                    name: '$name',
+                    code: 1,
+                    stocks: {
+                        $filter: {
+                            input: '$stocks',
+                            as: 'stock',
+                            cond: { $lte: ['$$stock.quantity', threshold] }
+                        }
+                    }
+                }},
+                
+                // Final projection
+                { $project: {
+                    name: '$name',
+                    code: 1,
+                    total_available: { $sum: '$stocks.quantity' },
+                    stocks: {
+                        $map: {
+                            input: '$stocks',
+                            as: 'stock',
+                            in: {
+                                batch_id: '$$stock.batch_id',
+                                quantity: '$$stock.quantity',
+                                brand: '$$stock.brand',
+                                color: '$$stock.color',
+                                capacity: '$$stock.capacity',
+                                height: '$$stock.height',
+                                power: '$$stock.power',
+                                model: '$$stock.model',
+                                entry_date: '$$stock.date',
+                                seller: '$$stock.seller',
+                                description: '$$stock.description'
+                            }
+                        }
+                    }
+                }}
+            ]);
+
+            for(let i=0; i<docs.length; i++){
+                for(let j=0; j<docs[i].stocks.length; j++){
+                    const ref = docs[i].stocks[j];
+                    ref.brand = ref.brand ? ref.brand: "N/A";
+                    ref.color = ref.color ? ref.color: "N/A";
+                    ref.capacity = ref.capacity ? ref.capacity: "N/A";
+                    ref.height = ref.height ? ref.height: "N/A";
+                    ref.power = ref.power ? ref.power: "N/A";
+                    ref.model = ref.model ? ref.model: "N/A";
+                    ref.entry_date = moment(ref.entry_date).format('DD/MM/YYYY');
+                    ref.seller = ref.seller ? ref.seller: "N/A";
+                    ref.description = ref.description ? ref.description: "N/A";
+                }
+            }
+            res.status(200).json({status: true, docs: docs})
+        } catch(err){
+            res.status(400).json({ msg: err.message });
+        }
+    },
     operatorList: async(req, res)=>{
         try {
             const userId = new ObjectId(req.user.id);
