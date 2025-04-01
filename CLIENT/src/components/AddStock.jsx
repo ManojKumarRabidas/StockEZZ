@@ -11,6 +11,7 @@ function AddStock() {
   const [date, setDate] = useState(new Date());
   const [time, setTime] = useState(new Date());
   const [sub_category, setSubCategory] = useState("")
+  const [challan_no, setChallanNo] = useState("");
   const [item, setItem] = useState("");
   const [item_id, setItemId] = useState("");
   const [batch_brand, setBatchBrand] = useState("");
@@ -33,7 +34,7 @@ function AddStock() {
   const [batch_exp_date, setBatchExpDate] = useState("");
   const [batch_warrantee_guarantee, setBatchWarranteeGuarente] = useState("")
   const [batch_warrantee_guarantee_duration, setBatchWarranteeGuarenteDuration] = useState("")
-  const [item_status, setItemStatus] = useState("");
+  const [item_status, setItemStatus] = useState("RECEIVED");
   const [return_reason, setReturnReason] = useState("");
   const [remarks, setRemarks] = useState("");
   const [lowerPartEntries, setLowerPartEntries] = useState([
@@ -315,6 +316,7 @@ function AddStock() {
     setDate(new Date());
     setTime(new Date());
     setSubCategory("")
+    setChallanNo("")
     setItem("")
     setItemId("")
     setBatchBrand("")
@@ -363,7 +365,7 @@ function AddStock() {
   };
   const handleSubmit = async (event) => {
     event.preventDefault();
-    const data = {sl_no, date, time, sub_category, item, item_id, seller, seller_id, total_quantity, batch_no, item_status, return_reason, remarks, stock_details: lowerPartEntries};
+    const data = {sl_no, date, time, sub_category, challan_no, item, item_id, seller, seller_id, total_quantity, batch_no, item_status, return_reason, remarks, stock_details: lowerPartEntries};
     const additionalData = {batch_brand, batch_brand_id, batch_color, batch_capacity, batch_height, batch_power, batch_description, batch_model, batch_buy_price, batch_sell_price, per_piece_buy_price, per_piece_sell_price, batch_mfg_date, batch_exp_date, batch_warrantee_guarantee, batch_warrantee_guarantee_duration}
     if(!data.date || !data.item || !data.total_quantity || !additionalData.batch_buy_price || !data.item_status){
       toastr.error("Please enter all required field.");
@@ -381,7 +383,6 @@ function AddStock() {
     if (response) {
       const result = await response.json();
       if (response.ok) {
-        
         toastr.success(result.msg);
         handleReset()
       } else {
@@ -475,7 +476,7 @@ function AddStock() {
         <div className="col mb-3" key="sl_no">
           <label className="form-label mx-3">Sl No</label>
           <input
-            placeholder="Enter Sl no"
+            placeholder="Enter sl number"
             name="sl_no"
             type="text"
             maxLength={70}
@@ -483,6 +484,24 @@ function AddStock() {
             aria-describedby="emailHelp"
             value={sl_no}
             onChange={(e) => setSlNo(e.target.value)}
+          />
+        </div>
+      );
+    }
+
+    if (stockStructure.challan_no) {
+      fields.push(
+        <div className="col mb-3" key="challan_no">
+          <label className="form-label mx-3">Challan No</label>
+          <input
+            placeholder="Enter challan number"
+            name="challan_no"
+            type="text"
+            maxLength={70}
+            className="form-control"
+            aria-describedby="emailHelp"
+            value={challan_no}
+            onChange={(e) => setChallanNo(e.target.value)}
           />
         </div>
       );
@@ -642,7 +661,12 @@ function AddStock() {
     if (stockStructure.batch_description) {
       fields.push(
         <div className="col mb-3" key="batch_description">
-          <label className="form-label mx-3">Description</label>
+          <label className="form-label mx-3">Description <span className="title-class" data-tooltip="If you left the field empty, our system will autometically generate a description for the item."><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-info-circle" viewBox="0 0 16 16">
+              <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
+              <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0"/>
+              </svg>
+            </span>
+          </label>
           <input
             placeholder="Enter description (it will help to find the item)"
             name="batch_description"
@@ -889,9 +913,7 @@ function AddStock() {
             value={item_status}
             onChange={(e) => setItemStatus(e.target.value)}
           >
-            <option value="">--Select item status--</option>
             <option value="RECEIVED">Received</option>
-            <option value="ACCEPTED">Accepted</option>
             <option value="RETURNED">Returned</option>
           </select>
         </div>
@@ -1116,7 +1138,12 @@ function AddStock() {
     if (stockStructure.description) {
       fields.push(
         <div className="col mb-3" key={`description_${index}`}>
-          <label className="form-label mx-3">Description</label>
+          <label className="form-label mx-3">Description <span className="title-class" data-tooltip="If you left the field empty, our system will autometically generate a description for the item."><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-info-circle" viewBox="0 0 16 16">
+              <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
+              <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0"/>
+              </svg>
+            </span>
+          </label>
           <input
             placeholder="Enter description (it will help to find the item)"
             name="description"

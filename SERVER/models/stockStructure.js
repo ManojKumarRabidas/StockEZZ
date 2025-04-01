@@ -5,6 +5,7 @@ const stockStructureSchema = new mongoose.Schema({
     date: {type: Boolean},
     time: {type: Boolean},
     sub_category: {type: Boolean},
+    challan_no: {type: Boolean},
     item: {type: Boolean},
     batch_brand: {type: Boolean},
     batch_color: {type: Boolean},

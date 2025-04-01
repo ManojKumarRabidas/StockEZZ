@@ -8,6 +8,7 @@ const stockSchema = new mongoose.Schema({
     date: {type: Date, required: true},
     time: {type: Date},
     sub_category: {type: String},
+    challan_no: {type: String},
     item_id: {type: mongoose.Schema.Types.ObjectId, required: true},
     brand_id: {type: mongoose.Schema.Types.ObjectId},
     color: {type: String},
@@ -49,6 +50,39 @@ const stockSchema = new mongoose.Schema({
           },
         ],
         default: [],
+      },
+      damages: {
+          type: [
+              {
+                  quantity: Number,
+                  reason: String,
+                  updatedBy: mongoose.Schema.Types.ObjectId,
+                  updatedAt: { type: Date, default: Date.now },
+              }
+          ],
+          default: [],
+      },
+      returns: {
+          type: [
+              {
+                  quantity: Number,
+                  reason: String,
+                  updatedBy: mongoose.Schema.Types.ObjectId,
+                  updatedAt: { type: Date, default: Date.now },
+              }
+          ],
+          default: [],
+      },
+      clears: {
+          type: [
+              {
+                  quantity: Number,
+                  reason: String,
+                  updatedBy: mongoose.Schema.Types.ObjectId,
+                  updatedAt: { type: Date, default: Date.now },
+              }
+          ],
+          default: [],
       },
     created_by: {type: mongoose.Schema.Types.ObjectId},
     updated_by: {type: mongoose.Schema.Types.ObjectId}

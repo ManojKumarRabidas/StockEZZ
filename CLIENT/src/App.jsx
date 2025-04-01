@@ -20,6 +20,7 @@ import AddStock from './components/AddStock';
 import Buyer from './components/Buyers';
 import Seller from './components/Sellers';
 import Stocks from './components/StockDetails';
+import BillingArea from './components/billingArea';
 import ManageStock from './components/ManageStock';
 import ManageBills from './components/ManageBills';
 import ManageInstallation from './components/ManageInstallation';
@@ -263,7 +264,8 @@ function AppContent({ isAuthenticated, userType }) {
               <Route path='/buyers/*' element={(user_type === 'OPERATOR' || user_type === 'COMPANY') ? <Buyer /> : <Unauthorized />} />
               <Route path='/sellers/*' element={(user_type === 'OPERATOR' || user_type === 'COMPANY') ? <Seller /> : <Unauthorized />} />
               <Route path='/stocks/*' element={(user_type === 'OPERATOR' || user_type === 'COMPANY') ? <Stocks /> : <Unauthorized />} />
-              <Route path='/manage-stocks/*' element={user_type === 'OPERATOR' ? <ManageStock /> : <Unauthorized />} />
+              <Route path='/billing-area/*' element={user_type === 'OPERATOR' ? <BillingArea /> : <Unauthorized />} />
+              <Route path='/manage-stock/*' element={user_type === 'OPERATOR' ? <ManageStock /> : <Unauthorized />} />
               <Route path='/manage-bills/*' element={(user_type === 'OPERATOR' || user_type === 'COMPANY') ? <ManageBills /> : <Unauthorized />} />
               <Route path='/manage-installation/*' element={user_type === 'OPERATOR' ? <ManageInstallation /> : <Unauthorized />} />
             </Routes>

@@ -201,18 +201,18 @@ function ManageBills() {
       //   sortingFn: "alphanumeric",
       //   enableSorting: true,
       // },
-      {
-        header: "Grand Total",
-        accessorKey: "grandTotal",
-        sortingFn: "alphanumeric",
-        enableSorting: true,
-      },
-      {
-        header: "Payment Mode",
-        accessorKey: "payment_type",
-        sortingFn: "alphanumeric",
-        enableSorting: true,
-      },
+      // {
+      //   header: "Grand Total",
+      //   accessorKey: "grandTotal",
+      //   sortingFn: "alphanumeric",
+      //   enableSorting: true,
+      // },
+      // {
+      //   header: "Payment Mode",
+      //   accessorKey: "payment_type",
+      //   sortingFn: "alphanumeric",
+      //   enableSorting: true,
+      // },
       {
         header: "Paid Amount",
         accessorKey: "paid_amount",
@@ -245,9 +245,25 @@ function ManageBills() {
         enableSorting: false,
         headerClassName: "ei-text-center-imp",
         cell: ({ row }) => (
-          <div style={{ textAlign: "center" }}>
-            
-            <button type="button" className="btn btn-outline-light" style={{ color: "blue", backgroundColor: "ghostwhite" }} onClick={() => details(row.original._id)} >Details </button>
+          <div className="text-center py-2">
+            <span className="p-2 mx-1 cursor-pointer rounded" style={{background: "white", border: "2px solid #f2f2f2"}}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-cash" viewBox="0 0 16 16">
+                <path d="M8 10a2 2 0 1 0 0-4 2 2 0 0 0 0 4"/>
+                <path d="M0 4a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H1a1 1 0 0 1-1-1zm3 0a2 2 0 0 1-2 2v4a2 2 0 0 1 2 2h10a2 2 0 0 1 2-2V6a2 2 0 0 1-2-2z"/>
+              </svg>
+            </span>
+            <span className="p-2 mx-1 cursor-pointer rounded" style={{background: "white", border: "2px solid #f2f2f2"}}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-return-left" viewBox="0 0 16 16">
+                <path fill-rule="evenodd" d="M14.5 1.5a.5.5 0 0 1 .5.5v4.8a2.5 2.5 0 0 1-2.5 2.5H2.707l3.347 3.346a.5.5 0 0 1-.708.708l-4.2-4.2a.5.5 0 0 1 0-.708l4-4a.5.5 0 1 1 .708.708L2.707 8.3H12.5A1.5 1.5 0 0 0 14 6.8V2a.5.5 0 0 1 .5-.5"/>
+              </svg>
+            </span>
+            <span className="p-2 mx-1 cursor-pointer rounded" style={{background: "white", border: "2px solid #f2f2f2"}}>
+              <svg onClick={() => details(row.original._id)} xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye" viewBox="0 0 16 16">
+                <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8M1.173 8a13 13 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5s3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5s-3.879-1.168-5.168-2.457A13 13 0 0 1 1.172 8z"/>
+                <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0"/>
+              </svg>
+            </span>
+            {/* <button type="button" className="btn btn-outline-light" style={{ color: "blue", backgroundColor: "ghostwhite" }} onClick={() => details(row.original._id)} >Details </button> */}
           </div>
         ),
       },
@@ -364,8 +380,20 @@ function ManageBills() {
               <strong> {pageIndex + 1} of {table.getPageCount()} </strong>
             </span>
             <div className="btn-group mx-2">
-              <button className="btn btn-secondary" onClick={() => table.previousPage()}disabled={!table.getCanPreviousPage()} >Previous</button>
-              <button className="btn btn-secondary" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}> Next </button>
+              <span className="btn btn-secondary " onClick={() => table.previousPage()}disabled={!table.getCanPreviousPage()}>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chevron-double-left" viewBox="0 0 16 16">
+                  <path fill-rule="evenodd" d="M8.354 1.646a.5.5 0 0 1 0 .708L2.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0"/>
+                  <path fill-rule="evenodd" d="M12.354 1.646a.5.5 0 0 1 0 .708L6.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0"/>
+                </svg>
+              </span>
+              <span className="btn btn-secondary" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chevron-double-right" viewBox="0 0 16 16">
+                  <path fill-rule="evenodd" d="M3.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L9.293 8 3.646 2.354a.5.5 0 0 1 0-.708"/>
+                  <path fill-rule="evenodd" d="M7.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L13.293 8 7.646 2.354a.5.5 0 0 1 0-.708"/>
+                </svg>
+              </span>
+              {/* <button className="btn btn-secondary" onClick={() => table.previousPage()}disabled={!table.getCanPreviousPage()} >Previous</button>
+              <button className="btn btn-secondary" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}> Next </button> */}
             </div>
           </div>
         </>}
@@ -376,26 +404,14 @@ function ManageBills() {
                 {(detailsBill.items.length > 0) && <div className="mt-3">
                     <table className="table table-striped p-3 rounded">
                             <tr className="text-center">
-                                <th className="p-2 text-start">Product Name</th>
-                                <th className="p-2 text-start">Brand</th>
-                                <th className="p-2 text-start">Model</th>
-                                <th className="p-2 text-start">Color</th>
-                                <th className="p-2 text-start">Capacity</th>
-                                <th className="p-2 text-start">Height</th>
-                                <th className="p-2 text-start">Power</th>
+                                <th className="p-2 text-start">Description</th>
                                 <th className="p-2">Quantity</th>
                                 <th className="p-2 text-end">Price</th>
                                 <th className="p-2 text-end">Total Price</th>
                             </tr>
                             {detailsBill.items.map((item, index) => (
                             <tr className="text-center">
-                                <td className="p-2 text-start">{item.item.item_name}</td>
-                                <td className="p-2 text-start">{item.item.brand_name ? item.item.brand_name : "N/A"}</td> 
-                                <td className="p-2 text-start">{item.item.model ? item.item.model : "N/A"}</td> 
-                                <td className="p-2 text-start">{item.item.color ? item.item.color : "N/A"}</td> 
-                                <td className="p-2 text-start">{item.item.capacity ? item.item.capacity : "N/A"}</td> 
-                                <td className="p-2 text-start">{item.item.height ? item.item.height : "N/A"}</td> 
-                                <td className="p-2 text-start">{item.item.power ? item.item.power : "N/A"}</td> 
+                                <td className="p-2 text-start">{item.item.description}</td>
                                 <td className="p-2">{item.quantity}</td>
                                 <td className="p-2 text-end"> {item.sell_price}</td>
                                 <td className="p-2 text-end"> {item.sell_price * item.quantity}</td>
@@ -405,22 +421,10 @@ function ManageBills() {
                             <tr >
                                 <td></td>
                                 <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
                                 <th className="p-1 text-end"> Total : </th>
                                 <td className="text-end p-1">{detailsBill.total}</td>
                             </tr>
                             <tr >
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
                                 <td></td>
                                 <td></td>
                                 <th className="p-1 text-end"> GST : </th>
@@ -429,34 +433,16 @@ function ManageBills() {
                             <tr>
                                 <td></td>
                                 <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
                                 <th className="p-1 text-end">Ad. Charges : </th>
                                 <td className="text-end p-1">{detailsBill.additional_charges}</td>
                             </tr>
                             <tr>
                                 <td></td>
                                 <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
                                 <th className="p-1 text-end">Discount : </th>
                                 <td className="text-end p-1">{detailsBill.discount}</td>
                             </tr>
                             <tr>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
                                 <td></td>
                                 <td></td>
                                 <th className="p-1 text-end">Grand Total : </th>

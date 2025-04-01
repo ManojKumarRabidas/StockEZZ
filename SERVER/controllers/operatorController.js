@@ -144,6 +144,37 @@ module.exports = {
                 body.warrantee_guarantee_duration = additionalData.batch_warrantee_guarantee_duration ? Number(additionalData.batch_warrantee_guarantee_duration): null;
                 body.quantity = itemQuantity - detailsBodyTotalQuantity;
                 body.total_quantity = itemQuantity - detailsBodyTotalQuantity;
+
+                if (body.description && body.description.trim() !== "") {
+                    // Use the existing description
+                } else {
+                    const descriptionParts = [];
+                    if (body.item) {
+                        descriptionParts.push(body.item);
+                    }
+                    if (additionalData.batch_brand && additionalData.batch_brand.trim() !== "") {
+                        descriptionParts.push(additionalData.batch_brand);
+                    }
+                    if (body.model && body.model.trim() !== "") {
+                        descriptionParts.push(body.model);
+                    }
+                    if (body.color && body.color.trim() !== "") {
+                        descriptionParts.push(body.color);
+                    }
+                    if (body.capacity && body.capacity.trim() !== "") {
+                        descriptionParts.push(body.capacity);
+                    }
+                    if (body.height && body.height.trim() !== "") {
+                        descriptionParts.push(body.height);
+                    }
+                    if (body.power && body.power.trim() !== "") {
+                        descriptionParts.push(body.power);
+                    }
+
+                    // Join all parts with space and set as description
+                    body.description = descriptionParts.join(" ");
+                }
+
                 finalStockBody.push(body);
             }
             if(detailsBodyTotalQuantity > 0){
@@ -172,7 +203,7 @@ module.exports = {
                         }
                         newBody.brand_id = doc._id;
                     } else{
-                        newBody.brand_id = additionalData.batch_brand_id ? additionalData.batch_brand_id: null;
+                        newBody.brand_id = body.brand_id ? body.brand_id: null;
                     }
 
                     newBody.color = ref.color ? ref.color: additionalData.batch_color;
@@ -188,6 +219,42 @@ module.exports = {
                     newBody.item_sell_price = ref.item_sell_price ? Number(ref.item_sell_price) : (additionalData.per_piece_sell_price ? Number(additionalData.per_piece_sell_price): null);
                     newBody.warrantee_guarantee = ref.warrantee_guarantee ? ref.warrantee_guarantee : ((additionalData.batch_warrantee_guarantee ? additionalData.batch_warrantee_guarantee: null));
                     newBody.warrantee_guarantee_duration = ref.warrantee_guarantee_duration ? Number(ref.warrantee_guarantee_duration) : (((additionalData.batch_warrantee_guarantee_duration ? Number(additionalData.batch_warrantee_guarantee_duration): null)));
+                    
+                    if (newBody.description && newBody.description.trim() !== "") {
+                        // Use the existing description
+                    } else {
+                        const descriptionParts = [];
+                        if (newBody.item) {
+                            descriptionParts.push(newBody.item);
+                        }
+                        if (ref.brand && ref.brand.trim() !== "") {
+                            descriptionParts.push(ref.brand);
+                        } else if (additionalData.batch_brand && additionalData.batch_brand.trim() != ""){
+                            descriptionParts.push(additionalData.batch_brand);
+                        }
+                        if (newBody.model && newBody.model.trim() !== "") {
+                            descriptionParts.push(newBody.model);
+                        }
+                        if (newBody.color && newBody.color.trim() !== "") {
+                            descriptionParts.push(newBody.color);
+                        }
+                        if (newBody.capacity && newBody.capacity.trim() !== "") {
+                            descriptionParts.push(newBody.capacity);
+                        }
+                        if (newBody.height && newBody.height.trim() !== "") {
+                            descriptionParts.push(newBody.height);
+                        }
+                        if (newBody.power && newBody.power.trim() !== "") {
+                            descriptionParts.push(newBody.power);
+                        }
+                        if (newBody.unique_code && newBody.unique_code.trim() !== "") {
+                            descriptionParts.push(newBody.unique_code);
+                        }
+    
+                        // Join all parts with space and set as description
+                        newBody.description = descriptionParts.join(" ");
+                    }
+                    
                     finalStockBody.push(newBody);
                 }
             }
@@ -356,6 +423,39 @@ module.exports = {
                 tempMatchStage.companyId = new ObjectId(operator.company)
                 company = await companyModel.findOne({_id: operator.company}, {name: 1, phone: 1, email: 1, address: 1, gstNo: 1});
             }
+            // const docs = await billModel.aggregate([
+            //     {$match: matchStage},
+            //     {$lookup: {from: "buyers",
+            //             localField: "buyer_id",
+            //             foreignField: "_id",
+            //             as: "buyer"}},
+            //     {$addFields:{buyer:{ $arrayElemAt: ["$buyer", 0]}}},
+            //     {$lookup: {from: "stocks",
+            //             localField: "items.item_id",
+            //             foreignField: "_id",
+            //             as: "itemDetails"}},
+            //     {$addFields: {items: {$map: {input: "$items",
+            //                     as: "item",
+            //                     in: {sell_price: "$$item.sell_price",
+            //                         quantity: "$$item.quantity",
+            //                         item: {$arrayElemAt: [{$map: {
+            //                                         input: {$filter: {input: "$itemDetails",
+            //                                                 as: "detail",
+            //                                                 cond: { $eq: ["$$detail._id", "$$item.item_id"] }}},
+            //                                         as: "filteredItem",
+            //                                         in: {item_id: "$$filteredItem.item_id",
+            //                                             brand_id: "$$filteredItem.brand_id",
+            //                                             batch_id: "$$filteredItem.batch_id",
+            //                                             sub_category: "$$filteredItem.sub_category",
+            //                                             color: "$$filteredItem.color",
+            //                                             capacity: "$$filteredItem.capacity",
+            //                                             height: "$$filteredItem.height",
+            //                                             power: "$$filteredItem.power",
+            //                                             description: "$$filteredItem.description",
+            //                                             model: "$$filteredItem.model"}}},
+            //                                 0]}}}}}},
+            //     {$project: projectionStage}
+            // ]);
             const docs = await billModel.aggregate([
                 {$match: matchStage},
                 {$lookup: {from: "buyers",
@@ -376,21 +476,13 @@ module.exports = {
                                                             as: "detail",
                                                             cond: { $eq: ["$$detail._id", "$$item.item_id"] }}},
                                                     as: "filteredItem",
-                                                    in: {item_id: "$$filteredItem.item_id",
-                                                        brand_id: "$$filteredItem.brand_id",
-                                                        batch_id: "$$filteredItem.batch_id",
-                                                        sub_category: "$$filteredItem.sub_category",
-                                                        color: "$$filteredItem.color",
-                                                        capacity: "$$filteredItem.capacity",
-                                                        height: "$$filteredItem.height",
-                                                        power: "$$filteredItem.power",
-                                                        description: "$$filteredItem.description",
-                                                        model: "$$filteredItem.model"}}},
+                                                    in: {sub_category: "$$filteredItem.sub_category",
+                                                        description: "$$filteredItem.description"}}},
                                             0]}}}}}},
                 {$project: projectionStage}
             ]);
-            const brands = await brandModel.find(tempMatchStage, {name: 1});
-            const items = await itemModel.find(tempMatchStage, {name: 1});
+            // const brands = await brandModel.find(tempMatchStage, {name: 1});
+            // const items = await itemModel.find(tempMatchStage, {name: 1});
         
             if(docs.length>0){
                 for(let i=0; i<docs.length; i++){
@@ -410,29 +502,24 @@ module.exports = {
                   outerRef.pending_installation = outerRef.pending_installation ? outerRef.pending_installation : "N/A";
                   for(let j=0; j<outerRef.items.length; j++){
                     const ref = outerRef.items[j].item;
-                    if(ref.brand_id){
-                        for(let i=0; i<brands.length; i++){
-                            if((brands[i]._id).toString() == (ref.brand_id).toString()){
-                                ref.brand_name = brands[i].name;
-                                break;     
-                            }
-                        }
-                    }
-                    if(ref.item_id){
-                        for(let i=0; i<items.length; i++){
-                            if((items[i]._id).toString() == (ref.item_id).toString()){
-                                ref.item_name = items[i].name;
-                                break;     
-                            }
-                        }
-                    }
+                    // if(ref.brand_id){
+                    //     for(let i=0; i<brands.length; i++){
+                    //         if((brands[i]._id).toString() == (ref.brand_id).toString()){
+                    //             ref.brand_name = brands[i].name;
+                    //             break;     
+                    //         }
+                    //     }
+                    // }
+                    // if(ref.item_id){
+                    //     for(let i=0; i<items.length; i++){
+                    //         if((items[i]._id).toString() == (ref.item_id).toString()){
+                    //             ref.item_name = items[i].name;
+                    //             break;     
+                    //         }
+                    //     }
+                    // }
                     ref.sub_category = ref.sub_category ? ref.sub_category: "N/A";
-                    ref.color = ref.color ? ref.color: "N/A";
-                    ref.capacity = ref.capacity ? ref.capacity: "N/A";
-                    ref.height = ref.height ? ref.height: "N/A";
-                    ref.power = ref.power ? ref.power: "N/A";
                     ref.description = ref.description ? ref.description: "N/A";
-                    ref.model = ref.model ? ref.model: "N/A";
                 }
               } 
             }
@@ -446,6 +533,141 @@ module.exports = {
             doc.company = company;
             const pdfExportService = require("../services/pdfExportService");
             const result = await pdfExportService.generateBill(doc);
+            
+            if (!result.status) {
+                return res.status(400).json({ status: false, msg: 'Failed to generate PDF' });
+            }
+
+            const pdfDoc = result.doc;
+            
+            // Set response headers
+            res.setHeader('Content-Type', 'application/pdf');
+            res.setHeader('Content-Disposition', 'attachment; filename="tasting-report1.pdf"');
+
+            // Pipe the PDF document directly to the response
+            const { PassThrough } = require('stream');
+            const stream = pdfDoc.pipe(new PassThrough());
+            stream.pipe(res);
+
+            pdfDoc.end();
+        } catch(err){
+            res.status(500).json({ status: false, msg: err.message });
+        }
+    },
+    manageStock: async(req, res)=>{
+        try{
+            const body = req.body;
+            const userId = new ObjectId(req.user.id);
+            if (!body){
+                res.status(400).json({ msg: "Missing Parameters!" });
+                return;
+            }
+            let action;
+            if(body.type == "DAMAGE"){
+                action = "damages"
+            } else if (body.type == "RETURN"){
+                action = "returns"
+            } else if (body.type == "CLEAR"){
+                action = "clears"
+            }
+            const bulkOps = body.docs.map(update => ({
+                updateOne: {
+                    filter: { _id: new ObjectId(update._id) },
+                    update: {
+                        $inc: { quantity: -update.quantity },
+                        $push: {
+                            [action]: {
+                                quantity: update.quantity,
+                                reason: update.reason,
+                                updatedBy: userId,
+                                updatedAt: new Date()
+                            }
+                        }
+                    },
+                    upsert: true
+                }
+            }));
+    
+            await stockModel.bulkWrite(bulkOps);
+            res.status(200).json({status: true});
+        } catch(err){
+            res.status(500).json({ status: false, msg: err.message });
+        }
+    },
+    generateSellerInvoicePdf: async (req, res)=>{
+        try{
+            const body = req.body;
+            if (!body || !Array.isArray(body)) {
+                res.status(400).json({ msg: "Invalid or missing parameters!" });
+                return;
+            }
+            const itemMap = new Map(body.map(item => [item._id.toString(), item.quantity]));
+            const docs = await stockModel.aggregate([
+                { $match: { _id: { $in: [...itemMap.keys()].map(_id => new ObjectId(_id)) } } },
+                {
+                    $lookup: {
+                        from: "sellers",
+                        localField: "seller_id",
+                        foreignField: "_id",
+                        as: "seller"
+                    }
+                },
+                { $unwind: { path: "$seller", preserveNullAndEmptyArrays: true } },
+                {
+                    $project: {
+                        _id: 1,
+                        date: 1,
+                        description: 1,
+                        challan_no: 1,
+                        batch_no: 1,
+                        batch_id: 1,
+                        seller: "$seller.name",
+                        quantity: 1,
+                        item_buy_price: 1,
+                    }
+                }
+            ]);
+            if (docs.length === 0) {
+                res.status(404).json({ msg: "No records found!" });
+                return;
+            }
+            // Check if all `challan_no` and `seller` values are the same
+            const firstChallanNo = docs[0].challan_no;
+            const firstSeller = docs[0].seller;
+            const isValid = docs.every(doc => doc.challan_no === firstChallanNo && doc.seller === firstSeller);
+
+            if (!isValid) {
+                res.status(400).json({ status: false, msg: "Must be same seller and challan no" });
+                return;
+            }
+
+            let grandTotal = 0;
+            const updatedDocs = docs.map(doc => {
+                let plainDoc = { ...doc };  // Convert to plain object
+                const updatedQuantity = itemMap.get(doc._id.toString()); // Ensure lookup by string ID
+                plainDoc.date = moment(plainDoc.date).format('DD/MM/YY');
+                plainDoc.quantity = updatedQuantity !== undefined ? updatedQuantity : plainDoc.quantity; // Update quantity
+                plainDoc.total = plainDoc.quantity + plainDoc.item_buy_price; // Calculate total (quantity + item_buy_price)
+                grandTotal += plainDoc.total; // Add to grandTotal
+                return plainDoc;
+            });
+
+            // Response format
+            let doc = {
+                challan_no: firstChallanNo,
+                seller: firstSeller,
+                grandTotal: grandTotal,
+                items: updatedDocs // The modified array
+            };
+            const userId = new ObjectId(req.user.id);
+            let operator = await userModel.findOne({_id: userId}, {company: 1, name: 1, code: 1});
+            company = await companyModel.findOne({_id: operator.company}, {name: 1, phone: 1, email: 1, address: 1, gstNo: 1});
+
+            doc.operator = operator.code+"-"+operator.name;
+            doc.company = company;
+            doc.today = moment(new Date()).format('DD/MM/YYYY');
+            const pdfExportService = require("../services/pdfExportService");
+            const result = await pdfExportService.generateSellerInvoice(doc);
             
             if (!result.status) {
                 return res.status(400).json({ status: false, msg: 'Failed to generate PDF' });

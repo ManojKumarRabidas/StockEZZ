@@ -123,6 +123,129 @@ function StockDetails() {
         enableSorting: false,
       },
       {
+        header: "Challan No",
+        accessorKey: "challan_no",
+        sortingFn: "alphanumeric",
+        enableSorting: true,
+      },
+      {
+        header: "Description",
+        id: "description",
+        accessorKey: "description",
+        sortingFn: "alphanumeric",
+        enableSorting: true,
+        headerClassName: "ei-text-center-imp",
+        cell: ({ row }) => {
+          const [value, setValue] = useState(row.original.description);
+          const handleChange = (e) => {
+            const newValue = e.target.value;
+            setValue(newValue);
+            changeTableValue(row.original._id, newValue, "DESCRIPTION");
+          };
+      
+          return (
+            <div style={{ textAlign: "center" }}>
+              {!editableTable && <label>{value}</label>}
+              {editableTable && <div> <input name="description" value={value} onChange={handleChange} /></div>}
+            </div>
+          );
+        },
+      },
+      {
+        header: "Quantity",
+        accessorKey: "quantity",
+        sortingFn: "alphanumeric",
+        enableSorting: true,
+      },
+      {
+        header: "Buy Price",
+        accessorKey: "item_buy_price",
+        sortingFn: "alphanumeric",
+        enableSorting: true,
+      },
+      {
+        header: "Sell Price",
+        id: "sell_price_key",
+        accessorKey: "sell_price_key",
+        sortingFn: "alphanumeric",
+        enableSorting: true,
+        headerClassName: "ei-text-center-imp",
+        cell: ({ row }) => {
+          const [value, setValue] = useState(row.original.item_sell_price);
+          const handleChange = (e) => {
+            const newValue = e.target.value;
+            setValue(newValue);
+            changeTableValue(row.original._id, newValue, "SELLPRICE");
+          };
+      
+          return (
+            <div style={{ textAlign: "center" }}>
+              {!editableTable && <label>{value}</label>}
+              {editableTable && <div> <input name="sell_price" value={value} onChange={handleChange} /></div>}
+            </div>
+          );
+        },
+      },
+      {
+        header: "Item Status",
+        id: "item_status",
+        accessorKey: "item_status",
+        sortingFn: "alphanumeric",
+        enableSorting: true,
+        headerClassName: "ei-text-center-imp",
+        cell: ({ row }) => {
+          const [value, setValue] = useState(row.original.item_status);
+          const handleChange = (e) => {
+            const newValue = e.target.value;
+            setValue(newValue);
+            changeTableValue(row.original._id, newValue, "ITEMSTATUS");
+          };
+      
+          return (
+            <div style={{ textAlign: "center" }}>
+              {!editableTable && <label>{value}</label>}
+              {editableTable && <div>
+                <select style={{minWidth:"130px"}} className="form-select" aria-label="Default select example" name="item_status" value={value} onChange={handleChange}>
+                  <option value="RECEIVED">Received</option>
+                  <option value="ACCEPTED">Accepted</option>
+                  <option value="RETURNED">Returned</option>
+                </select> 
+              </div>}
+            </div>
+          );
+        },
+      },
+      {
+        header: "Remarks",
+        accessorKey: "remarks",
+        sortingFn: "alphanumeric",
+        enableSorting: true,
+      },
+      {
+        header: "Seller",
+        accessorKey: "seller",
+        sortingFn: "alphanumeric",
+        enableSorting: true,
+      },
+      {
+        header: "Entry Date",
+        accessorKey: "date",
+        sortingFn: "alphanumeric",
+        enableSorting: true,
+      },
+      {
+        header: "Item Sl No",
+        accessorKey: "sl_no",
+        sortingFn: "alphanumeric",
+        enableSorting: true,
+      },
+      {
+        header: "Batch Id",
+        accessorKey: "batch_id",
+        sortingFn: "alphanumeric",
+        enableSorting: true,
+      },
+      {
         header: "Item Name",
         accessorKey: "item",
         sortingFn: "alphanumeric",
@@ -165,123 +288,6 @@ function StockDetails() {
         enableSorting: true,
       },
       {
-        header: "Quantity",
-        accessorKey: "quantity",
-        sortingFn: "alphanumeric",
-        enableSorting: true,
-      },
-      {
-        header: "Buy Price",
-        accessorKey: "item_buy_price",
-        sortingFn: "alphanumeric",
-        enableSorting: true,
-      },
-      {
-        header: "Sell Price",
-        id: "sell_price_key",
-        accessorKey: "sell_price_key",
-        sortingFn: "alphanumeric",
-        enableSorting: true,
-        headerClassName: "ei-text-center-imp",
-        cell: ({ row }) => {
-          const [value, setValue] = useState(row.original.item_sell_price);
-          const handleChange = (e) => {
-            const newValue = e.target.value;
-            setValue(newValue);
-            changeTableValue(row.original._id, newValue, "SELLPRICE");
-          };
-      
-          return (
-            <div style={{ textAlign: "center" }}>
-              {!editableTable && <label>{value}</label>}
-              {editableTable && <div> <input name="sell_price" value={value} onChange={handleChange} /></div>}
-            </div>
-          );
-        },
-      },
-      {
-        header: "Description",
-        id: "description",
-        accessorKey: "description",
-        sortingFn: "alphanumeric",
-        enableSorting: true,
-        headerClassName: "ei-text-center-imp",
-        cell: ({ row }) => {
-          const [value, setValue] = useState(row.original.description);
-          const handleChange = (e) => {
-            const newValue = e.target.value;
-            setValue(newValue);
-            changeTableValue(row.original._id, newValue, "DESCRIPTION");
-          };
-      
-          return (
-            <div style={{ textAlign: "center" }}>
-              {!editableTable && <label>{value}</label>}
-              {editableTable && <div> <input name="description" value={value} onChange={handleChange} /></div>}
-            </div>
-          );
-        },
-      },
-      {
-        header: "Item Status",
-        id: "item_status",
-        accessorKey: "item_status",
-        sortingFn: "alphanumeric",
-        enableSorting: true,
-        headerClassName: "ei-text-center-imp",
-        cell: ({ row }) => {
-          const [value, setValue] = useState(row.original.item_status);
-          const handleChange = (e) => {
-            const newValue = e.target.value;
-            setValue(newValue);
-            changeTableValue(row.original._id, newValue, "ITEMSTATUS");
-          };
-      
-          return (
-            <div style={{ textAlign: "center" }}>
-              {!editableTable && <label>{value}</label>}
-              {editableTable && <div>
-                <select style={{minWidth:"130px"}} className="form-select" aria-label="Default select example" name="item_status" value={value} onChange={handleChange}>
-                  <option value="RECEIVED">Received</option>
-                  <option value="ACCEPTED">Accepted</option>
-                  <option value="RETURNED">Returned</option>
-                </select> 
-              </div>}
-            </div>
-          );
-        },
-      },
-      {
-        header: "Seller",
-        accessorKey: "seller",
-        sortingFn: "alphanumeric",
-        enableSorting: true,
-      },
-      {
-        header: "Entry Date",
-        accessorKey: "date",
-        sortingFn: "alphanumeric",
-        enableSorting: true,
-      },
-      {
-        header: "Item Sl No",
-        accessorKey: "sl_no",
-        sortingFn: "alphanumeric",
-        enableSorting: true,
-      },
-      {
-        header: "Batch Id",
-        accessorKey: "batch_id",
-        sortingFn: "alphanumeric",
-        enableSorting: true,
-      },
-      {
-        header: "Remarks",
-        accessorKey: "remarks",
-        sortingFn: "alphanumeric",
-        enableSorting: true,
-      },
-      {
         header: "Mfg date",
         accessorKey: "mfg_date",
         sortingFn: "alphanumeric",
@@ -315,6 +321,9 @@ function StockDetails() {
     return data.filter((row) => {
       const lowercasedFilter = globalFilter.toLowerCase();
       return (
+        row.challan_no.toString().toLowerCase().includes(lowercasedFilter) ||
+        row.description.toString().toLowerCase().includes(lowercasedFilter) ||
+        row.remarks.toString().toLowerCase().includes(lowercasedFilter) ||
         row.item.toString().toLowerCase().includes(lowercasedFilter) ||
         row.brand_name.toLowerCase().includes(lowercasedFilter) ||
         row.model.toString().toLowerCase().includes(lowercasedFilter) ||
@@ -322,12 +331,10 @@ function StockDetails() {
         row.capacity.toString().toLowerCase().includes(lowercasedFilter) ||
         row.height.toString().toLowerCase().includes(lowercasedFilter) ||
         row.power.toString().toLowerCase().includes(lowercasedFilter) ||
-        row.description.toString().toLowerCase().includes(lowercasedFilter) ||
         row.item_status.toString().toLowerCase().includes(lowercasedFilter) ||
         row.seller.toString().toLowerCase().includes(lowercasedFilter) ||
         row.sl_no.toString().toLowerCase().includes(lowercasedFilter) ||
-        row.batch_id.toString().toLowerCase().includes(lowercasedFilter) ||
-        row.remarks.toString().toLowerCase().includes(lowercasedFilter)
+        row.batch_id.toString().toLowerCase().includes(lowercasedFilter)
       );
     });
   }, [data, globalFilter]);

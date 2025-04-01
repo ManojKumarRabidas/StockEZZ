@@ -152,12 +152,23 @@ module.exports = {
             const userType = req.user.user_type;
             const value = req.headers.value;
             const sold_status = req.headers.sold_status;
+            const manage = req.headers.manage;
+            const filter = req.headers.filter;
             let cmpMatchStage ={}
             let matchStage ={}
             let projectionStage ={}
             if(value){
-                cmpMatchStage = {item: {$regex: value, $options: "i"}, quantity: {$gt: 0}} 
-                projectionStage = {item: "$item.name", brand: "$brand.name", model: 1,quantity: 1,item_sell_price: 1, item_buy_price: 1, color: 1, capacity: 1, height: 1, power: 1}
+                if(filter){
+                    cmpMatchStage = {[filter]: {$regex: value, $options: "i"}, quantity: {$gt: 0}} 
+                } else{
+                    cmpMatchStage = {description: {$regex: value, $options: "i"}, quantity: {$gt: 0}} 
+                }
+                if(!manage){
+                    projectionStage = {description: 1, quantity: 1,item_sell_price: 1, item_buy_price: 1, mfg_date: 1, exp_date: 1, warrantee_guarantee: 1, warrantee_guarantee_duration: 1}
+                } else{
+                    cmpMatchStage.item_status = "RECEIVED";
+                    projectionStage = {date: 1, description: 1, challan_no: 1, item_buy_price: 1, quantity: 1, remarks: 1, seller_name: { $ifNull: ["$seller.name", "N/A"] }, batch_id: 1, batch_no: 1, item_status: 1}
+                }
             } else if(sold_status){
                 if(sold_status == "UNSOLD"){
                     matchStage.quantity = {$gt: 0}
@@ -169,6 +180,7 @@ module.exports = {
                 projectionStage = { _id: 1,
                     sl_no: 1,
                     date: 1,
+                    challan_no: 1,
                     item: "$item.name",
                     brand_name: { $ifNull: ["$brand.name", "N/A"] },
                     batch_id: 1,
@@ -223,6 +235,7 @@ module.exports = {
             if(docs.length>0){
                 for(let i=0; i<docs.length; i++){
                   const ref = docs[i];
+                  ref.challan_no = ref.challan_no ? ref.challan_no: "N/A";
                   ref.brand = ref.brand ? ref.brand: "N/A";
                   ref.model = ref.model ? ref.model: "N/A";
                   ref.color = ref.color ? ref.color: "N/A";

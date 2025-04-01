@@ -1,578 +1,366 @@
 import React, { useState, useEffect , useCallback} from "react";
 import moment from 'moment';
+import { saveAs } from 'file-saver';
 import toastr from 'toastr';
 const token = sessionStorage.getItem('token');
 const HOST = import.meta.env.VITE_HOST;
 const PORT = import.meta.env.VITE_PORT;
 
-function StockDetails() {
-  const [billListDiv, setBillListDiv] = useState(true);
-  const [billCreationStatus, setBillCreationStatus] = useState(false);
-  const [company_details, setCompanyDetails] = useState({})
-  const [searchElement, setSearchElement] = useState("");
-  const [listData, setListData] = useState([]);
-  const [billingData, setBillingData] = useState([]);
-  const [finalBillingData, setFinalBillingData] = useState({});
-  const [paymentDetails, setPaymentDetails] = useState({});
-  const [buyerDetails, setBuyerDetails] = useState({buyer_phone: "", buyer_name: "", buyer_address: "", buyer_pin: "", buyer_email: "", buyer_aadhar: ""});
-  const [buyers, setBuyers] = useState([]);
-  const [billId, setBillId] = useState("");
+function ManageStock() {
+    const [searchFilterType, setSearchFilterType] = useState("description");
+    const [searchElement, setSearchElement] = useState("");
+    const [listData, setListData] = useState([]);
+    const [selectedData, setSelectedData] = useState([]);
+    const [selectedItems, setSelectedItems] = useState({});
+    const [modal, setModal] = useState(false);
+    const [actionType, setActionType] = useState("");
 
-  const fetchCompanyDetails = async () => {
-    try {
-        const response = await fetch(`${HOST}:${PORT}/server/get-company-details`, {
-            method: "GET",
-            headers: { 'authorization': `Bearer ${token}` },
-          });
-          if (response) {
-            const result = await response.json();
-            if (response.ok) {
-                setCompanyDetails(result.doc)
-            } else {
-              toastr.error(result.msg);
-            }
-          } else {
-            toastr.error("We are unable to process now. Please try again later.");
-          }
-    } catch (err) {
-      toastr.error("Failed to load details. Please try again later.");
-    }
-  };
-
-  useEffect(() => {
-    fetchCompanyDetails();
-  }, []);
-
-  const searchFilter = async (value) => {
-    setSearchElement(value)
-    setListData([]);
-    if(value){
-        try {
-            const response = await fetch(`${HOST}:${PORT}/server/stock-list`, {
-            method: "GET",
-            headers: { 'authorization': `Bearer ${token}`, "value": value, "available": true },
-            });
-    
-            const result = await response.json();
-            if (response.ok) {
-                let tempArr = [];
-                for(let i=0; i<result.docs.length; i++){
-                    const ref = result.docs[i];
-                    const matchedItem = billingData.find((item)=>item._id == ref._id);
-                    if(!matchedItem){
-                        tempArr.push(ref)
-                    }
-                }
-                setListData(tempArr);
-            } else {
-            toastr.error(result.msg);
-            }
-        } catch (err) {
-            toastr.error("We are unable to process now. Please try again later.");
-        }
-    }
-  }
-
-  const handleSelect = (_id, type) =>{
-    if(type == "ITEM"){
-        const matchedItem = listData.find((item)=>item._id == _id);
-        const tempArr = billingData.slice();
-        matchedItem.total_quantity = matchedItem.quantity;
-        matchedItem.total_item_sell_price = matchedItem.item_sell_price;
-        matchedItem.quantity = 1;
-        tempArr.push(matchedItem)
-        setBillingData(tempArr)
+    const searchFilter = async (value) => {
+        setSearchElement(value)
         setListData([]);
+        if(value){
+            try {
+                const response = await fetch(`${HOST}:${PORT}/server/stock-list`, {
+                method: "GET",
+                headers: { 'authorization': `Bearer ${token}`, "value": value, "manage": true, "filter": searchFilterType},
+                });
+        
+                const result = await response.json();
+                if (response.ok) {
+                    let tempArr = [];
+                    for(let i=0; i<result.docs.length; i++){
+                        const ref = result.docs[i];
+                        const matchedItem = selectedData.find((item)=>item._id == ref._id);
+                        if(!matchedItem){
+                            tempArr.push(ref)
+                        }
+                    }
+                    setListData(tempArr);
+                } else {
+                toastr.error(result.msg);
+                }
+            } catch (err) {
+                toastr.error("We are unable to process now. Please try again later.");
+            }
+        }
+    }
+
+    const clearSearch = () => {
+    setSearchElement("");
+    setListData([]);
+    };
+
+    const handleSelect = (_id) => {
+        setSelectedData((prevSelectedData) => {
+            const isAlreadySelected = prevSelectedData.some((item) => item._id === _id);
+            if (isAlreadySelected) {
+                return prevSelectedData.filter((item) => item._id !== _id);
+            } else {
+                const matchedItem = listData.find((item) => item._id === _id);
+                if (matchedItem) {
+                    matchedItem.selected_quantity = matchedItem.quantity;
+                    return [...prevSelectedData, matchedItem];
+                }
+            }
+            return prevSelectedData;
+        });
+
+        setSelectedItems((prevSelectedItems) => ({
+            ...prevSelectedItems,
+            [_id]: !prevSelectedItems[_id]
+        }));
+    };
+
+    const removeItem = (_id) => {
+        setSelectedData((prevSelectedData) => prevSelectedData.filter(item => item._id !== _id));
+        setSelectedItems((prevSelectedItems) => {
+            const updatedItems = { ...prevSelectedItems };
+            delete updatedItems[_id];
+            return updatedItems;
+        });
+    };
+
+    const clearSelectedData = () => {
         setSearchElement("");
-    } else if (type == "BUYER"){
-        const matchedItem = buyers.find((item)=>item._id == _id);
-        const tempObj = {...buyerDetails};
-            tempObj._id = matchedItem._id;
-            tempObj.buyer_phone = matchedItem.phone;
-            tempObj.buyer_name = matchedItem.name;
-            tempObj.buyer_address = matchedItem.address;
-            tempObj.buyer_pin = matchedItem.pin;
-            tempObj.buyer_email = matchedItem.email;
-            tempObj.buyer_aadhar = matchedItem.aadhar;
-        setBuyerDetails(tempObj)
-        setBuyers([])
+        setSelectedData([]);
+        setSelectedItems({});
+        setListData([]);
     }
-  }
 
-  const removeItem = (_id) =>{
-    const tempArr = billingData.slice();
-    for(let i=0; i<tempArr.length; i++){
-        if(tempArr[i]._id == _id){
-            tempArr.splice(i, 1);
-            i--;
-        }
-        setBillingData(tempArr)
-    }
-  }
-
-  const clearBillingData = () => {
-    setBillingData([])
-  }
-
-  const changePrice = (value, _id) => {
-    value = value ? Number(value) : 0;
-    const tempArr = billingData.slice();
-    for(let i=0; i<tempArr.length; i++){
-        if(tempArr[i]._id == _id){
-            tempArr[i].item_sell_price = value;
-            tempArr[i].total_item_sell_price = tempArr[i].quantity * tempArr[i].item_sell_price
-        }
-        setBillingData(tempArr)
-    }
-  }
-
-  const changeQuantity = (_id, value) => {
-    const tempArr = billingData.slice();
-    for(let i=0; i<tempArr.length; i++){
-        if(tempArr[i]._id == _id){
-            if(value == 1 && tempArr[i].quantity<tempArr[i].total_quantity){
-                tempArr[i].quantity = Number(tempArr[i].quantity)+1;
-                tempArr[i].total_item_sell_price = tempArr[i].quantity * tempArr[i].item_sell_price
-            } else if (value == 0 && tempArr[i].quantity>1){
-                tempArr[i].quantity = Number(tempArr[i].quantity)-1;
-                tempArr[i].total_item_sell_price = tempArr[i].quantity * tempArr[i].item_sell_price
-            } 
-        }
-        setBillingData(tempArr)
-    }
-  }
-
-  const bill = (type) => {
-    if(type == "ALL"){
-        const billObj = {}
-        billObj.billingData = billingData;
-        billObj.total = 0
-        for(let i=0; i<billingData.length; i++){
-            if(isNaN(billingData[i].total_item_sell_price)){return toastr.error("Invalid price amount !")}
-            billObj.total = billObj.total + billingData[i].total_item_sell_price;
-        }
-        billObj.grandTotal = billObj.total;
-        const rightNow = new Date();
-        billObj.date = moment(rightNow).format('DD/MM/YYYY');
-        const paymentObj = {}
-        paymentObj.grandTotal = billObj.grandTotal;
-        paymentObj.payment_type = "CASH";
-        paymentObj.paid_amount = billObj.grandTotal;
-        paymentObj.remaining_amount = 0;
-        paymentObj.info = "";
-        setBillListDiv(false)
-        setFinalBillingData(billObj)
-        setPaymentDetails(paymentObj)
-        setBuyerDetails({buyer_phone: "", buyer_name: "", buyer_address: "", buyer_pin: "", buyer_email: "", buyer_aadhar: ""})
-    }
-  }
-
-  const changeCharges = (value, type) => {
-    const tempObj = {...finalBillingData};
-    if(type == "discount"){
-        tempObj.discount = value;
-        if(value && value > -1){
-            if(tempObj.additional_charges && tempObj.additional_charges>0){
-                tempObj.grandTotal = (Number(tempObj.total) + Number(tempObj.additional_charges)) - Number(value)
-            } else{
-                tempObj.grandTotal = Number(tempObj.total) - Number(value)
+    const changeQuantity = (_id, value) => {
+        const tempArr = selectedData.slice();
+        for(let i=0; i<tempArr.length; i++){
+            if(tempArr[i]._id == _id){
+                if(value == 1 && tempArr[i].selected_quantity<tempArr[i].quantity){
+                    tempArr[i].selected_quantity = Number(tempArr[i].selected_quantity)+1;
+                } else if (value == 0 && tempArr[i].selected_quantity>1){
+                    tempArr[i].selected_quantity = Number(tempArr[i].selected_quantity)-1;
+                } 
             }
-        }
-    } else if (type == "additional_charges"){
-        tempObj.additional_charges = value;
-        if(value && value > -1){
-            if(tempObj.discount && tempObj.discount>0){
-                tempObj.grandTotal = (Number(tempObj.total) - Number(tempObj.discount)) + Number(value)
-            } else {
-                tempObj.grandTotal = Number(tempObj.total) + Number(value)
-            }
+            setSelectedData(tempArr)
         }
     }
-    const paymentpObj = {...paymentDetails};
-    // paymentpObj.paid_amount = (tempObj.grandTotal - paymentpObj.remaining_amount);
-    paymentpObj.grandTotal = tempObj.grandTotal;
-    paymentpObj.remaining_amount = (tempObj.grandTotal - paymentpObj.paid_amount);
-    setPaymentDetails(paymentpObj)
-    setFinalBillingData(tempObj)
-  }
 
-const changePaymentDetails = (value, type) => {
-    const tempObj = {...paymentDetails};
-    if(type == "payment_type"){
-        tempObj.payment_type = value;
-    } else if (type == "paid_amount"){
-        tempObj.paid_amount = Number(value);
-        tempObj.remaining_amount = tempObj.grandTotal - value;
-    } else if (type == "info"){
-        tempObj.info = value;
-    }else if (type == "pending_installation"){
-        tempObj.pending_installation = value;
+    const handleSubmit = (type) =>{
+        if(type == "FINAL"){
+            save()
+        } else{
+            setActionType(type)
+            setModal(true);
+        }
     }
-    setPaymentDetails(tempObj)
-  }
-  
-  const changeBuyerDetails = (value, type)=>{
-    const tempObj = {...buyerDetails};
-    if(type == "buyer_phone"){
-        tempObj.buyer_phone = value;
-        searchBuyers(value)
-    } else if (type == "buyer_name"){
-        tempObj.buyer_name = value;
-    } else if (type == "buyer_address"){
-        tempObj.buyer_address = value;
-    } else if (type == "buyer_pin"){
-        tempObj.buyer_pin = value;
-    } else if (type == "buyer_email"){
-        tempObj.buyer_email = value;
-    } else if (type == "buyer_aadhar"){
-        tempObj.buyer_aadhar = value;
-    }
-    setBuyerDetails(tempObj)
-  }
 
-  const searchBuyers = async (value) => {
-    setBuyers([]);
-    if(value){
-        try {
-            const response = await fetch(`${HOST}:${PORT}/server/buyer-list`, {
-            method: "GET",
-            headers: { 'authorization': `Bearer ${token}`, "value": value, "company_id": company_details._id, active: true },
-            });
-    
-            const result = await response.json();
-            if (response.ok) {
-                setBuyers(result.docs);
-            } else {
+    const setReason = (value, index)=>{
+        selectedData[index].reason = value;
+    }
+
+    const save = async () =>{
+        const finalData = {type: actionType, docs: []};
+        for(let i=0; i<selectedData.length; i++){
+            finalData.docs.push({_id: selectedData[i]._id, quantity: selectedData[i].selected_quantity, reason: selectedData[i].reason})
+        }
+        if (finalData.length<0){
+            toastr.error("We are facing some problem in submission. Please try again with fresh entry.");
+            return;
+        }
+        const response = await fetch(`${HOST}:${PORT}/server/manage-stock`, {
+            method: "POST",
+            body: JSON.stringify(finalData),
+            headers: {
+                'Content-Type': 'application/json',
+                'authorization': `Bearer ${token}`,
+        }
+        });
+        if (response){
+        const result = await response.json();
+        if (response.ok && result.status){
+            setModal(false)
+            clearSelectedData()
+            toastr.success("Stock updated successfully.");
+        } else{
             toastr.error(result.msg);
-            }
-        } catch (err) {
-            toastr.error("We are unable to process now. Please try again later.");
+        }
+        } else{
+        toastr.error("We are unable to process now. Please try again later.")
         }
     }
-  }
 
-  const submitBill = async () =>{
-    const billingItemDetails = [];
-    for(let i=0; i<finalBillingData.billingData.length; i++){
-        const ref = {
-            item_id: finalBillingData.billingData[i]._id,
-            sell_price: finalBillingData.billingData[i].item_sell_price,
-            buy_price: finalBillingData.billingData[i].item_buy_price,
-            quantity: finalBillingData.billingData[i].quantity
-        }
-        billingItemDetails.push(ref);
-    }
-    const billData = {company_id: company_details._id , items: billingItemDetails, total: finalBillingData.total, additional_charges: finalBillingData.additional_charges, discount: finalBillingData.discount, grandTotal: finalBillingData.grandTotal,
-        payment_type: paymentDetails.payment_type, paid_amount:paymentDetails.paid_amount, remaining_amount: paymentDetails.remaining_amount, pending_installation: paymentDetails.pending_installation, info: paymentDetails.info,
-        buyer_id: buyerDetails._id, buyer_phone: buyerDetails.buyer_phone, buyer_name: buyerDetails.buyer_name, buyer_email: buyerDetails.buyer_email, buyer_address: buyerDetails.buyer_address, buyer_pin: buyerDetails.buyer_pin, buyer_aadhar: buyerDetails.buyer_aadhar };
-    if (!billData || !billData.company_id ){
-      toastr.error("We are facing some problem in submission. Please try again with fresh entry.");
-      return;
-    }
-    const response = await fetch(`${HOST}:${PORT}/server/bill-create`, {
-      method: "POST",
-      body: JSON.stringify(billData),
-      headers: {
-        'Content-Type': 'application/json',
-        'authorization': `Bearer ${token}`,
-      }
-    });
-    if (response){
-      const result = await response.json();
-      if (response.ok && result.status){
-        setBillCreationStatus(true)
-        setBillId(result.doc._id)
-        toastr.success("Bill created successfully.");
-      } else{
-        toastr.error(result.msg);
-      }
-    } else{
-      toastr.error("We are unable to process now. Please try again later.")
-    }
-  }
-
-  const home = () => {
-    setBillListDiv(true)
-    setListData([])
-    setBillingData([])
-    setFinalBillingData({})
-    setPaymentDetails({})
-    setBuyerDetails({buyer_phone: "", buyer_name: "", buyer_address: "", buyer_pin: "", buyer_email: "", buyer_aadhar: ""})
-    setBillCreationStatus(false)
-  };
-
-  const generateBillPdf = useCallback(async (id) => {
+    const generateSellerInvoicePdf = useCallback(async () => {
       try {
-        const response = await fetch(`${HOST}:${PORT}/server/generate-bill-pdf/${id}`, {
+        const finalData = [];
+        for(let i=0; i<selectedData.length; i++){
+            finalData.push({_id: selectedData[i]._id, quantity: selectedData[i].selected_quantity})
+        }
+        if (finalData.length<=0){
+            toastr.error("We are facing some problem in submission. Please try again with fresh entry.");
+            return;
+        }
+        // ids = JSON.stringify(ids);
+        const response = await fetch(`${HOST}:${PORT}/server/generate-seller-invoice-pdf`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            // Add authorization header if needed
             'Authorization': `Bearer ${token}`,
           },
-          // body: JSON.stringify(payload),
+          body: JSON.stringify(finalData),
         });
   
         if (!response.ok) {
           const errorData = await response.json();
-          toastr.error(errorData.msg || 'Failed to generate bill');
+          toastr.error(errorData.msg || 'Failed to generate seller invoice');
           return;
         }
-  
-        // Get the PDF blob
         const pdfBlob = await response.blob();
-        
-        // Check if we got a valid PDF
         if (pdfBlob.size > 100) {
-          saveAs(pdfBlob, `bill_${id}.pdf`);
+          saveAs(pdfBlob, `seller_invoice.pdf`);
         } else {
           throw new Error('Received empty or invalid PDF');
         }
   
       } catch (error) {
-        toastr.error(error.message || 'Failed to download bill PDF');
+        toastr.error(error.message || 'Failed to generate seller invoice PDF');
       }
     }, []);
 
   return (
     <div className="container my-2">
-        {billListDiv && <div>
+        <div>
             <div className="row">
-                <div className="col-9">
-                    <input autoComplete="off" value={searchElement} name="searchElement" onChange={(e) => searchFilter(e.target.value)} placeholder="Search item..." className="form-control my-3"/>
+                <div className="col-2 my-3">
+                    <select className="form-select" aria-label="Default select example" name="searchFilterType" value={searchFilterType} onChange={(e) => setSearchFilterType(e.target.value)}>
+                        <option value="description">Description</option>
+                        <option value="challan_no">Challan Number</option>
+                        <option value="batch_no">Batch Number</option>
+                        <option value="batch_id">Batch Id</option>
+                    </select>
                 </div>
-                <div className="col-1">
-                    <button disabled className="form-control my-3 disabled-btn">Scan</button>
+                <div className="col-7 d-flex align-items-center justify-content-center">
+                    <input autoComplete="off" value={searchElement} name="searchElement" onChange={(e) => searchFilter(e.target.value)} placeholder={"Search using item's " + searchFilterType} className="form-control my-3"/>
+                    {searchElement && (
+                        <span style={{cursor: "pointer", padding: "3px", background:"#ffffff", marginLeft: "-28px"}} onClick={clearSearch}> &#10006;</span>
+                    )}
                 </div>
-                <div className="col-1">
-                    <button disabled={billingData.length === 0} className={`form-control my-3 bc-red-imp ${billingData.length === 0 ? 'disabled-btn' : ''}`} onClick={() =>clearBillingData()}>Clear</button>
-                </div>
-                <div className="col-1">
-                    <button disabled={billingData.length === 0} className={`form-control my-3 bc-green-imp ${billingData.length === 0 ? 'disabled-btn' : ''}`}  onClick={() =>bill("ALL")}>Bill</button>
+                <div className="col-3 d-flex justify-content-center align-items-center">
+                    <span data-tooltip="Clear selection." disabled={selectedData.length === 0} className={`title-class cursor-pointer text-center form-control m-2 bc-red-imp ${selectedData.length === 0 ? 'disabled-btn' : ''}`} onClick={() => clearSelectedData()} >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
+                                <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/>
+                                <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z"/>
+                                </svg>
+                            </span>
+                    <span data-tooltip="Generate seller invoice." disabled={selectedData.length === 0} className={`title-class cursor-pointer text-center form-control m-2 bc-red-imp ${selectedData.length === 0 ? 'disabled-btn' : ''}`} onClick={() =>generateSellerInvoicePdf()}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-printer" viewBox="0 0 16 16">
+                            <path d="M2.5 8a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1"/>
+                            <path d="M5 1a2 2 0 0 0-2 2v2H2a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1v1a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-1h1a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-1V3a2 2 0 0 0-2-2zM4 3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2H4zm1 5a2 2 0 0 0-2 2v1H2a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v-1a2 2 0 0 0-2-2zm7 2v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1"/>
+                        </svg>
+                    </span>
+                    <span data-tooltip="Remove the items from the stock." disabled={selectedData.length === 0} className={`title-class cursor-pointer text-center form-control m-2 bc-red-imp ${selectedData.length === 0 ? 'disabled-btn' : ''}`} onClick={() =>handleSubmit("CLEAR")}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x-octagon" viewBox="0 0 16 16">
+                            <path d="M4.54.146A.5.5 0 0 1 4.893 0h6.214a.5.5 0 0 1 .353.146l4.394 4.394a.5.5 0 0 1 .146.353v6.214a.5.5 0 0 1-.146.353l-4.394 4.394a.5.5 0 0 1-.353.146H4.893a.5.5 0 0 1-.353-.146L.146 11.46A.5.5 0 0 1 0 11.107V4.893a.5.5 0 0 1 .146-.353zM5.1 1 1 5.1v5.8L5.1 15h5.8l4.1-4.1V5.1L10.9 1z"/>
+                            <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708"/>
+                        </svg>
+                    </span>
+                    <span data-tooltip="Return the items." disabled={selectedData.length === 0} className={`title-class cursor-pointer text-center form-control m-2 bc-red-imp ${selectedData.length === 0 ? 'disabled-btn' : ''}`} onClick={() =>handleSubmit("RETURN")}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-return-left" viewBox="0 0 16 16">
+                            <path fill-rule="evenodd" d="M14.5 1.5a.5.5 0 0 1 .5.5v4.8a2.5 2.5 0 0 1-2.5 2.5H2.707l3.347 3.346a.5.5 0 0 1-.708.708l-4.2-4.2a.5.5 0 0 1 0-.708l4-4a.5.5 0 1 1 .708.708L2.707 8.3H12.5A1.5 1.5 0 0 0 14 6.8V2a.5.5 0 0 1 .5-.5"/>
+                        </svg>
+                    </span>
+                    <span data-tooltip="Mark as damage." disabled={selectedData.length === 0} className={`title-class cursor-pointer text-center form-control m-2 bc-red-imp ${selectedData.length === 0 ? 'disabled-btn' : ''}`}  onClick={() =>handleSubmit("DAMAGE")}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-exclamation-triangle" viewBox="0 0 16 16">
+                            <path d="M7.938 2.016A.13.13 0 0 1 8.002 2a.13.13 0 0 1 .063.016.15.15 0 0 1 .054.057l6.857 11.667c.036.06.035.124.002.183a.2.2 0 0 1-.054.06.1.1 0 0 1-.066.017H1.146a.1.1 0 0 1-.066-.017.2.2 0 0 1-.054-.06.18.18 0 0 1 .002-.183L7.884 2.073a.15.15 0 0 1 .054-.057m1.044-.45a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767z"/>
+                            <path d="M7.002 12a1 1 0 1 1 2 0 1 1 0 0 1-2 0M7.1 5.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0z"/>
+                        </svg>
+                    </span>
                 </div>
             </div>
             {listData.length > 0 && (
-                    <ul style={{ border: "1px solid #ccc", padding: "5px", marginTop: "2px", listStyleType: "none", maxHeight: "250px", overflowY: "auto", position: "absolute", background: "white", width: "79%" }}>
-                    {listData.map((item, index) => (
-                        <li key={index} onClick={() => handleSelect(item._id, "ITEM")} style={{ padding: "5px", cursor: "pointer", borderBottom: "1px solid #eee"}} className="d-flex justify-content-between"> <span> {item.item} [ Available: {item.quantity}, Price: {item.item_sell_price}, Brand: {item.brand}, Model: {item.model}, Colour: {item.color}, Capacity: {item.capacity}, Height: {item.height}, Power: {item.power} ]</span> <span className="d-flex"> <button className="form-control mx-2">Sell</button> <button className="form-control mx-2 bc-green-imp">Bill</button></span></li>
-                    ))}
-                </ul>)}
-            {(billingData.length == 0) && <div className="text-center my-5">
+            <div  style={{ border: "1px solid #ccc", padding: "5px", marginTop: "2px", maxHeight: "280px", overflowY: "auto", position: "absolute", background: "white", width: "79%" }}>
+                <table className="text-center" style={{ width: "100%" , maxHeight: "250px"}}>
+                    <tr>
+                        <th>Select</th>
+                        <th className="p-2 text-start">Entry Date</th>
+                        <th className="p-2 text-start">Description</th>
+                        <th className="p-2">Challan No</th>
+                        <th className="p-2">Batch No</th>
+                        <th className="p-2">Batch Id</th>
+                        <th className="p-2">Seller</th>
+                        <th className="p-2">Available</th>
+                        <th className="p-2">Buy Price</th>
+                    </tr>
+                {listData.map((item, index) => (
+                    // <tr title="Click to add into bill" onClick={() => handleSelect(item._id, "ITEM")} style={{ cursor: "pointer", borderTop: "1px solid #eee"}} className="" key={index}>
+                    <tr key={index} style={{ cursor: "pointer", borderTop: "1px solid #eee" }}>
+                        <td>
+                            <input type="checkbox" checked={selectedItems[item._id] || false} onChange={() => handleSelect(item._id)}/>
+                        </td>
+                        <td className="p-2 text-start">{item.date} </td>
+                        <td className="p-2 text-start">{item.description} </td>
+                        <td className="p-2">{item.challan_no}</td>
+                        <td className="p-2">{item.batch_no}</td>
+                        <td className="p-2">{item.batch_id}</td>
+                        <td className="p-2">{item.seller_name}</td>
+                        <td className="p-2">{item.quantity}</td>
+                        <td className="p-2">{item.item_buy_price}</td> 
+                    </tr>
+                    // <li key={index} onClick={() => handleSelect(item._id, "ITEM")} style={{ padding: "10px", cursor: "pointer", borderBottom: "1px solid #eee"}} className="d-flex justify-content-between"> <span> {item.description} [ Available: <span className="text-success bold">{item.quantity}</span>, Price: <span className="text-primary">{item.item_sell_price}</span>, Mfg date: {item.mfg_date}, Exp Date: {item.exp_date}, Warrantee/Guarantee Duration: {item.warrantee_guarantee_duration}]</span> <span className="d-flex"> </span></li>
+                ))}
+                </table>
+                <div className="d-flex justify-content-end">
+                    <button className="btn m-2" onClick={clearSearch}>Save</button>
+                </div>
+            </div>)}
+            {(selectedData.length == 0) && <div className="text-center my-5">
                 No item selected. Please select by searching in the above search box.
             </div>}
-            {(billingData.length > 0) && <div>
+            {(selectedData.length > 0) && <div>
                 <table className="table table-striped shadow-sm p-3 bg-body-tertiary rounded">
                         <tr className="text-center">
-                            <th className="p-2">Name</th>
-                            <th className="p-2">Brand</th>
-                            <th className="p-2">Model</th>
-                            <th className="p-2">Color</th>
-                            <th className="p-2">Capacity</th>
-                            <th className="p-2">Height</th>
-                            <th className="p-2">Power</th>
+                            <th className="p-2 text-start">Entry Date</th>
+                            <th className="p-2 text-start">Description</th>
+                            <th className="p-2">Challan No</th>
+                            <th className="p-2">Batch No</th>
+                            <th className="p-2">Batch Id</th>
+                            <th className="p-2">Buy Price</th>
+                            <th className="p-2">Available</th>
                             <th className="p-2">Quantity</th>
-                            <th className="p-2">Price</th>
-                            <th className="p-2">Total Price</th>
                             <th className="p-2">Action</th>
                         </tr>
-                        {billingData.map((item, index) => (
+                        {selectedData.map((item, index) => (
                         <tr className="text-center">
-                            <td className="p-2">{item.item}</td>
-                            <td className="p-2">{item.brand}</td> 
-                            <td className="p-2">{item.model}</td> 
-                            <td className="p-2">{item.color}</td> 
-                            <td className="p-2">{item.capacity}</td> 
-                            <td className="p-2">{item.height}</td> 
-                            <td className="p-2">{item.power}</td> 
+                            <td className="p-2 text-start">{item.date} </td>
+                            <td className="p-2 text-start">{item.description} </td>
+                            <td className="p-2">{item.challan_no}</td>
+                            <td className="p-2">{item.batch_no}</td>
+                            <td className="p-2">{item.batch_id}</td>
+                            <td className="p-2">{item.item_buy_price}</td> 
+                            <td className="p-2">{item.quantity}</td>
                             <td className="p-2 d-flex justify-content-center align-items-center">
                                 <div style={{maxWidth: "100px"}} className="d-flex align-items-center justify-content-between">
                                     <div className="px-2 cursor-pointer" style={{backgroundColor: "#f2f2f2"}} onClick={() => changeQuantity(item._id, 0)}>-</div>
                                     <div className="px-2">
-                                        {item.quantity}
+                                        {item.selected_quantity}
                                     </div>
                                     <div className="px-2 cursor-pointer" style={{backgroundColor: "#f2f2f2"}} onClick={() => changeQuantity(item._id, 1)}>+</div>
                                 </div>
                             </td>
-                            <td className="p-2 "> <div style={{background: "unset"}} className="d-flex align-items-center justify-content-center"> <input style={{maxWidth: "150px"}} className="form-control" type="text" value={item.item_sell_price} onChange={(e) => changePrice(e.target.value, item._id)}/></div></td>
-                            <td className="p-2 ">{item.total_item_sell_price}</td>
-                            <td className="p-2"><button className="form-control" onClick={() => removeItem(item._id)} >Remove</button></td>
+                            <td className="p-2"><span className="cursor-pointer" onClick={() => removeItem(item._id)} >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
+                                <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/>
+                                <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z"/>
+                                </svg>
+                            </span></td>
                         </tr>
                         ))}
                 </table>
             </div>}
-        </div>}
-        {!billListDiv &&<div>
-            {!billCreationStatus &&  <div className="d-flex justify-content-end">
-                <button className="form-control mb-3" style={{maxWidth: "100px"}} onClick={() => setBillListDiv(true)} >Back</button>
-            </div> }
-            <div className="text-center bg-body-tertiary p-3">
-                <h3>{company_details.name}</h3>
-                <h6>GST No: {company_details.gstNo}</h6>
-                <h6>Contact Number: {company_details.phone}</h6>
-                <h6>Address: {company_details.address}</h6>
-                {(finalBillingData.billingData.length > 0) && <div className="mt-3">
-                    <div className="my-3 d-flex justify-content-end">Date: {finalBillingData.date}</div>
-                    <table className="table table-striped p-3 rounded">
-                            <tr className="text-center">
-                                <th className="p-2 text-start">Product Name</th>
-                                <th className="p-2 text-start">Brand</th>
-                                <th className="p-2 text-start">Model</th>
-                                <th className="p-2 text-start">Color</th>
-                                <th className="p-2 text-start">Capacity</th>
-                                <th className="p-2 text-start">Height</th>
-                                <th className="p-2 text-start">Power</th>
-                                <th className="p-2">Quantity</th>
-                                <th className="p-2 text-end">Price</th>
-                                <th className="p-2 text-end">Total Price</th>
-                            </tr>
-                            {finalBillingData.billingData.map((item, index) => (
-                            <tr className="text-center">
-                                <td className="p-2 text-start">{item.item}</td>
-                                <td className="p-2 text-start">{item.brand}</td> 
-                                <td className="p-2 text-start">{item.model}</td> 
-                                <td className="p-2 text-start">{item.color}</td> 
-                                <td className="p-2 text-start">{item.capacity}</td> 
-                                <td className="p-2 text-start">{item.height}</td> 
-                                <td className="p-2 text-start">{item.power}</td> 
-                                <td className="p-2">{item.quantity}</td>
-                                <td className="p-2 text-end"> {item.item_sell_price}</td>
-                                <td className="p-2 text-end"> {item.total_item_sell_price}</td>
-                            </tr>
-                            ))}
-                            <tr></tr>
-                            <tr >
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <th className="p-2 text-end"> Total : </th>
-                                <td className="text-end p-2">{finalBillingData.total}</td>
-                            </tr>
-                            <tr >
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <th className="p-2 text-end"> GST : </th>
-                                <td className="text-end p-2">00</td>
-                            </tr>
-                            <tr>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <th className="p-2 text-end">Additional Charges : </th>
-                                <td className="p-2"> <div style={{background: "unset"}} className="d-flex align-items-center justify-content-end p-0"> <input disabled={billCreationStatus} style={{maxWidth: "150px"}} placeholder="00" className="form-control text-end" type="text" value={finalBillingData.additional_charges} onChange={(e) => changeCharges(e.target.value, "additional_charges")}/></div></td>
-                            </tr>
-                            <tr>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <th className="p-2 text-end">Discount : </th>
-                                <td className="p-2"> <div style={{background: "unset"}} className="d-flex align-items-center justify-content-end p-0"> <input disabled={billCreationStatus} style={{maxWidth: "150px"}} placeholder="00" className="form-control text-end" type="text" value={finalBillingData.discount} onChange={(e) => changeCharges(e.target.value, "discount")}/></div></td>
-                            </tr>
-                            <tr>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <th className="p-2 text-end">Grand Total : </th>
-                                <td className="text-end p-2">{finalBillingData.grandTotal}</td>
-                            </tr>
-                    </table>
-                </div>}
-                <div className="row">
-                    <div className="col d-flex flex-row align-items-center flex-nowrap">
-                        <label className="form-label me-2 text-nowrap">Payment type :</label>
-                        <select disabled={billCreationStatus} className="form-select" aria-label="Default select example" name="type" value={paymentDetails.payment_type} onChange={(e) => changePaymentDetails(e.target.value, "payment_type")}>
-                            <option>-- Payment type --</option>
-                            <option defaultValue value="CASH">Cash</option>
-                            <option value="UPI">UPI</option>
-                            <option value="CARD">Card</option>
-                            <option value="BANKTRANSFER">Bank Transfer</option>
-                        </select>
-                    </div>
-                    <div className="col d-flex flex-row align-items-center flex-nowrap">
-                        <label className="form-label me-2 text-nowrap">Paid amount :</label>
-                        <input disabled={billCreationStatus} name="paid_amount" placeholder="Paid amount"  type="text" maxLength={70} className="form-control text-end" aria-describedby="emailHelp" value={paymentDetails.paid_amount} onChange={(e) => changePaymentDetails(e.target.value, "paid_amount")}/>
-                    </div>
-                    <div className="col d-flex flex-row align-items-center flex-nowrap">
-                        <label className="form-label me-2 text-nowrap">Remaining amount :</label>
-                        <input disabled name="remaining_amount" placeholder="Remaining amount"  type="text" maxLength={70} className="form-control text-end " aria-describedby="emailHelp" value={paymentDetails.remaining_amount}/>
-                    </div>
-                    <div className="col d-flex flex-row align-items-center flex-nowrap">
-                        <label className="form-label me-2 text-nowrap">Installation :</label>
-                        <select disabled={billCreationStatus} className="form-select" aria-label="Default select example" name="type" value={paymentDetails.pending_installation} onChange={(e) => changePaymentDetails(e.target.value, "pending_installation")}>
-                            <option>Not applicable</option>
-                            <option value="PENDING">Pending</option>
-                            <option value="COMPLETE">Complete</option>
-                        </select>
-                    </div>
+        </div>
+        {modal && (
+          <div className="modal" tabIndex="-1" style={{ display: 'block', backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
+            <div className="modal-dialog">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">Enter the reason/remark and save.</h5>
+                  <button type="button" className="btn-close" onClick={() => setModal(false)}></button>
                 </div>
-                <input disabled={billCreationStatus} name="info" placeholder="Enter any additional information releted to sell or product or installation."  type="text" maxLength={255} className="form-control mt-4 mb-4" aria-describedby="emailHelp" value={paymentDetails.info} onChange={(e) => changePaymentDetails(e.target.value, "info")}/>
-                <hr />
-                <div className="row">
-                    <div className="col">
-                        <input disabled={billCreationStatus} autoComplete="off" name="buyer_phone" placeholder="Enter Buyer phone number"  type="text" maxLength={12} className="form-control" aria-describedby="emailHelp" value={buyerDetails.buyer_phone} onChange={(e) => changeBuyerDetails(e.target.value, "buyer_phone")}/>
-                    </div>
-                    <div className="col">
-                        <input disabled={billCreationStatus} name="buyer_name" placeholder="Enter Buyer name"  type="text" maxLength={70} className="form-control" aria-describedby="emailHelp" value={buyerDetails.buyer_name} onChange={(e) => changeBuyerDetails(e.target.value, "buyer_name")}/>
-                    </div>
+                <div className="modal-body">
+                  {selectedData.length>0 && <table className="table table-striped">
+                    <thead>
+                      <tr>
+                        <th>Batch Id</th>
+                        <th>Description</th>
+                        <th>Quantity</th>
+                        <th>Reason/Remarks</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {selectedData.map((item, index)=>(
+                      <tr>
+                        <td>{item.batch_id}</td>
+                        <td>{item.description}</td>
+                        <td className="text-center">{item.selected_quantity}</td>
+                        <td><input style={{minWidth: "40vw"}} className="form-control" type="text" autoComplete="off" name="reason" onChange={(e) => setReason(e.target.value, index)}/></td>
+                      </tr>
+                      ))}
+                    </tbody>
+                  </table>}
                 </div>
-                {buyers.length > 0 && (
-                    <ul style={{ border: "1px solid #ccc", padding: "5px", marginTop: "2px", listStyleType: "none", maxHeight: "250px", overflowY: "auto", position: "absolute", background: "white", width: "38%" }}>
-                    {buyers.map((item, index) => (
-                        <li key={index} onClick={() => handleSelect(item._id, "BUYER")} style={{ padding: "5px", cursor: "pointer", borderBottom: "1px solid #eee"}} className="d-flex justify-content-between"> {item.phone} - {item.name} - {item.aadhar} </li>
-                    ))}
-                </ul>)}
-                <div className="row my-4">
-                    <div className="col">
-                        <input disabled={billCreationStatus} name="buyer_address" placeholder="Enter Buyer address"  type="text" maxLength={70} className="form-control" aria-describedby="emailHelp" value={buyerDetails.buyer_address} onChange={(e) => changeBuyerDetails(e.target.value, "buyer_address")}/>
-                    </div>
-                    <div className="col">
-                        <input disabled={billCreationStatus} name="buyer_pin" placeholder="Enter Buyer PIN code"  type="text" maxLength={6} className="form-control" aria-describedby="emailHelp" value={buyerDetails.buyer_pin} onChange={(e) => changeBuyerDetails(e.target.value, "buyer_pin")}/>
-                    </div>
+                <div className="modal-footer">
+                  <button type="button" className="btn btn-secondary" onClick={() => handleSubmit("FINAL")}>Save</button>
+                  <button type="button" className="btn btn-secondary" onClick={() => setModal(false)}>Cancel</button>
+                  {/* <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={() => handleReorder(selectedItem)}
+                    disabled={reorderQuantity <= 0}
+                  >
+                    Reorder
+                  </button> */}
                 </div>
-                <div className="row my-4">
-                    <div className="col">
-                        <input disabled={billCreationStatus} name="buyer_email" placeholder="Enter Buyer email address"  type="email" maxLength={70} className="form-control" aria-describedby="emailHelp" value={buyerDetails.buyer_email} onChange={(e) => changeBuyerDetails(e.target.value, "buyer_email")}/>
-                    </div>
-                    <div className="col">
-                        <input disabled={billCreationStatus} name="buyer_aadhar" placeholder="Enter Buyer Aadhar Number"  type="text" maxLength={12} className="form-control" aria-describedby="emailHelp" value={buyerDetails.buyer_aadhar} onChange={(e) => changeBuyerDetails(e.target.value, "buyer_aadhar")}/>
-                    </div>
-                </div>
+              </div>
             </div>
-            <div className="d-flex justify-content-end mt-3 mb-5">
-                {!billCreationStatus && <button className="form-control mx-2" style={{maxWidth: "100px"}} onClick={() => submitBill()} >Submit</button>}
-                {billCreationStatus && <button className="form-control mx-2" style={{maxWidth: "100px"}} onClick={() => home()} >Home</button>}
-                {billCreationStatus && <button className="form-control mx-2" style={{maxWidth: "100px"}} onClick={() => generateBillPdf(billId)} >Print</button>}
-                {billCreationStatus && <button className="form-control mx-2" style={{maxWidth: "130px"}} onClick={() => generateBillPdf(billId)} >Save as Pdf</button>}
-                {billCreationStatus && <button className="form-control mx-2 bc-green-imp" style={{maxWidth: "140px"}} onClick={() => whatsappBill(true)} >Whatsapp</button>}
-            </div>
-        </div>}
+          </div>
+        )}
     </div>
   );
 }
 
-export default StockDetails;
+export default ManageStock;
