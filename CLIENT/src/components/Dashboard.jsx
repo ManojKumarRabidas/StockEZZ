@@ -95,8 +95,8 @@ const Dashboard = () => {
     try {
       if(!stockFilter){
         return;
-      } else if(typeof(stockFilter) == "NaN"){
-        return;
+      // } else if(typeof(stockFilter) == "NaN"){
+      //   return;
       } else if(typeof(stockFilter) != "number"){
         toastr.error("Invalid number to filter.")
         return;
@@ -226,10 +226,10 @@ const Dashboard = () => {
 
   const pendingBillsCSVData = matricsData?.bills?.map(bill => ({
     "Date": bill.date,
-    "Bill Number": bill.billNo,
-    "Total Amount": bill.grandTotal,
+    "Bill Number": bill.bill_no,
+    "Total Amount": bill.grand_total,
     "Pending Amount": bill.remaining_amount,
-    "Installation": bill.pending_installation,
+    "Installation": bill.installation_status,
     "Customer Name": bill.buyer_name,
     "Customer Phone": bill.buyer_phone,
     "Customer Email Id": bill.buyer_email,
@@ -538,7 +538,7 @@ const Dashboard = () => {
                   <tbody>
                     {matricsData?.bills?.map((bill) => (
                       <tr key={bill._id}>
-                        <td>{bill.billNo}</td>
+                        <td>{bill.bill_no}</td>
                         <td>₹{bill.remaining_amount.toLocaleString()}</td>
                         <td style={{textWrap: "nowrap"}}>{bill.buyer_name}</td>
                         <td>{bill.date}</td>
@@ -655,7 +655,7 @@ const Dashboard = () => {
             <div className="modal-dialog">
               <div className="modal-content">
                 <div className="modal-header">
-                  <h5 className="modal-title"> <strong>Bill Details of - {selectedBill.billNo}</strong></h5>
+                  <h5 className="modal-title"> <strong>Bill Details of - {selectedBill.bill_no}</strong></h5>
                   <button type="button" className="btn-close" onClick={() => setSelectedBill(null)}></button>
                 </div>
                 <div className="modal-body">
@@ -687,7 +687,7 @@ const Dashboard = () => {
                       </tr>
                       <tr>
                         <td>Total Amount</td>
-                        <td>: ₹{selectedBill.grandTotal?.toLocaleString()}</td>
+                        <td>: ₹{selectedBill.grand_total?.toLocaleString()}</td>
                       </tr>
                       <tr>
                         <td>Pending Amount</td>
@@ -695,7 +695,7 @@ const Dashboard = () => {
                       </tr>
                       <tr>
                         <td>Installation</td>
-                        <td>: {selectedBill.pending_installation}</td>
+                        <td>: {selectedBill.installation_status}</td>
                       </tr>
                     </tbody>
                   </table>

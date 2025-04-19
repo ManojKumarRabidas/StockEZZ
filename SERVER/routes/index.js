@@ -92,4 +92,7 @@ router.get("/financials", authorizeRole(['COMPANY','OPERATOR']), utilController.
 router.get("/metrics", authorizeRole(['COMPANY','OPERATOR']), utilController.dashboardMetrics);
 router.get("/stock/low", authorizeRole(['COMPANY','OPERATOR']), utilController.dashboardLowStock);
 
+router.post("/manage-stock", authorizeRole(['OPERATOR']), operatorController.manageStock);
+router.post("/generate-seller-invoice-pdf", authorizeRole(['OPERATOR']), operatorController.generateSellerInvoicePdf);
+
 module.exports = router;

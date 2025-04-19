@@ -152,12 +152,28 @@ module.exports = {
             const userType = req.user.user_type;
             const value = req.headers.value;
             const sold_status = req.headers.sold_status;
+            const manage = req.headers.manage;
+            const exchange = req.headers.exchange;
+            const filter = req.headers.filter;
             let cmpMatchStage ={}
             let matchStage ={}
             let projectionStage ={}
             if(value){
-                cmpMatchStage = {item: {$regex: value, $options: "i"}, quantity: {$gt: 0}} 
-                projectionStage = {item: "$item.name", brand: "$brand.name", model: 1,quantity: 1,item_sell_price: 1, item_buy_price: 1, color: 1, capacity: 1, height: 1, power: 1}
+                if(filter){
+                    // cmpMatchStage = {[filter]: {$regex: value, $options: "i"}, quantity: {$gt: 0}} 
+                    cmpMatchStage = {$expr: {$and: [{$regexMatch: {input: {$trim: { input: `$${filter}`}}, regex: value.trim(),options: "i" }},{$gt: ["$quantity", 0] }]}};
+                } else{
+                    cmpMatchStage = {description: {$regex: value, $options: "i"}, quantity: {$gt: 0}} 
+                }
+                if(!manage && !exchange){
+                    projectionStage = {batch_id:1, batch_no:1, description: 1, quantity: 1,item_sell_price: 1, item_buy_price: 1, mfg_date: 1, exp_date: 1, warrantee_guarantee: 1, warrantee_guarantee_duration: 1}
+                } else if(exchange){
+                    cmpMatchStage.item_status = "RECEIVED";
+                    projectionStage = {description: 1, description_key: 1,quantity: 1, item_status: 1}
+                } else{
+                    cmpMatchStage.item_status = "RECEIVED";
+                    projectionStage = {date: 1, description: 1, challan_no: 1, item_buy_price: 1, quantity: 1, remarks: 1, seller_name: { $ifNull: ["$seller.name", "N/A"] }, batch_id: 1, batch_no: 1, item_status: 1}
+                }
             } else if(sold_status){
                 if(sold_status == "UNSOLD"){
                     matchStage.quantity = {$gt: 0}
@@ -169,6 +185,7 @@ module.exports = {
                 projectionStage = { _id: 1,
                     sl_no: 1,
                     date: 1,
+                    challan_no: 1,
                     item: "$item.name",
                     brand_name: { $ifNull: ["$brand.name", "N/A"] },
                     batch_id: 1,
@@ -209,7 +226,7 @@ module.exports = {
                         let: { brand_id: "$brand_id" },
                         pipeline: [{$match: {$expr: {$eq: ["$_id", "$$brand_id"]}}}],
                         as: "brand"}},
-                { $unwind: { path: "$brand", preserveNullAndEmptyArrays: true}},
+                {$unwind: { path: "$brand", preserveNullAndEmptyArrays: true}},
                 {$lookup: {from: "sellers",
                         let: { seller_id: "$seller_id" },
                         pipeline: [{$match: {$expr: {$eq: ["$_id", "$$seller_id"]
@@ -223,6 +240,7 @@ module.exports = {
             if(docs.length>0){
                 for(let i=0; i<docs.length; i++){
                   const ref = docs[i];
+                  ref.challan_no = ref.challan_no ? ref.challan_no: "N/A";
                   ref.brand = ref.brand ? ref.brand: "N/A";
                   ref.model = ref.model ? ref.model: "N/A";
                   ref.color = ref.color ? ref.color: "N/A";
@@ -232,7 +250,7 @@ module.exports = {
                   ref.seller = ref.seller ? ref.seller: "N/A";
                   ref.date = moment(ref.date).format('DD/MM/YYYY');
                   ref.sl_no = ref.sl_no ? ref.sl_no: "N/A";
-                  ref.item_sell_price = ref.item_sell_price ? ref.item_sell_price: "N/A";
+                  ref.item_sell_price = ref.item_sell_price ? ref.item_sell_price: 0;
                   ref.description = ref.description ? ref.description: "N/A";
                   ref.remarks = ref.remarks ? ref.remarks: "N/A";
                   ref.mfg_date = ref.mfg_date ? moment(ref.mfg_date).format('DD/MM/YYYY'): "N/A";
@@ -254,19 +272,21 @@ module.exports = {
             let matchStage ={}
             let tempMatchStage ={}
             let projectionStage = { _id: 1,
-                    billNo: 1,
+                    bill_no: 1,
                     date: 1,
                     items: 1,
                     buyer: 1,
                     total: 1,
+                    expected_profit: 1,
                     additional_charges: 1,
                     discount: 1,
-                    grandTotal: 1,
-                    payment_type: 1,
+                    grand_total: 1,
+                    payment_mode: 1,
                     paid_amount: 1,
                     remaining_amount: 1,
                     info: 1,
-                    pending_installation: 1
+                    installation_status: 1,
+                    payments: 1
                 }
             
             if (userType === "COMPANY") {
@@ -279,11 +299,29 @@ module.exports = {
             }
             const docs = await billModel.aggregate([
                 {$match: matchStage},
+                {$unwind: { path: "$item", preserveNullAndEmptyArrays: true}},
                 {$lookup: {from: "buyers",
                     localField: "buyer_id",
                     foreignField: "_id",
                     as: "buyer"}},
                 {$addFields:{buyer:{ $arrayElemAt: ["$buyer", 0]}}},
+                {$lookup: {from: "stocks",
+                    localField: "items.item_id",
+                    foreignField: "_id",
+                    as: "itemDetails"}},
+                        {$addFields: {items: {$map: {input: "$items",
+                            as: "item",
+                            in: {sell_price: "$$item.sell_price",
+                                quantity: "$$item.quantity",
+                                item: {$arrayElemAt: [{$map: {
+                                                input: {$filter: {input: "$itemDetails",
+                                                        as: "detail",
+                                                        cond: { $eq: ["$$detail._id", "$$item.item_id"] }}},
+                                                as: "filteredItem",
+                                                in: {stock_id: "$$filteredItem._id",
+                                                    description_key: "$$filteredItem.description_key",
+                                                    description: "$$filteredItem.description"}}},
+                                        0]}}}}}},
                 {$project: projectionStage},
                 {$match: cmpMatchStage},
                 
@@ -293,8 +331,12 @@ module.exports = {
                     const outerRef = docs[i];
                     outerRef.date = moment(outerRef.date).format('DD/MM/YYYY');
                     outerRef.buyer_name = outerRef.buyer ? outerRef.buyer.name : "N/A";
-                    outerRef.pending_installation = outerRef.pending_installation ? outerRef.pending_installation : "N/A";
+                    outerRef.buyer_phone = outerRef.buyer ? outerRef.buyer.phone : "N/A";
+                    outerRef.installation_status = outerRef.installation_status ? outerRef.installation_status : "N/A";
                     outerRef.info = outerRef.info ? outerRef.info : "N/A";
+                    for(let j=0; j<outerRef.payments.length; j++){
+                        outerRef.payments[j].billed_at = moment(outerRef.payments[j].billed_at).format('DD/MM/YYYY');
+                    }
                 }
             }
             res.status(200).json({ docs: docs });
@@ -320,13 +362,13 @@ module.exports = {
                     total: 1,
                     additional_charges: 1,
                     discount: 1,
-                    grandTotal: 1,
-                    payment_type: 1,
+                    grand_total: 1,
+                    payment_mode: 1,
                     paid_amount: 1,
                     remaining_amount: 1,
                     info: 1,
-                    pending_installation: 1,
-                    profit: 1,
+                    installation_status: 1,
+                    expected_profit: 1,
                     total_profit: 1
                 }
             
@@ -376,7 +418,7 @@ module.exports = {
                   const outerRef = docs[i];
                   outerRef.date = moment(outerRef.date).format('DD/MM/YYYY');
                   outerRef.buyer = outerRef.buyer ? outerRef.buyer : {name: "Not available",phone: "Not available",email: "Not available",aadhar: "Not available",pin: "Not available",address: "Not available",};
-                  outerRef.pending_installation = outerRef.pending_installation ? outerRef.pending_installation : "N/A";
+                  outerRef.installation_status = outerRef.installation_status ? outerRef.installation_status : "N/A";
                   for(let j=0; j<outerRef.items.length; j++){
                     const ref = outerRef.items[j].item;
                     if(ref.brand_id){
@@ -438,7 +480,7 @@ module.exports = {
                         company_id: company_id,
                         $or: [
                             {remaining_amount: {$gt: 0}},
-                            {pending_installation: "PENDING"}
+                            {installation_status: "PENDING"}
                         ]
                     }},
                     {$lookup: {
@@ -449,7 +491,7 @@ module.exports = {
                     }},
                     {$unwind: {path: "$buyer_info", preserveNullAndEmptyArrays: true}},
                     {$project: {
-                        billNo: 1, date: 1, grandTotal: 1, remaining_amount: 1, pending_installation: 1, buyer_name: "$buyer_info.name", buyer_phone: "$buyer_info.phone", buyer_email: "$buyer_info.email", buyer_address: "$buyer_info.address",buyer_pin: "$buyer_info.pin"
+                        bill_no: 1, date: 1, grand_total: 1, remaining_amount: 1, installation_status: 1, buyer_name: "$buyer_info.name", buyer_phone: "$buyer_info.phone", buyer_email: "$buyer_info.email", buyer_address: "$buyer_info.address",buyer_pin: "$buyer_info.pin"
                     }}                     
             ]);
             let totalPendingInstallation = 0
@@ -457,8 +499,8 @@ module.exports = {
             const finalBills = []
             for (let i=0; i<bills.length; i++){
                 totalPendingBills = totalPendingBills + bills[i].remaining_amount;
-                if(bills[i].pending_installation == "PENDING"){totalPendingInstallation++}
-                else if(!bills[i].pending_installation){bills[i].pending_installation = "N/A"}
+                if(bills[i].installation_status == "PENDING"){totalPendingInstallation++}
+                else if(!bills[i].installation_status){bills[i].installation_status = "N/A"}
                 bills[i].buyer_name = bills[i].buyer_name ? bills[i].buyer_name : "N/A";
                 bills[i].buyer_phone = bills[i].buyer_phone ? bills[i].buyer_phone : "N/A";
                 bills[i].buyer_email = bills[i].buyer_email ? bills[i].buyer_email : "N/A";
