@@ -339,7 +339,7 @@ function AddStock() {
     setBatchExpDate("")
     setBatchWarranteeGuarente("")
     setBatchWarranteeGuarenteDuration("")
-    setItemStatus("")
+    setItemStatus("RECEIVED")
     setReturnReason("")
     setRemarks("")
     setLowerPartEntries([
@@ -368,6 +368,8 @@ function AddStock() {
     const data = {sl_no, date, time, sub_category, challan_no, item, item_id, seller, seller_id, total_quantity, batch_no, item_status, return_reason, remarks, stock_details: lowerPartEntries};
     const additionalData = {batch_brand, batch_brand_id, batch_color, batch_capacity, batch_height, batch_power, batch_description, batch_model, batch_buy_price, batch_sell_price, per_piece_buy_price, per_piece_sell_price, batch_mfg_date, batch_exp_date, batch_warrantee_guarantee, batch_warrantee_guarantee_duration}
     if(!data.date || !data.item || !data.total_quantity || !additionalData.batch_buy_price || !data.item_status){
+      console.log(data)
+      console.log(additionalData)
       toastr.error("Please enter all required field.");
       return;
     }
@@ -1011,40 +1013,6 @@ function AddStock() {
       );
     }
 
-    if (stockStructure.mfg_date) {
-      fields.push(
-        <div className="col mb-3" key={`mfg_date_${index}`}>
-          <label className="form-label mx-3">Item Mfg Date</label>
-          <input
-            name="mfg_date"
-            type="date"
-            maxLength={70}
-            className="form-control"
-            aria-describedby="emailHelp"
-            value={entry.mfg_date}
-            onChange={(e) => handleLowerPartChange(index, "mfg_date", e.target.value)}
-          />
-        </div>
-      );
-    }
-
-    if (stockStructure.exp_date) {
-      fields.push(
-        <div className="col mb-3" key={`exp_date_${index}`}>
-          <label className="form-label mx-3">Item Exp Date</label>
-          <input
-            name="exp_date"
-            type="date"
-            maxLength={70}
-            className="form-control"
-            aria-describedby="emailHelp"
-            value={entry.exp_date}
-            onChange={(e) => handleLowerPartChange(index, "exp_date", e.target.value)}
-          />
-        </div>
-      );
-    }
-
     if (stockStructure.color) {
       fields.push(
         <div className="col mb-3" key={`color_${index}`}>
@@ -1121,16 +1089,7 @@ function AddStock() {
       fields.push(
         <div className="col mb-3" key={`model_${index}`}>
           <label className="form-label mx-3">Model</label>
-          <input
-            placeholder="Enter model number (if available)"
-            name="model"
-            type="text"
-            maxLength={70}
-            className="form-control"
-            aria-describedby="emailHelp"
-            value={entry.model}
-            onChange={(e) => handleLowerPartChange(index, "model", e.target.value)}
-          />
+          <input placeholder="Enter model number (if available)" name="model" type="text" maxLength={70} className="form-control" aria-describedby="emailHelp" value={entry.model} onChange={(e) => handleLowerPartChange(index, "model", e.target.value)}/>
         </div>
       );
     }
@@ -1212,6 +1171,40 @@ function AddStock() {
       );
     }
 
+    if (stockStructure.mfg_date) {
+      fields.push(
+        <div className="col mb-3" key={`mfg_date_${index}`}>
+          <label className="form-label mx-3">Item Mfg Date</label>
+          <input
+            name="mfg_date"
+            type="date"
+            maxLength={70}
+            className="form-control"
+            aria-describedby="emailHelp"
+            value={entry.mfg_date}
+            onChange={(e) => handleLowerPartChange(index, "mfg_date", e.target.value)}
+          />
+        </div>
+      );
+    }
+
+    if (stockStructure.exp_date) {
+      fields.push(
+        <div className="col mb-3" key={`exp_date_${index}`}>
+          <label className="form-label mx-3">Item Exp Date</label>
+          <input
+            name="exp_date"
+            type="date"
+            maxLength={70}
+            className="form-control"
+            aria-describedby="emailHelp"
+            value={entry.exp_date}
+            onChange={(e) => handleLowerPartChange(index, "exp_date", e.target.value)}
+          />
+        </div>
+      );
+    }
+    
     if (stockStructure.warrantee_guarantee) {
       fields.push(
         <div className="col mb-3" key={`warrantee_guarantee_${index}`}>

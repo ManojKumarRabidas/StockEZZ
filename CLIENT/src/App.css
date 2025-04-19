@@ -1,3 +1,14 @@
+/* For Chrome, Safari, Edge, Opera */
+input[type="number"]::-webkit-inner-spin-button, 
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* For Firefox */
+input[type="number"] {
+  -moz-appearance: textfield;
+}
 /* Bootstrap overrides  */
 .modal-dialog{
   max-width: fit-content !important;
@@ -32,6 +43,11 @@
 .title-class:hover::after {
   opacity: 1;
   visibility: visible;
+}
+.title-class-wrap:hover::after {
+  max-width: 50rem;
+  text-wrap: auto;
+  min-width: 50rem;
 }
 .shimmer {
   position: relative;
@@ -96,6 +112,9 @@
 }
 .ei-col-red{
   color: red;
+}
+.se-col-green{
+  color: green;
 }
 .cursor-pointer{
   cursor: pointer;

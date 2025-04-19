@@ -41,7 +41,7 @@ module.exports = {
         },
         {
           columns: [
-            { text: `Bill No: ${doc.billNo ? doc.billNo : "N/A"}`, alignment: "left"  },
+            { text: `Bill No: ${doc.bill_no ? doc.bill_no : "N/A"}`, alignment: "left"  },
             { text: `Date: ${doc.date}`,  alignment: 'right' },
           ],
           margin: [0, 0, 0, 10],
@@ -79,7 +79,7 @@ module.exports = {
               ["GST : ", {text: `00`, alignment: 'right'}],
               ["Additional Charges : ", {text: `${doc.additional_charges}`, alignment: 'right'}],
               ["Discount", {text: `${doc.discount}`, alignment: 'right'}],
-              ["Grand Total", {text: `${doc.grandTotal}`, alignment: 'right'}],
+              ["Grand Total", {text: `${doc.grand_total}`, alignment: 'right'}],
             ],
           },
           layout: "noBorders",
@@ -100,7 +100,7 @@ module.exports = {
 
         {
           columns: [
-            { text: `Payment Type: ${doc.payment_type}`, alignment: "left"  },
+            { text: `Payment Type: ${doc.payment_mode}`, alignment: "left"  },
             { text: ` Paid Amt: ${doc.paid_amount}`, alignment: "center"  },
             { text: ` Remaining Amt: ${doc.remaining_amount ? doc.remaining_amount: "00"}`, alignment: "right"  }
           ],
@@ -108,7 +108,7 @@ module.exports = {
         },
         {
             columns: [
-                { text: `Installation: ${doc.pending_installation ? doc.pending_installation : "N/A"}`, alignment: "left" },
+                { text: `Installation: ${doc.installation_status ? doc.installation_status : "N/A"}`, alignment: "left" },
                 { text: `Installation Date: N/A`, alignment: "right" }
               ]
         },
@@ -203,7 +203,6 @@ module.exports = {
           { text: `Phone No: +91 ${doc.company.phone}`,  fontSize: 10, alignment: "center" , margin: [0, 0, 0, 3]},
           { text: `Email Id: ${doc.company.email}`,  fontSize: 10, alignment: "center" , margin: [0, 0, 0, 3]},
           { text: `Address: ${doc.company.address}`, fontSize: 10, alignment: "center" , margin: [0, 0, 0, 2]},
-          { text: `Seller Invoice`, fontSize: 13, alignment: "center" , margin: [0, 0, 0, 2]},
           {
             canvas: [
               { 
@@ -214,8 +213,9 @@ module.exports = {
                 opacity: 0.2
               }
             ],
-            margin: [0, 10]
+            margin: [0, 5]
           },
+          { text: `Seller Invoice`, fontSize: 13, alignment: "center" , margin: [0, 0, 0, 2]},
           {
             columns: [
               { text: `Challan No: ${doc.challan_no ? doc.challan_no : "N/A"}`, alignment: "left"  },
@@ -234,10 +234,10 @@ module.exports = {
           {
             table: {
               headerRows: 1,
-              widths: [40, 80, 50, 50, 40, 40, 60],
+              widths: [55, 200, 50, 45, 40, 50],
                 body: [
-                ["Date", "Description","Batch Id", "Batch No" ,{text: `Quantity`, alignment: 'center'}, {text: `Price`, alignment: 'right'}, {text: `Total price`, alignment: 'right'}],
-                ...doc.items.map(p => [p.date, p.description, p.batch_id, p.batch_no, {text: `${p.quantity}`, alignment: 'center'}, {text: `${p.item_buy_price}`, alignment: 'right'},  {text: `${p.total}`, alignment: 'right'}])
+                ["Date", "Description", "Batch No" ,{text: `Quantity`, alignment: 'center'}, {text: `Price`, alignment: 'right'}, {text: `Total`, alignment: 'right'}],
+                ...doc.items.map(p => [p.date, p.description, p.batch_no, {text: `${p.quantity}`, alignment: 'center'}, {text: `${p.item_buy_price}`, alignment: 'right'},  {text: `${p.total}`, alignment: 'right'}])
               ],
             },
             layout: "lightHorizontalLines",
@@ -258,9 +258,9 @@ module.exports = {
 
           {
             table: {
-              widths: [120, 40],
+              widths: [100, 60],
               body: [
-                ["Total : ", {text: `${doc.grandTotal}`, alignment: 'right'}],
+                ["Total : ", {text: `${doc.grand_total}`, alignment: 'right'}],
               ],
             },
             layout: "noBorders",
@@ -281,7 +281,7 @@ module.exports = {
 // ---------------------------------------------------------------------------------------------------------------------------
         //   {
         //     columns: [
-        //       { text: `Payment Type: ${doc.payment_type}`, alignment: "left"  },
+        //       { text: `Payment Type: ${doc.payment_mode}`, alignment: "left"  },
         //       { text: ` Paid Amt: ${doc.paid_amount}`, alignment: "center"  },
         //       { text: ` Remaining Amt: ${doc.remaining_amount ? doc.remaining_amount: "00"}`, alignment: "right"  }
         //     ],
@@ -289,7 +289,7 @@ module.exports = {
         //   },
         //   {
         //       columns: [
-        //           { text: `Installation: ${doc.pending_installation ? doc.pending_installation : "N/A"}`, alignment: "left" },
+        //           { text: `Installation: ${doc.installation_status ? doc.installation_status : "N/A"}`, alignment: "left" },
         //           { text: `Installation Date: N/A`, alignment: "right" }
         //         ]
         //   },

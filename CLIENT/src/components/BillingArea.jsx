@@ -150,16 +150,16 @@ function billingArea() {
         billObj.billingData = billingData;
         billObj.total = 0
         for(let i=0; i<billingData.length; i++){
-            if(isNaN(billingData[i].total_item_sell_price)){return toastr.error("Invalid price amount !")}
+            if(isNaN(billingData[i].total_item_sell_price) || (billingData[i].total_item_sell_price == 0)){return toastr.error("Invalid price !")}
             billObj.total = billObj.total + billingData[i].total_item_sell_price;
         }
-        billObj.grandTotal = billObj.total;
+        billObj.grand_total = billObj.total;
         const rightNow = new Date();
         billObj.date = moment(rightNow).format('DD/MM/YYYY');
         const paymentObj = {}
-        paymentObj.grandTotal = billObj.grandTotal;
-        paymentObj.payment_type = "CASH";
-        paymentObj.paid_amount = billObj.grandTotal;
+        paymentObj.grand_total = billObj.grand_total;
+        paymentObj.payment_mode = "CASH";
+        paymentObj.paid_amount = billObj.grand_total;
         paymentObj.remaining_amount = 0;
         paymentObj.info = "";
         setBillListDiv(false)
@@ -175,40 +175,40 @@ function billingArea() {
         tempObj.discount = value;
         if(value && value > -1){
             if(tempObj.additional_charges && tempObj.additional_charges>0){
-                tempObj.grandTotal = (Number(tempObj.total) + Number(tempObj.additional_charges)) - Number(value)
+                tempObj.grand_total = (Number(tempObj.total) + Number(tempObj.additional_charges)) - Number(value)
             } else{
-                tempObj.grandTotal = Number(tempObj.total) - Number(value)
+                tempObj.grand_total = Number(tempObj.total) - Number(value)
             }
         }
     } else if (type == "additional_charges"){
         tempObj.additional_charges = value;
         if(value && value > -1){
             if(tempObj.discount && tempObj.discount>0){
-                tempObj.grandTotal = (Number(tempObj.total) - Number(tempObj.discount)) + Number(value)
+                tempObj.grand_total = (Number(tempObj.total) - Number(tempObj.discount)) + Number(value)
             } else {
-                tempObj.grandTotal = Number(tempObj.total) + Number(value)
+                tempObj.grand_total = Number(tempObj.total) + Number(value)
             }
         }
     }
     const paymentpObj = {...paymentDetails};
-    // paymentpObj.paid_amount = (tempObj.grandTotal - paymentpObj.remaining_amount);
-    paymentpObj.grandTotal = tempObj.grandTotal;
-    paymentpObj.remaining_amount = (tempObj.grandTotal - paymentpObj.paid_amount);
+    // paymentpObj.paid_amount = (tempObj.grand_total - paymentpObj.remaining_amount);
+    paymentpObj.grand_total = tempObj.grand_total;
+    paymentpObj.remaining_amount = (tempObj.grand_total - paymentpObj.paid_amount);
     setPaymentDetails(paymentpObj)
     setFinalBillingData(tempObj)
   }
 
 const changePaymentDetails = (value, type) => {
     const tempObj = {...paymentDetails};
-    if(type == "payment_type"){
-        tempObj.payment_type = value;
+    if(type == "payment_mode"){
+        tempObj.payment_mode = value;
     } else if (type == "paid_amount"){
         tempObj.paid_amount = Number(value);
-        tempObj.remaining_amount = tempObj.grandTotal - value;
+        tempObj.remaining_amount = tempObj.grand_total - value;
     } else if (type == "info"){
         tempObj.info = value;
-    }else if (type == "pending_installation"){
-        tempObj.pending_installation = value;
+    }else if (type == "installation_status"){
+        tempObj.installation_status = value;
     }
     setPaymentDetails(tempObj)
   }
@@ -264,8 +264,8 @@ const changePaymentDetails = (value, type) => {
         }
         billingItemDetails.push(ref);
     }
-    const billData = {company_id: company_details._id , items: billingItemDetails, total: finalBillingData.total, additional_charges: finalBillingData.additional_charges, discount: finalBillingData.discount, grandTotal: finalBillingData.grandTotal,
-        payment_type: paymentDetails.payment_type, paid_amount:paymentDetails.paid_amount, remaining_amount: paymentDetails.remaining_amount, pending_installation: paymentDetails.pending_installation, info: paymentDetails.info,
+    const billData = {company_id: company_details._id , items: billingItemDetails, total: finalBillingData.total, additional_charges: finalBillingData.additional_charges, discount: finalBillingData.discount, grand_total: finalBillingData.grand_total,
+        payment_mode: paymentDetails.payment_mode, paid_amount:paymentDetails.paid_amount, remaining_amount: paymentDetails.remaining_amount, installation_status: paymentDetails.installation_status, info: paymentDetails.info,
         buyer_id: buyerDetails._id, buyer_phone: buyerDetails.buyer_phone, buyer_name: buyerDetails.buyer_name, buyer_email: buyerDetails.buyer_email, buyer_address: buyerDetails.buyer_address, buyer_pin: buyerDetails.buyer_pin, buyer_aadhar: buyerDetails.buyer_aadhar };
     if (!billData || !billData.company_id ){
       toastr.error("We are facing some problem in submission. Please try again with fresh entry.");
@@ -340,40 +340,52 @@ const changePaymentDetails = (value, type) => {
     <div className="container my-2">
         {billListDiv && <div>
             <div className="row">
-                <div className="col-9">
+                <div className="col-10">
                     <input autoComplete="off" value={searchElement} name="searchElement" onChange={(e) => searchFilter(e.target.value)} placeholder="Search item..." className="form-control my-3"/>
                 </div>
-                <div className="col-1">
-                    <button disabled className="form-control my-3 disabled-btn">Scan</button>
-                </div>
-                <div className="col-1">
-                    <button disabled={billingData.length === 0} className={`form-control my-3 bc-red-imp ${billingData.length === 0 ? 'disabled-btn' : ''}`} onClick={() =>clearBillingData()}>Clear</button>
-                </div>
-                <div className="col-1">
-                    <button disabled={billingData.length === 0} className={`form-control my-3 bc-green-imp ${billingData.length === 0 ? 'disabled-btn' : ''}`}  onClick={() =>bill("ALL")}>Bill</button>
+                <div className="col-2 d-flex">
+                    <div className="ms-3 cursor-pointer">
+                        <span disabled className="form-control my-3 disabled-btn">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-upc-scan" viewBox="0 0 16 16">
+                                <path d="M1.5 1a.5.5 0 0 0-.5.5v3a.5.5 0 0 1-1 0v-3A1.5 1.5 0 0 1 1.5 0h3a.5.5 0 0 1 0 1zM11 .5a.5.5 0 0 1 .5-.5h3A1.5 1.5 0 0 1 16 1.5v3a.5.5 0 0 1-1 0v-3a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 1-.5-.5M.5 11a.5.5 0 0 1 .5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 1 0 1h-3A1.5 1.5 0 0 1 0 14.5v-3a.5.5 0 0 1 .5-.5m15 0a.5.5 0 0 1 .5.5v3a1.5 1.5 0 0 1-1.5 1.5h-3a.5.5 0 0 1 0-1h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 1 .5-.5M3 4.5a.5.5 0 0 1 1 0v7a.5.5 0 0 1-1 0zm2 0a.5.5 0 0 1 1 0v7a.5.5 0 0 1-1 0zm2 0a.5.5 0 0 1 1 0v7a.5.5 0 0 1-1 0zm2 0a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5zm3 0a.5.5 0 0 1 1 0v7a.5.5 0 0 1-1 0z"/>
+                            </svg>
+                        </span>
+                    </div>
+                    <div className="ms-3 cursor-pointer">
+                        <span disabled={billingData.length === 0} className={`form-control my-3 bc-red-imp ${billingData.length === 0 ? 'disabled-btn' : ''}`} onClick={() =>clearBillingData()}>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-trash" viewBox="0 0 16 16">
+                                <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/>
+                                <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z"/>
+                            </svg>
+                        </span>
+                    </div>
+                    <div className="ms-3 cursor-pointer">
+                        <span disabled={billingData.length === 0} className={`form-control my-3 bc-green-imp ${billingData.length === 0 ? 'disabled-btn' : ''}`}  onClick={() =>bill("ALL")}>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-arrow-right-circle" viewBox="0 0 16 16">
+                                <path fill-rule="evenodd" d="M1 8a7 7 0 1 0 14 0A7 7 0 0 0 1 8m15 0A8 8 0 1 1 0 8a8 8 0 0 1 16 0M4.5 7.5a.5.5 0 0 0 0 1h5.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3a.5.5 0 0 0 0-.708l-3-3a.5.5 0 1 0-.708.708L10.293 7.5z"/>
+                            </svg>
+                        </span>
+                    </div>
                 </div>
             </div>
-            {/* {listData.length > 0 && (
-                    <ul style={{ border: "1px solid #ccc", padding: "5px", marginTop: "2px", listStyleType: "none", maxHeight: "250px", overflowY: "auto", position: "absolute", background: "white", width: "79%" }}>
-                    {listData.map((item, index) => (
-                        <li key={index} onClick={() => handleSelect(item._id, "ITEM")} style={{ padding: "10px", cursor: "pointer", borderBottom: "1px solid #eee"}} className="d-flex justify-content-between"> <span> {item.description} [ Available: <span className="text-success bold">{item.quantity}</span>, Price: <span className="text-primary">{item.item_sell_price}</span>, Mfg date: {item.mfg_date}, Exp Date: {item.exp_date}, Warrantee/Guarantee Duration: {item.warrantee_guarantee_duration}]</span> <span className="d-flex"> </span></li>
-                    ))}
-                </ul>)} */}
             {listData.length > 0 && (
                 <table className="text-center" style={{ border: "1px solid #ccc", padding: "5px", marginTop: "2px", maxHeight: "250px", overflowY: "auto", position: "absolute", background: "white", width: "79%" }}>
                     <tr>
                         <th className="p-2 text-start">Description</th>
+                        <th className="p-2">Batch Id</th>
+                        <th className="p-2">Batch no</th>
                         <th className="p-2">Available</th>
                         <th className="p-2">Price</th>
                     </tr>
                 {listData.map((item, index) => (
                     <tr title="Click to add into bill" onClick={() => handleSelect(item._id, "ITEM")} style={{ cursor: "pointer", borderTop: "1px solid #eee"}} className="" key={index}>
                         <td className="p-2 text-start">{item.description} </td>
+                        <td className="p-2">{item.batch_id}</td>
+                        <td className="p-2">{item.batch_no}</td>
                         <td className="p-2">{item.quantity}</td>
                         <td className="p-2">{item.item_sell_price}</td> 
                     </tr>
-                    // <li key={index} onClick={() => handleSelect(item._id, "ITEM")} style={{ padding: "10px", cursor: "pointer", borderBottom: "1px solid #eee"}} className="d-flex justify-content-between"> <span> {item.description} [ Available: <span className="text-success bold">{item.quantity}</span>, Price: <span className="text-primary">{item.item_sell_price}</span>, Mfg date: {item.mfg_date}, Exp Date: {item.exp_date}, Warrantee/Guarantee Duration: {item.warrantee_guarantee_duration}]</span> <span className="d-flex"> </span></li>
-                ))}
+                 ))}
             </table>)}
             {(billingData.length == 0) && <div className="text-center my-5">
                 No item selected. Please select by searching in the above search box.
@@ -382,13 +394,6 @@ const changePaymentDetails = (value, type) => {
                 <table className="table table-striped shadow-sm p-3 bg-body-tertiary rounded">
                         <tr className="text-center">
                             <th className="p-2">Description</th>
-                            {/* <th className="p-2">Name</th>
-                            <th className="p-2">Brand</th>
-                            <th className="p-2">Model</th>
-                            <th className="p-2">Color</th>
-                            <th className="p-2">Capacity</th>
-                            <th className="p-2">Height</th>
-                            <th className="p-2">Power</th> */}
                             <th className="p-2">Quantity</th>
                             <th className="p-2">Price</th>
                             <th className="p-2">Total Price</th>
@@ -397,13 +402,6 @@ const changePaymentDetails = (value, type) => {
                         {billingData.map((item, index) => (
                         <tr className="text-center">
                             <td className="p-2">{item.description}</td>
-                            {/* <td className="p-2">{item.item}</td>
-                            <td className="p-2">{item.brand}</td> 
-                            <td className="p-2">{item.model}</td> 
-                            <td className="p-2">{item.color}</td> 
-                            <td className="p-2">{item.capacity}</td> 
-                            <td className="p-2">{item.height}</td> 
-                            <td className="p-2">{item.power}</td>  */}
                             <td className="p-2 d-flex justify-content-center align-items-center">
                                 <div style={{maxWidth: "100px"}} className="d-flex align-items-center justify-content-between">
                                     <div className="px-2 cursor-pointer" style={{backgroundColor: "#f2f2f2"}} onClick={() => changeQuantity(item._id, 0)}>-</div>
@@ -413,19 +411,22 @@ const changePaymentDetails = (value, type) => {
                                     <div className="px-2 cursor-pointer" style={{backgroundColor: "#f2f2f2"}} onClick={() => changeQuantity(item._id, 1)}>+</div>
                                 </div>
                             </td>
-                            {/* <td className="p-2 "> <div style={{background: "unset"}} className="d-flex align-items-center justify-content-center"> <input style={{maxWidth: "150px"}} className="form-control" type="text" value={item.item_sell_price} onChange={(e) => changePrice(e.target.value, item._id)}/></div></td> */}
                             <td className="p-2 ">{item.item_sell_price}</td>
                             <td className="p-2 ">{item.total_item_sell_price}</td>
-                            <td className="p-2"><button className="form-control" onClick={() => removeItem(item._id)} >Remove</button></td>
+                            <td className="p-2">
+                                <span className="cursor-pointer" onClick={() => removeItem(item._id)} >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-trash" viewBox="0 0 16 16">
+                                    <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/>
+                                    <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z"/>
+                                    </svg>
+                                </span> 
+                            </td>
                         </tr>
                         ))}
                 </table>
             </div>}
         </div>}
         {!billListDiv &&<div>
-            {!billCreationStatus &&  <div className="d-flex justify-content-end">
-                <button className="form-control mb-3" style={{maxWidth: "100px"}} onClick={() => setBillListDiv(true)} >Back</button>
-            </div> }
             <div className="text-center bg-body-tertiary p-3">
                 <h3>{company_details.name}</h3>
                 <h6>GST No: {company_details.gstNo}</h6>
@@ -436,13 +437,6 @@ const changePaymentDetails = (value, type) => {
                     <table className="table table-striped p-3 rounded">
                             <tr className="text-center">
                                 <th className="p-2 text-start">Description</th>
-                                {/* <th className="p-2 text-start">Product Name</th> */}
-                                {/* <th className="p-2 text-start">Brand</th>
-                                <th className="p-2 text-start">Model</th>
-                                <th className="p-2 text-start">Color</th>
-                                <th className="p-2 text-start">Capacity</th>
-                                <th className="p-2 text-start">Height</th>
-                                <th className="p-2 text-start">Power</th> */}
                                 <th className="p-2">Quantity</th>
                                 <th className="p-2 text-end">Price</th>
                                 <th className="p-2 text-end">Total Price</th>
@@ -450,13 +444,6 @@ const changePaymentDetails = (value, type) => {
                             {finalBillingData.billingData.map((item, index) => (
                             <tr className="text-center">
                                 <td className="p-2 text-start">{item.description}</td>
-                                {/* <td className="p-2 text-start">{item.item}</td> */}
-                                {/* <td className="p-2 text-start">{item.brand}</td> 
-                                <td className="p-2 text-start">{item.model}</td> 
-                                <td className="p-2 text-start">{item.color}</td> 
-                                <td className="p-2 text-start">{item.capacity}</td> 
-                                <td className="p-2 text-start">{item.height}</td> 
-                                <td className="p-2 text-start">{item.power}</td>  */}
                                 <td className="p-2">{item.quantity}</td>
                                 <td className="p-2 text-end"> {item.item_sell_price}</td>
                                 <td className="p-2 text-end"> {item.total_item_sell_price}</td>
@@ -464,71 +451,41 @@ const changePaymentDetails = (value, type) => {
                             ))}
                             <tr></tr>
                             <tr >
-                                {/* <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td> */}
                                 <td></td>
                                 <td></td>
                                 <th className="p-2 text-end"> Total : </th>
                                 <td className="text-end p-2">{finalBillingData.total}</td>
                             </tr>
                             <tr >
-                                {/* <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td> */}
                                 <td></td>
                                 <td></td>
                                 <th className="p-2 text-end"> GST : </th>
                                 <td className="text-end p-2">00</td>
                             </tr>
                             <tr>
-                                {/* <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td> */}
                                 <td></td>
                                 <td></td>
                                 <th className="p-2 text-end">Additional Charges : </th>
                                 <td className="p-2"> <div style={{background: "unset"}} className="d-flex align-items-center justify-content-end p-0"> <input disabled={billCreationStatus} style={{maxWidth: "150px"}} placeholder="00" className="form-control text-end" type="text" value={finalBillingData.additional_charges} onChange={(e) => changeCharges(e.target.value, "additional_charges")}/></div></td>
                             </tr>
                             <tr>
-                                {/* <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td> */}
                                 <td></td>
                                 <td></td>
                                 <th className="p-2 text-end">Discount : </th>
                                 <td className="p-2"> <div style={{background: "unset"}} className="d-flex align-items-center justify-content-end p-0"> <input disabled={billCreationStatus} style={{maxWidth: "150px"}} placeholder="00" className="form-control text-end" type="text" value={finalBillingData.discount} onChange={(e) => changeCharges(e.target.value, "discount")}/></div></td>
                             </tr>
                             <tr>
-                                {/* <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td> */}
                                 <td></td>
                                 <td></td>
                                 <th className="p-2 text-end">Grand Total : </th>
-                                <td className="text-end p-2">{finalBillingData.grandTotal}</td>
+                                <td className="text-end p-2">{finalBillingData.grand_total}</td>
                             </tr>
                     </table>
                 </div>}
                 <div className="row">
                     <div className="col d-flex flex-row align-items-center flex-nowrap">
                         <label className="form-label me-2 text-nowrap">Payment type :</label>
-                        <select disabled={billCreationStatus} className="form-select" aria-label="Default select example" name="type" value={paymentDetails.payment_type} onChange={(e) => changePaymentDetails(e.target.value, "payment_type")}>
+                        <select disabled={billCreationStatus} className="form-select" aria-label="Default select example" name="type" value={paymentDetails.payment_mode} onChange={(e) => changePaymentDetails(e.target.value, "payment_mode")}>
                             <option>-- Payment type --</option>
                             <option defaultValue value="CASH">Cash</option>
                             <option value="UPI">UPI</option>
@@ -546,7 +503,7 @@ const changePaymentDetails = (value, type) => {
                     </div>
                     <div className="col d-flex flex-row align-items-center flex-nowrap">
                         <label className="form-label me-2 text-nowrap">Installation :</label>
-                        <select disabled={billCreationStatus} className="form-select" aria-label="Default select example" name="type" value={paymentDetails.pending_installation} onChange={(e) => changePaymentDetails(e.target.value, "pending_installation")}>
+                        <select disabled={billCreationStatus} className="form-select" aria-label="Default select example" name="type" value={paymentDetails.installation_status} onChange={(e) => changePaymentDetails(e.target.value, "installation_status")}>
                             <option>Not applicable</option>
                             <option value="PENDING">Pending</option>
                             <option value="COMPLETE">Complete</option>
@@ -587,6 +544,8 @@ const changePaymentDetails = (value, type) => {
                 </div>
             </div>
             <div className="d-flex justify-content-end mt-3 mb-5">
+                
+                {!billCreationStatus && <button className="form-control mx-2" style={{maxWidth: "100px"}} onClick={() => setBillListDiv(true)} >Back</button>}
                 {!billCreationStatus && <button className="form-control mx-2" style={{maxWidth: "100px"}} onClick={() => submitBill()} >Submit</button>}
                 {billCreationStatus && <button className="form-control mx-2" style={{maxWidth: "100px"}} onClick={() => home()} >Home</button>}
                 {billCreationStatus && <button className="form-control mx-2" style={{maxWidth: "100px"}} onClick={() => generateBillPdf(billId)} >Print</button>}

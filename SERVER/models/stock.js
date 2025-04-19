@@ -16,6 +16,7 @@ const stockSchema = new mongoose.Schema({
     height: {type: String},
     power: {type: String},
     description: {type: String},
+    description_key: {type: String},
     model: {type: String},
     seller_id: {type: mongoose.Schema.Types.ObjectId},
     total_quantity: {type: Number},
@@ -62,7 +63,7 @@ const stockSchema = new mongoose.Schema({
           ],
           default: [],
       },
-      returns: {
+      returns_to_seller: {
           type: [
               {
                   quantity: Number,
@@ -84,8 +85,20 @@ const stockSchema = new mongoose.Schema({
           ],
           default: [],
       },
-    created_by: {type: mongoose.Schema.Types.ObjectId},
-    updated_by: {type: mongoose.Schema.Types.ObjectId}
+      returns_from_buyer: {
+        type: [{
+                sold_date: Date,
+                return_date: Date,
+                sold_to: mongoose.Schema.Types.ObjectId,
+                sold_price: Number,
+                return_type: String,
+                updatedBy: mongoose.Schema.Types.ObjectId,
+                updatedAt: { type: Date, default: Date.now },
+            }],
+        default: [],
+    },
+    createdBy: {type: mongoose.Schema.Types.ObjectId},
+    updatedBy: {type: mongoose.Schema.Types.ObjectId}
 }, { timestamps: true });
 
 const Stock = mongoose.model('stock', stockSchema)

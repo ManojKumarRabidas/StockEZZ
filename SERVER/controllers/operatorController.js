@@ -40,8 +40,8 @@ module.exports = {
             const company = req.body.company;
             body.company_id = new ObjectId(company._id);
             body.category_id = new ObjectId(company.company_type_id);
-            body.created_by = new ObjectId(userId);
-            body.updated_by = new ObjectId(userId);
+            body.createdBy = new ObjectId(userId);
+            body.updatedBy = new ObjectId(userId);
             body.date = new Date(body.date);
             body.time = body.time? new Date(body.time): null;
             if(body.sub_category){
@@ -127,7 +127,23 @@ module.exports = {
             }
             const itemQuantity = body.total_quantity ? Number(body.total_quantity): 0;
             delete body.total_quantity;
-            body.batch_id = uuidv4().replace(/-/g, '').substring(0, 12);
+
+            const d = new Date();
+            const [dd, mm, yy, h, m] = [
+              d.getDate(), d.getMonth() + 1, d.getFullYear() % 100,
+              d.getHours(), d.getMinutes()
+            ];
+            const isPM = h >= 12;
+            const hour12 = h % 12 || 12;
+            const baseId = (dd < 10 ? '0' : '') + dd +
+            (mm < 10 ? '0' : '') + mm +
+            (yy < 10 ? '0' : '') + yy +
+            (hour12 < 10 ? '0' : '') + hour12 +
+            (m < 10 ? '0' : '') + m +
+            (isPM ? 'PM' : 'AM')
+
+            const baseUuid = uuidv4().replace(/-/g, '').substring(0, 5).toUpperCase();
+            body.batch_id = baseId+baseUuid
             if(detailsBodyTotalQuantity < itemQuantity){
                 // body.brand_id = body.brand_id ? additionalData.batch_brand_id: null;
                 body.color = additionalData.batch_color ? additionalData.batch_color: null;
@@ -139,39 +155,53 @@ module.exports = {
                 body.mfg_date = additionalData.batch_mfg_date ? new Date(additionalData.batch_mfg_date): null;
                 body.exp_date = additionalData.batch_exp_date ? new Date(additionalData.batch_exp_date): null;
                 body.item_buy_price = additionalData.per_piece_buy_price ? Number(additionalData.per_piece_buy_price): null;
-                body.item_sell_price = additionalData.per_piece_sell_price ? Number(additionalData.per_piece_sell_price): null;
+                body.item_sell_price = additionalData.per_piece_sell_price ? Number(additionalData.per_piece_sell_price): 0;
                 body.warrantee_guarantee = additionalData.batch_warrantee_guarantee ? additionalData.batch_warrantee_guarantee: null;
                 body.warrantee_guarantee_duration = additionalData.batch_warrantee_guarantee_duration ? Number(additionalData.batch_warrantee_guarantee_duration): null;
                 body.quantity = itemQuantity - detailsBodyTotalQuantity;
                 body.total_quantity = itemQuantity - detailsBodyTotalQuantity;
 
-                if (body.description && body.description.trim() !== "") {
-                    // Use the existing description
-                } else {
-                    const descriptionParts = [];
-                    if (body.item) {
-                        descriptionParts.push(body.item);
-                    }
-                    if (additionalData.batch_brand && additionalData.batch_brand.trim() !== "") {
-                        descriptionParts.push(additionalData.batch_brand);
-                    }
-                    if (body.model && body.model.trim() !== "") {
-                        descriptionParts.push(body.model);
-                    }
-                    if (body.color && body.color.trim() !== "") {
-                        descriptionParts.push(body.color);
-                    }
-                    if (body.capacity && body.capacity.trim() !== "") {
-                        descriptionParts.push(body.capacity);
-                    }
-                    if (body.height && body.height.trim() !== "") {
-                        descriptionParts.push(body.height);
-                    }
-                    if (body.power && body.power.trim() !== "") {
-                        descriptionParts.push(body.power);
-                    }
+                
+                const descriptionParts = [];
+                const descriptionKeyParts = [];
+                if (body.item) {
+                    descriptionParts.push(body.item);
+                    descriptionKeyParts.push(body.item.trim().replace(/\s+/g, ''));
+                }
+                
+                if (additionalData.batch_brand && additionalData.batch_brand.trim() !== "") {
+                    descriptionParts.push(additionalData.batch_brand);
+                    descriptionKeyParts.push(additionalData.batch_brand.trim().replace(/\s+/g, ''));
+                }
+                
+                if (body.model && body.model.trim() !== "") {
+                    descriptionParts.push(body.model);
+                    descriptionKeyParts.push(body.model.trim().replace(/\s+/g, ''));
+                }
+                
+                if (body.color && body.color.trim() !== "") {
+                    descriptionParts.push(body.color);
+                    descriptionKeyParts.push(body.color.trim().replace(/\s+/g, ''));
+                }
+                
+                if (body.capacity && body.capacity.trim() !== "") {
+                    descriptionParts.push(body.capacity);
+                    descriptionKeyParts.push(body.capacity.trim().replace(/\s+/g, ''));
+                }
+                
+                if (body.height && body.height.trim() !== "") {
+                    descriptionParts.push(body.height);
+                    descriptionKeyParts.push(body.height.trim().replace(/\s+/g, ''));
+                }
+                
+                if (body.power && body.power.trim() !== "") {
+                    descriptionParts.push(body.power);
+                    descriptionKeyParts.push(body.power.trim().replace(/\s+/g, ''));
+                }
 
-                    // Join all parts with space and set as description
+                body.description_key = descriptionKeyParts.join("").toLowerCase();
+
+                if (!body.description || body.description.trim() == "") {
                     body.description = descriptionParts.join(" ");
                 }
 
@@ -216,45 +246,52 @@ module.exports = {
                     newBody.mfg_date = ref.mfg_date ? new Date(ref.mfg_date) : (additionalData.batch_mfg_date ? new Date(additionalData.batch_mfg_date): null);
                     newBody.exp_date = ref.exp_date ? new Date(ref.exp_date) : (additionalData.batch_exp_date ? new Date(additionalData.batch_exp_date): null);
                     newBody.item_buy_price = ref.item_buy_price ? Number(ref.item_buy_price) : (additionalData.per_piece_buy_price ? Number(additionalData.per_piece_buy_price): null);
-                    newBody.item_sell_price = ref.item_sell_price ? Number(ref.item_sell_price) : (additionalData.per_piece_sell_price ? Number(additionalData.per_piece_sell_price): null);
+                    newBody.item_sell_price = ref.item_sell_price ? Number(ref.item_sell_price) : (additionalData.per_piece_sell_price ? Number(additionalData.per_piece_sell_price): 0);
                     newBody.warrantee_guarantee = ref.warrantee_guarantee ? ref.warrantee_guarantee : ((additionalData.batch_warrantee_guarantee ? additionalData.batch_warrantee_guarantee: null));
                     newBody.warrantee_guarantee_duration = ref.warrantee_guarantee_duration ? Number(ref.warrantee_guarantee_duration) : (((additionalData.batch_warrantee_guarantee_duration ? Number(additionalData.batch_warrantee_guarantee_duration): null)));
                     
-                    if (newBody.description && newBody.description.trim() !== "") {
-                        // Use the existing description
-                    } else {
-                        const descriptionParts = [];
-                        if (newBody.item) {
-                            descriptionParts.push(newBody.item);
-                        }
-                        if (ref.brand && ref.brand.trim() !== "") {
-                            descriptionParts.push(ref.brand);
-                        } else if (additionalData.batch_brand && additionalData.batch_brand.trim() != ""){
-                            descriptionParts.push(additionalData.batch_brand);
-                        }
-                        if (newBody.model && newBody.model.trim() !== "") {
-                            descriptionParts.push(newBody.model);
-                        }
-                        if (newBody.color && newBody.color.trim() !== "") {
-                            descriptionParts.push(newBody.color);
-                        }
-                        if (newBody.capacity && newBody.capacity.trim() !== "") {
-                            descriptionParts.push(newBody.capacity);
-                        }
-                        if (newBody.height && newBody.height.trim() !== "") {
-                            descriptionParts.push(newBody.height);
-                        }
-                        if (newBody.power && newBody.power.trim() !== "") {
-                            descriptionParts.push(newBody.power);
-                        }
-                        if (newBody.unique_code && newBody.unique_code.trim() !== "") {
-                            descriptionParts.push(newBody.unique_code);
-                        }
-    
-                        // Join all parts with space and set as description
-                        newBody.description = descriptionParts.join(" ");
+                    const descriptionParts = [];
+                    const descriptionKeyParts = [];
+                    if (newBody.item) {
+                        descriptionParts.push(newBody.item);
+                        descriptionKeyParts.push(newBody.item.trim().replace(/\s+/g, ''));
+                    }
+                    if (ref.brand && ref.brand.trim() !== "") {
+                        descriptionParts.push(ref.brand);
+                        descriptionKeyParts.push(ref.brand.trim().replace(/\s+/g, ''));
+                    } else if (additionalData.batch_brand && additionalData.batch_brand.trim() != ""){
+                        descriptionParts.push(additionalData.batch_brand);
+                        descriptionKeyParts.push(additionalData.batch_brand.trim().replace(/\s+/g, ''));
+                    }
+                    if (newBody.model && newBody.model.trim() !== "") {
+                        descriptionParts.push(newBody.model);
+                        descriptionKeyParts.push(newBody.model.trim().replace(/\s+/g, ''));
+                    }
+                    if (newBody.color && newBody.color.trim() !== "") {
+                        descriptionParts.push(newBody.color);
+                        descriptionKeyParts.push(newBody.color.trim().replace(/\s+/g, ''));
+                    }
+                    if (newBody.capacity && newBody.capacity.trim() !== "") {
+                        descriptionParts.push(newBody.capacity);
+                        descriptionKeyParts.push(newBody.capacity.trim().replace(/\s+/g, ''));
+                    }
+                    if (newBody.height && newBody.height.trim() !== "") {
+                        descriptionParts.push(newBody.height);
+                        descriptionKeyParts.push(newBody.height.trim().replace(/\s+/g, ''));
+                    }
+                    if (newBody.power && newBody.power.trim() !== "") {
+                        descriptionParts.push(newBody.power);
+                        descriptionKeyParts.push(newBody.power.trim().replace(/\s+/g, ''));
+                    }
+                    newBody.description_key = descriptionKeyParts.join("").toLowerCase();
+
+                    if (newBody.unique_code && newBody.unique_code.trim() !== "") {
+                        descriptionParts.push(newBody.unique_code);
                     }
                     
+                    if (!newBody.description || newBody.description.trim() == "") {
+                        newBody.description = descriptionParts.join(" ");
+                    }
                     finalStockBody.push(newBody);
                 }
             }
@@ -296,7 +333,7 @@ module.exports = {
             }
             body.buyer_id = null;
             body.date = new Date();
-            body.billNo = uuidv4().replace(/-/g, '').substring(0, 12);
+            body.bill_no = uuidv4().replace(/-/g, '').substring(0, 12);
             if(body.buyer_name || body.buyer_phone){
                 const matchString = {}
                 if(body.buyer_name){matchString.name = body.buyer_name}
@@ -361,11 +398,20 @@ module.exports = {
             body.total = Number(body.total);
             body.additional_charges = body.additional_charges ? Number(body.additional_charges): 0;
             body.discount = body.discount ? Number(body.discount): 0;
-            body.grandTotal = Number(body.grandTotal);
+            body.grand_total = Number(body.grand_total);
             body.paid_amount = body.paid_amount ? Number(body.paid_amount): 0;
             body.remaining_amount = body.remaining_amount ? Number(body.remaining_amount): 0;
-            body.profit = (total_profit+body.additional_charges-body.discount);
-            body.total_profit = body.profit - body.remaining_amount;
+            body.expected_profit = (total_profit+body.additional_charges-body.discount);
+            body.total_profit = body.expected_profit - body.remaining_amount;
+            body.payments = [
+                {
+                    paid_amount: body.paid_amount,
+                    payment_mode: body.payment_mode,
+                    info: body.info,
+                    updatedBy: new ObjectId(user.id),
+                    billed_at: new Date()
+                }
+            ]
             const doc = await billModel.create(body)
             res.status(201).json({ status: true, msg: "Bill created successfully.", doc:doc});
         } catch(err){
@@ -374,16 +420,44 @@ module.exports = {
     },
     billUpdate: async(req, res)=>{
         try {
-            const params = req.params;
+            const { id } = req.params;
             const body = req.body;
-            body.updatedBy = new ObjectId(req.user.id);
-            if (!params || !params.id || !body){
-                res.status(400).json({ msg: "Missing Parameters!" });
-                return;
+        
+            if (!id || !body) {
+                return res.status(400).json({ msg: "Missing Parameters!" });
             }
-            body.total_profit = body.profit - body.remaining_amount;
-            const doc = await billModel.findByIdAndUpdate(params.id, body, {new: true});
-            res.status(200).json({ message: "Details updated successfully", doc: doc });
+            // Extract payment-related fields to be pushed
+            const paymentEntry = {
+                paid_amount: body.paid_amount,
+                payment_mode: body.payment_mode,
+                info: body.info,
+                updatedBy: new ObjectId(req.user.id)
+            };
+        
+            // Fields to be updated directly
+            const billFieldsToUpdate = {
+                total_profit: Number(body.expected_profit) - Number(body.remaining_amount),
+                paid_amount: Number(body.prev_paid_amount)+Number(body.paid_amount),
+                remaining_amount: body.remaining_amount,
+                installation_status: body.installation_status,
+                updatedAt: new Date()
+            };
+        
+            // First update installation_status and info
+            const updatedBill = await billModel.findByIdAndUpdate(
+                id,
+                {
+                $set: billFieldsToUpdate,
+                $push: { payments: paymentEntry }
+                },
+                { new: true, runValidators: true }
+            );
+        
+            if (!updatedBill) {
+                return res.status(404).json({ msg: "Bill not found!" });
+            }
+
+            res.status(200).json({ message: "Details updated successfully" });
         } catch (err) {
             res.status(500).json({ msg: err.message });
         }
@@ -401,19 +475,19 @@ module.exports = {
             let tempMatchStage ={}
             let company;
             let projectionStage ={_id: 1,
-                    billNo: 1,
+                    bill_no: 1,
                     date: 1,
                     items: 1,
                     buyer: 1,
                     total: 1,
                     additional_charges: 1,
                     discount: 1,
-                    grandTotal: 1,
-                    payment_type: 1,
+                    grand_total: 1,
                     paid_amount: 1,
                     remaining_amount: 1,
                     info: 1,
-                    pending_installation: 1
+                    installation_status: 1,
+                    payments: 1
                 }
             
             if (userType === "COMPANY") {
@@ -499,7 +573,8 @@ module.exports = {
                         outerRef.buyer.address = outerRef.buyer.address ? outerRef.buyer.address : "Not available"
                   }
                 //   outerRef.buyer = outerRef.buyer ? outerRef.buyer : {name: "Not available",phone: "Not available",email: "Not available",aadhar: "Not available",pin: "Not available",address: "Not available",};
-                  outerRef.pending_installation = outerRef.pending_installation ? outerRef.pending_installation : "N/A";
+                  outerRef.installation_status = outerRef.installation_status ? outerRef.installation_status : "N/A";
+                  outerRef.payment_mode = outerRef.payments ? outerRef.payments[0].payment_mode : "N/A";
                   for(let j=0; j<outerRef.items.length; j++){
                     const ref = outerRef.items[j].item;
                     // if(ref.brand_id){
@@ -566,7 +641,7 @@ module.exports = {
             if(body.type == "DAMAGE"){
                 action = "damages"
             } else if (body.type == "RETURN"){
-                action = "returns"
+                action = "returns_to_seller"
             } else if (body.type == "CLEAR"){
                 action = "clears"
             }
@@ -641,14 +716,14 @@ module.exports = {
                 return;
             }
 
-            let grandTotal = 0;
+            let grand_total = 0;
             const updatedDocs = docs.map(doc => {
                 let plainDoc = { ...doc };  // Convert to plain object
                 const updatedQuantity = itemMap.get(doc._id.toString()); // Ensure lookup by string ID
                 plainDoc.date = moment(plainDoc.date).format('DD/MM/YY');
                 plainDoc.quantity = updatedQuantity !== undefined ? updatedQuantity : plainDoc.quantity; // Update quantity
-                plainDoc.total = plainDoc.quantity + plainDoc.item_buy_price; // Calculate total (quantity + item_buy_price)
-                grandTotal += plainDoc.total; // Add to grandTotal
+                plainDoc.total = plainDoc.quantity * plainDoc.item_buy_price; // Calculate total (quantity + item_buy_price)
+                grand_total += plainDoc.total; // Add to grand_total
                 return plainDoc;
             });
 
@@ -656,7 +731,7 @@ module.exports = {
             let doc = {
                 challan_no: firstChallanNo,
                 seller: firstSeller,
-                grandTotal: grandTotal,
+                grand_total: grand_total,
                 items: updatedDocs // The modified array
             };
             const userId = new ObjectId(req.user.id);

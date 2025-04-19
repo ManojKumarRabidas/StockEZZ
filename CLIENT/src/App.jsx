@@ -20,7 +20,7 @@ import AddStock from './components/AddStock';
 import Buyer from './components/Buyers';
 import Seller from './components/Sellers';
 import Stocks from './components/StockDetails';
-import BillingArea from './components/billingArea';
+import BillingArea from './components/BillingArea';
 import ManageStock from './components/ManageStock';
 import ManageBills from './components/ManageBills';
 import ManageInstallation from './components/ManageInstallation';
