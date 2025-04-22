@@ -43,9 +43,12 @@ const stockSchema = new mongoose.Schema({
     sell_details: {
         type: [
           {
+            bill_id: mongoose.Schema.Types.ObjectId,
             buyer_id: mongoose.Schema.Types.ObjectId,
             sell_price: Number,
             quantity: Number,
+            returned_quantity: Number,
+            replaced_quantity: Number,
             profit: Number,
             sold_at: { type: Date, default: Date.now },
           },

@@ -368,11 +368,11 @@ function AddStock() {
     const data = {sl_no, date, time, sub_category, challan_no, item, item_id, seller, seller_id, total_quantity, batch_no, item_status, return_reason, remarks, stock_details: lowerPartEntries};
     const additionalData = {batch_brand, batch_brand_id, batch_color, batch_capacity, batch_height, batch_power, batch_description, batch_model, batch_buy_price, batch_sell_price, per_piece_buy_price, per_piece_sell_price, batch_mfg_date, batch_exp_date, batch_warrantee_guarantee, batch_warrantee_guarantee_duration}
     if(!data.date || !data.item || !data.total_quantity || !additionalData.batch_buy_price || !data.item_status){
-      console.log(data)
-      console.log(additionalData)
       toastr.error("Please enter all required field.");
       return;
     }
+    const confirmed = window.confirm("Are you sure you want to submit?");
+    if (!confirmed) return;
     const finalData = {data: data, additionalData: additionalData, company: company_details};
     const response = await fetch(`${HOST}:${PORT}/server/save-stock-details`, {
       method: "POST",

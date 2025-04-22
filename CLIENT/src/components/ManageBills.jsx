@@ -19,6 +19,7 @@ function ManageBills() {
   const inputRef = useRef(null);
   const [data, setData] = useState([]);
   const [globalFilter, setGlobalFilter] = useState("");
+  const [filters, setFilters] = useState({bill_type: "FRESH"});
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const [sorting, setSorting] = useState([]); // State to manage sorting
@@ -46,7 +47,7 @@ function ManageBills() {
     try {
       const response = await fetch(`${HOST}:${PORT}/server/bill-list`, {
         method: "GET",
-        headers: { 'authorization': `Bearer ${token}` },
+        headers: { 'authorization': `Bearer ${token}`, "bill_type": filters.bill_type },
       });
 
       const result = await response.json();
@@ -61,8 +62,16 @@ function ManageBills() {
   }
 
   useEffect(() => {
-    getData();
+    // getData();
+    changeFilter("FRESH", "bill_type")
   }, []);
+
+  const changeFilter = (value, type) => {
+    if(type == "bill_type"){
+      filters.bill_type = value;
+      getData();
+    }
+  }
 
   const details = async (id) => {
     try {
@@ -324,9 +333,55 @@ function ManageBills() {
       setNewSelectedItemList([]);
     } else if (step == "STEP2"){
       toastr.info("Ganja Ganjaaaa")
-      console.log("newSelectedItemList", newSelectedItemList)
-      console.log("selectedData.items", selectedData.items)
-      console.log("selectedData._id", selectedData._id)
+      const returnItems = [];
+      const newAddedItems = [];
+      for(let i=0; i<selectedData.items.length; i++){
+        const ref = selectedData.items[i];
+        if (ref.checked == true){
+          if(ref.return_type == "EXCHANGE" && ref.avilibility_status == false){
+            toastr.error("Please select the item which is available in stock for exchange.");
+            return;
+          }
+          returnItems.push({item_id: ref.item.stock_id, description_key: ref.item.description_key, quantity: ref.quantity, return_type: ref.return_type})
+        }
+      }
+      for(let i=0; i<newSelectedItemList.length; i++){
+        const ref = newSelectedItemList[i];
+        newAddedItems.push({item_id: ref._id, quantity: ref.quantity, buy_price: ref.item_buy_price, sell_price: ref.item_sell_price})
+      }
+      if(selectedData._id && (returnItems.length>0 || newAddedItems.length>0)){
+        const finalDoc = {
+          bill_id: selectedData._id,
+          returnItems: returnItems,
+          newAddedItems: newAddedItems,
+        }
+        try {
+          const response = await fetch(`${HOST}:${PORT}/server/bill-recreate`, {
+            method: "POST",
+            body: JSON.stringify(finalDoc),
+            headers: {
+              'Content-Type': 'application/json',
+              'authorization': `Bearer ${token}`,
+            },
+          });
+    
+          if (response) {
+            const result = await response.json();
+            if (response.ok) {
+              toastr.success("Bill details updated successfully.");
+              setReturnModal(false);
+            } else {
+              toastr.error(result.msg);
+            }
+          } else {
+            toastr.error("We are unable to process now. Please try again later.");
+          }
+        } catch (error) {
+          toastr.error("We are unable to process now. Please try again later.");
+        }
+      } else{
+        toastr.error("We are unable to process now. Please try again later.");
+      }
     }
   }
 
@@ -549,7 +604,20 @@ function ManageBills() {
   return (
     <div className="container my-2">
       {!detailsBillDiv && <div>
-        <input value={globalFilter || ""} onChange={(e) => setGlobalFilter(e.target.value)} placeholder="Search by any field of table..." className="form-control my-3"/>
+        <div className="row">
+          <div className="col-9">
+            <input value={globalFilter || ""} onChange={(e) => setGlobalFilter(e.target.value)} placeholder="Search by any field of table..." className="form-control my-3"/>
+          </div>
+          <div className="col-3 d-flex align-items-center">
+            <label className="form-label me-2 text-nowrap">Bill Type :</label>
+            <select className="form-select" aria-label="Default select example" name="bill_type" value={filters.bill_type} onChange={(e) => changeFilter(e.target.value, "bill_type")}>
+                <option value="FRESH">Fresh</option>
+                <option value="CANCELLED">Cancelled</option>
+                <option value="RE-CREATED">Re-Created</option>
+                <option value="ALL">All</option>
+            </select> 
+          </div>
+        </div>
         {data.length>0 && <>   
           <div className="scroll-hidden">
             <table className="table table-striped shadow-sm p-3 bg-body-tertiary rounded" style={{ fontSize: "smaller", margin: "0" }}>
@@ -713,8 +781,8 @@ function ManageBills() {
             </div>
             <div className="d-flex justify-content-end mt-3 mb-5">
                 <button className="form-control mx-2" style={{maxWidth: "100px"}} onClick={() => backToBillList()} >Back</button>
-                {!billEditingStatus && (detailsBill.userType == "OPERATOR") && <button className="form-control mx-2" style={{maxWidth: "100px"}} onClick={() => setBillEditingStatus(true)} >Edit</button>}
-                {billEditingStatus && <button className="form-control mx-2" style={{maxWidth: "100px"}} onClick={() => updateBillDetails(detailsBill._id)} >Submit</button>}
+                {/* {!billEditingStatus && (detailsBill.userType == "OPERATOR") && <button className="form-control mx-2" style={{maxWidth: "100px"}} onClick={() => setBillEditingStatus(true)} >Edit</button>} */}
+                {/* {billEditingStatus && <button className="form-control mx-2" style={{maxWidth: "100px"}} onClick={() => updateBillDetails(detailsBill._id)} >Submit</button>} */}
                 {!billEditingStatus && (detailsBill.userType == "OPERATOR") && <button className="form-control mx-2" style={{maxWidth: "130px"}} onClick={() => generateBillPdf(detailsBill._id)} >Save as Pdf</button>}
                 {!billEditingStatus && (detailsBill.userType == "OPERATOR") && <button className="form-control mx-2" style={{maxWidth: "130px"}} onClick={() => generateBillPdf(detailsBill._id)} >Print</button>}
                 {!billEditingStatus && (detailsBill.userType == "OPERATOR") && <button className="form-control mx-2 bc-green-imp" style={{maxWidth: "130px"}} onClick={() => whatsappBill(true)} >Whatsapp</button>}
@@ -801,7 +869,7 @@ function ManageBills() {
                             {item.checked ?
                             <select className="form-select" aria-label="Default select example" value={item.return_type ? item.return_type: "RETURN"} name="return_type"  onChange={(e)=>changeReturnType(index, e.target.value, "STEP1")} >
                               <option value="RETURN">Return</option>
-                              <option value="EXCHANGE">Exchange</option>
+                              {/* <option value="EXCHANGE">Exchange</option> */}
                             </select> : 
                             <span>Not Applicable</span>}
                           </td>
@@ -1038,7 +1106,7 @@ function ManageBills() {
                       </tbody>
                     </table>
                   </div>
-                  {selectedData.remaining_amount>0 && 
+                  {selectedData.remaining_amount!=0 && 
                   <div className="border mt-3">
                     <div className="text-center"><strong>New Payments</strong></div>
                     <form action="#">
@@ -1077,7 +1145,7 @@ function ManageBills() {
                 </div> }
               </div>
               <div className="modal-footer">
-              {selectedData.remaining_amount>0 && <button type="button" className="btn btn-secondary" onClick={() => handlePaymentSubmit()}>Save</button>}
+              {selectedData.remaining_amount!=0 && <button type="button" className="btn btn-secondary" onClick={() => handlePaymentSubmit()}>Save</button>}
                 <button type="button" className="btn btn-secondary" onClick={() => setPaymentModal(false)}>Cancel</button>
               </div>
             </div>

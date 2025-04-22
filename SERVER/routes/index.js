@@ -82,6 +82,7 @@ router.post("/save-stock-details", authorizeRole(['OPERATOR']), operatorControll
 router.patch("/stock-bulk-update", authorizeRole(['OPERATOR']), operatorController.stockBulkUpdate);
 
 router.post("/bill-create", authorizeRole(['OPERATOR']), operatorController.billCreate);
+router.post("/bill-recreate", authorizeRole(['OPERATOR']), operatorController.billReCreate);
 router.patch("/bill-update/:id", authorizeRole(['OPERATOR']), operatorController.billUpdate);
 router.post("/generate-bill-pdf/:id", authorizeRole(['OPERATOR']), operatorController.generateBillPdf);
 
