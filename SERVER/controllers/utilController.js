@@ -268,6 +268,7 @@ module.exports = {
         try {
             const userId = new ObjectId(req.user.id);
             const userType = req.user.user_type;
+            const bill_type = req.headers.bill_type;
             let cmpMatchStage ={}
             let matchStage ={}
             let tempMatchStage ={}
@@ -296,6 +297,10 @@ module.exports = {
                 let operator = await userModel.findOne({_id: userId}, {company: 1});
                 matchStage.company_id = new ObjectId(operator.company)
                 tempMatchStage.companyId = new ObjectId(operator.company)
+            }
+
+            if(bill_type && bill_type!="ALL"){
+                matchStage.bill_type = bill_type
             }
             const docs = await billModel.aggregate([
                 {$match: matchStage},
@@ -481,7 +486,8 @@ module.exports = {
                         $or: [
                             {remaining_amount: {$gt: 0}},
                             {installation_status: "PENDING"}
-                        ]
+                        ],
+                        bill_type: {$in: ["FRESH", "RE-CREATED"]}
                     }},
                     {$lookup: {
                         from: "buyers",
@@ -537,7 +543,7 @@ module.exports = {
             endDate = new Date(end);
             endDate.setHours(23, 59, 59, 999);
             const revenueProfitResult = await billModel.aggregate([
-                {$match: {company_id: company_id, date: { $gte: startDate, $lte: endDate }}},
+                {$match: {company_id: company_id, date: { $gte: startDate, $lte: endDate }, bill_type: {$in: ["FRESH", "RE-CREATED"]}}},
                 {$project: {paid_amount: 1, total_profit: 1, month: { $dateToString: { format: "%Y-%m", date: "$date" } }}},
                 {$group: {
                     _id: "$month",

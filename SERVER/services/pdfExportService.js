@@ -73,7 +73,7 @@ module.exports = {
 
         {
           table: {
-            widths: [120, 40],
+            widths: [110, 50],
             body: [
               ["Total : ", {text: `${doc.total}`, alignment: 'right'}],
               ["GST : ", {text: `00`, alignment: 'right'}],
@@ -169,6 +169,7 @@ module.exports = {
         const pdfDoc = printer.createPdfKitDocument(docDefinition);
         return { status: true, doc: pdfDoc };
     } catch (err) {
+      console.log(err)
         return { status: false, err: err.message };
     }
   },

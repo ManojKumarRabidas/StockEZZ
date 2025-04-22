@@ -1,4 +1,5 @@
 const {ObjectId} = require('mongodb');
+const mongoose = require('mongoose');
 const moment = require('moment');
 const { v4: uuidv4 } = require('uuid');
 var _ = require('lodash');
@@ -334,6 +335,7 @@ module.exports = {
             body.buyer_id = null;
             body.date = new Date();
             body.bill_no = uuidv4().replace(/-/g, '').substring(0, 12);
+            body.bill_type = "FRESH";
             if(body.buyer_name || body.buyer_phone){
                 const matchString = {}
                 if(body.buyer_name){matchString.name = body.buyer_name}
@@ -367,26 +369,10 @@ module.exports = {
             }
             let total_profit = 0
             for(let i=0; i<body.items.length; i++){
-                body.items[i].item_id = new ObjectId(body.items[i].item_id)
                 const ref = body.items[i];
-                const stock = await stockModel.findOne({_id: ref.item_id});
-                if (!stock) {
-                  res.status(400).json({ msg: "Stock not found" });
-                  return;
-                }
-                
-                if (stock.quantity < ref.quantity) {
-                    res.status(400).json({ msg: "Not enough stock available" });
-                    return;
-                }
-                stock.quantity -= ref.quantity;
-                if (!Array.isArray(stock.sell_details)) {
-                    stock.sell_details = [];
-                  }
+                body.items[i].item_id = new ObjectId(body.items[i].item_id)
                 const profit = (Number(ref.sell_price) - Number(ref.buy_price)) * Number(ref.quantity);
                 total_profit = total_profit + profit;
-                stock.sell_details.push({ buyer_id: body.buyer_id, sell_price: Number(ref.sell_price), quantity: Number(ref.quantity), profit: profit });
-                await stock.save();
             }
             delete body.buyer_name
             delete body.buyer_phone
@@ -413,6 +399,30 @@ module.exports = {
                 }
             ]
             const doc = await billModel.create(body)
+
+            for(let i=0; i<body.items.length; i++){
+                body.items[i].item_id = new ObjectId(body.items[i].item_id)
+                const ref = body.items[i];
+                const stock = await stockModel.findOne({_id: ref.item_id});
+                if (!stock) {
+                  res.status(400).json({ msg: "Stock not found" });
+                  return;
+                }
+                
+                if (stock.quantity < ref.quantity) {
+                    res.status(400).json({ msg: "Not enough stock available" });
+                    return;
+                }
+                stock.quantity -= ref.quantity;
+                if (!Array.isArray(stock.sell_details)) {
+                    stock.sell_details = [];
+                  }
+                const profit = (Number(ref.sell_price) - Number(ref.buy_price)) * Number(ref.quantity);
+                stock.sell_details.push({bill_id: doc._id, buyer_id: body.buyer_id, sell_price: Number(ref.sell_price), quantity: Number(ref.quantity), returned_quantity: 0, profit: profit });
+                await stock.save();
+            }
+
+
             res.status(201).json({ status: true, msg: "Bill created successfully.", doc:doc});
         } catch(err){
             res.status(500).json({ status: false, msg: err.message });
@@ -497,39 +507,7 @@ module.exports = {
                 tempMatchStage.companyId = new ObjectId(operator.company)
                 company = await companyModel.findOne({_id: operator.company}, {name: 1, phone: 1, email: 1, address: 1, gstNo: 1});
             }
-            // const docs = await billModel.aggregate([
-            //     {$match: matchStage},
-            //     {$lookup: {from: "buyers",
-            //             localField: "buyer_id",
-            //             foreignField: "_id",
-            //             as: "buyer"}},
-            //     {$addFields:{buyer:{ $arrayElemAt: ["$buyer", 0]}}},
-            //     {$lookup: {from: "stocks",
-            //             localField: "items.item_id",
-            //             foreignField: "_id",
-            //             as: "itemDetails"}},
-            //     {$addFields: {items: {$map: {input: "$items",
-            //                     as: "item",
-            //                     in: {sell_price: "$$item.sell_price",
-            //                         quantity: "$$item.quantity",
-            //                         item: {$arrayElemAt: [{$map: {
-            //                                         input: {$filter: {input: "$itemDetails",
-            //                                                 as: "detail",
-            //                                                 cond: { $eq: ["$$detail._id", "$$item.item_id"] }}},
-            //                                         as: "filteredItem",
-            //                                         in: {item_id: "$$filteredItem.item_id",
-            //                                             brand_id: "$$filteredItem.brand_id",
-            //                                             batch_id: "$$filteredItem.batch_id",
-            //                                             sub_category: "$$filteredItem.sub_category",
-            //                                             color: "$$filteredItem.color",
-            //                                             capacity: "$$filteredItem.capacity",
-            //                                             height: "$$filteredItem.height",
-            //                                             power: "$$filteredItem.power",
-            //                                             description: "$$filteredItem.description",
-            //                                             model: "$$filteredItem.model"}}},
-            //                                 0]}}}}}},
-            //     {$project: projectionStage}
-            // ]);
+            
             const docs = await billModel.aggregate([
                 {$match: matchStage},
                 {$lookup: {from: "buyers",
@@ -555,8 +533,6 @@ module.exports = {
                                             0]}}}}}},
                 {$project: projectionStage}
             ]);
-            // const brands = await brandModel.find(tempMatchStage, {name: 1});
-            // const items = await itemModel.find(tempMatchStage, {name: 1});
         
             if(docs.length>0){
                 for(let i=0; i<docs.length; i++){
@@ -577,22 +553,7 @@ module.exports = {
                   outerRef.payment_mode = outerRef.payments ? outerRef.payments[0].payment_mode : "N/A";
                   for(let j=0; j<outerRef.items.length; j++){
                     const ref = outerRef.items[j].item;
-                    // if(ref.brand_id){
-                    //     for(let i=0; i<brands.length; i++){
-                    //         if((brands[i]._id).toString() == (ref.brand_id).toString()){
-                    //             ref.brand_name = brands[i].name;
-                    //             break;     
-                    //         }
-                    //     }
-                    // }
-                    // if(ref.item_id){
-                    //     for(let i=0; i<items.length; i++){
-                    //         if((items[i]._id).toString() == (ref.item_id).toString()){
-                    //             ref.item_name = items[i].name;
-                    //             break;     
-                    //         }
-                    //     }
-                    // }
+                   
                     ref.sub_category = ref.sub_category ? ref.sub_category: "N/A";
                     ref.description = ref.description ? ref.description: "N/A";
                 }
@@ -764,4 +725,533 @@ module.exports = {
             res.status(500).json({ status: false, msg: err.message });
         }
     },
+    // billReCreateOld1: async(req, res)=>{
+    //     try{
+    //         console.log(req.body)
+    //         const body = req.body
+    //         const userId = new ObjectId(req.user.id);
+    //         const oldBillId = body.bill_id;
+    //         const oldBill = await billModel.findById({ _id: body.bill_id });
+    //         const newBill = oldBill.toObject();
+    //         delete newBill._id;
+    //         // console.log(newBill);
+    //         newBill.bill_type = "RE-CREATED";
+    //         newBill.date = new Date();
+    //         let total = 0;
+    //         let expected_profit = 0;
+    //         for(let i=0; i<newBill.items.length; i++) {
+    //             const ref = newBill.items[i];
+    //             for(j=0; j<body.returnItems.length; j++){
+    //                 const innerRef = body.returnItems[j];
+    //                 if(ref.item_id.toString() == innerRef.item_id){
+    //                     if(innerRef.return_type == "RETURN"){
+    //                         ref.quantity = ref.quantity-innerRef.quantity;
+
+    //                         const stock = await stockModel.findOne({_id: new ObjectId(innerRef.item_id)});
+    //                         if (!stock) {
+    //                             res.status(400).json({ msg: "Stock not found" });
+    //                             return;
+    //                         }
+                            
+    //                         stock.quantity += innerRef.quantity;
+    //                         // Ensure sell_details is an array
+    //                         if (!Array.isArray(stock.sell_details)) {
+    //                             stock.sell_details = [];
+    //                         }
+                            
+    //                         // Find matching sell_details entry for the buyer
+    //                         const sellDetailIndex = stock.sell_details.findIndex(detail =>
+    //                             detail.bill_id.toString() === oldBillId.toString()
+    //                         );
+                            
+    //                         // If found, update returned_quantity
+    //                         if (sellDetailIndex !== -1) {
+    //                             const existingReturned = stock.sell_details[sellDetailIndex].returned_quantity || 0;
+    //                             stock.sell_details[sellDetailIndex].returned_quantity = existingReturned + innerRef.quantity;
+    //                         } else {
+    //                             return res.status(400).json({ status: false, msg: "Buyer not found in sell_details. No returned_quantity updated." });
+                            
+    //                         }
+                            
+    //                         // Save the updated stock document
+    //                         await stock.save();
+    //                     // } else if (innerRef.return_type == "EXCHANGE"){
+    //                     //     const stocks = await stockModel.find({company_id: new ObjectId(newBill.company_id), description_key: innerRef.description_key, quantity: {$gt: 0}}).sort({ createdAt: -1 });
+    //                     //     if (stocks.length<=0) {
+    //                     //         res.status(400).json({ msg: "No such stocks not found" });
+    //                     //         return;
+    //                     //     }
+    //                     //     for(let k=0; k<stocks.length; k++){
+    //                     //         if((stocks[k]._id).toString() == innerRef.item_id){
+    //                     //             const stockRef = stocks[k];
+    //                     //             if(stockRef.quantity >= innerRef.quantity){
+    //                     //                 if (!Array.isArray(stockRef.sell_details)) {
+    //                     //                     stockRef.sell_details = [];
+    //                     //                 }
+                                        
+    //                     //                 // Find matching sell_details entry for the buyer
+    //                     //                 const sellDetailIndex = stockRef.sell_details.findIndex(detail =>
+    //                     //                     detail.bill_id.toString() === oldBillId.toString()
+    //                     //                 );
+                                        
+    //                     //                 // If found, update returned_quantity
+    //                     //                 if (sellDetailIndex !== -1) {
+    //                     //                     const existingReplaced = stockRef.sell_details[sellDetailIndex].replaced_quantity || 0;
+    //                     //                     stockRef.sell_details[sellDetailIndex].replaced_quantity = existingReplaced + innerRef.quantity;
+    //                     //                 } else {
+    //                     //                     return res.status(400).json({ status: false, msg: "Buyer not found in sell_details. No returned_quantity updated." });
+                                        
+    //                     //                 }
+    //                     //             }
+    //                     //         }
+    //                     //     }
+    //                     //     await stocks.save();
+    //                     // }
+    //                     } else if (innerRef.return_type === "EXCHANGE") {
+    //                         const requiredQty = innerRef.quantity;
+    //                         let remainingQty = requiredQty;
+                        
+    //                         // Fetch all stocks with the same description_key and company_id, sorted oldest first
+    //                         const stocks = await stockModel.find({
+    //                             company_id: new ObjectId(newBill.company_id),
+    //                             description_key: innerRef.description_key
+    //                         }).sort({ createdAt: 1 });
+                        
+    //                         if (!stocks || stocks.length === 0) {
+    //                             return res.status(400).json({ msg: "No matching stock found for exchange." });
+    //                         }
+                        
+    //                         const stockMap = new Map();
+    //                         let originalStock = null;
+                        
+    //                         // Prepare a quick lookup for sell_details updates
+    //                         const updateSellDetails = (stock, quantity) => {
+    //                             if (!Array.isArray(stock.sell_details)) {
+    //                                 stock.sell_details = [];
+    //                             }
+                        
+    //                             const index = stock.sell_details.findIndex(detail =>
+    //                                 detail.bill_id.toString() === oldBillId.toString()
+    //                             );
+                        
+    //                             if (index !== -1) {
+    //                                 stock.sell_details[index].replaced_quantity =
+    //                                     (stock.sell_details[index].replaced_quantity || 0) + quantity;
+    //                             } else {
+    //                                 stock.sell_details.push({
+    //                                     bill_id: oldBillId,
+    //                                     buyer_id: newBill.buyer_id,
+    //                                     sell_price: 0, // No actual selling price in exchange
+    //                                     quantity: 0, // No new quantity sold
+    //                                     returned_quantity: 0, // Not a return
+    //                                     replaced_quantity: quantity, // Quantity exchanged
+    //                                     profit: 0, // No profit involved in exchange
+    //                                     sold_at: new Date()
+    //                                 });
+    //                             }
+    //                         };
+                        
+    //                         // Track which stocks need to be saved
+    //                         const stocksToSave = [];
+                        
+    //                         for (const stock of stocks) {
+    //                             if (stock._id.toString() === innerRef.item_id) {
+    //                                 originalStock = stock;
+    //                             }
+                        
+    //                             if (stock.quantity <= 0) continue;
+                        
+    //                             const usedQty = Math.min(stock.quantity, remainingQty);
+    //                             stock.quantity -= usedQty;
+    //                             updateSellDetails(stock, usedQty);
+    //                             stocksToSave.push(stock);
+                        
+    //                             remainingQty -= usedQty;
+    //                             if (remainingQty === 0) break;
+    //                         }
+                        
+    //                         // Ensure sell_details entry is updated in the originalStock even if it didn’t supply quantity
+    //                         if (originalStock && !stocksToSave.includes(originalStock)) {
+    //                             updateSellDetails(originalStock, requiredQty);
+    //                             stocksToSave.push(originalStock);
+    //                         }
+                        
+    //                         if (remainingQty > 0) {
+    //                             return res.status(400).json({ msg: `Only partial stock (${requiredQty - remainingQty}/${requiredQty}) available for exchange.` });
+    //                         }
+                        
+    //                         // Save all updated stocks
+    //                         await Promise.all(stocksToSave.map(stock => stock.save()));
+    //                     }
+    //                 }
+    //             }
+    //             total = total+(ref.sell_price * ref.quantity);
+    //             expected_profit = expected_profit + ((ref.sell_price - ref.buy_price) * ref.quantity);
+    //         }
+    //         for(let i=0; i<body.newAddedItems.length; i++) {
+    //             const ref = body.newAddedItems[i];
+    //             ref.item_id = new ObjectId(ref.item_id);
+    //             const stock = await stockModel.findOne({_id: ref.item_id});
+    //             if (!stock) {
+    //               res.status(400).json({ msg: "Stock not found" });
+    //               return;
+    //             }
+                
+    //             if (stock.quantity < ref.quantity) {
+    //                 res.status(400).json({ msg: "Not enough stock available" });
+    //                 return;
+    //             }
+    //             stock.quantity -= ref.quantity;
+    //             if (!Array.isArray(stock.sell_details)) {
+    //                 stock.sell_details = [];
+    //               }
+    //             const profit = (Number(ref.sell_price) - Number(ref.buy_price)) * Number(ref.quantity);
+    //             stock.sell_details.push({ buyer_id: newBill.buyer_id, sell_price: Number(ref.sell_price), quantity: Number(ref.quantity), profit: profit });
+    //             await stock.save();
+    //             total = total+(ref.sell_price * ref.quantity);
+    //             expected_profit = expected_profit + ((ref.sell_price - ref.buy_price) * ref.quantity);
+    //             newBill.items.push(ref)
+    //         }
+    //         newBill.total = total
+    //         newBill.expected_profit = expected_profit;
+    //         newBill.grand_total = ((total+newBill.additional_charges)-newBill.discount);
+    //         newBill.total_profit = (newBill.expected_profit-newBill.paid_amount);
+    //         newBill.remaining_amount = (newBill.grand_total-newBill.paid_amount);
+    //         console.log("newBill", newBill)
+    //         const newBillDoc = await billModel.create(newBill);
+    //         const updateOldBill = await billModel.findByIdAndUpdate(oldBillId, {bill_type: "CANCELLED"}, {new: true});
+    //         console.log(newBillDoc, updateOldBill)
+    //         res.status(200).json({status: true, doc: newBillDoc});
+    //     } catch(err){
+    //         console.log(err)
+    //         res.status(500).json({ status: false, msg: err.message });
+    //     }
+    // },
+    
+    // billReCreateOld2: async (req, res) => {
+    //     const session = await mongoose.startSession();
+    //     session.startTransaction();
+      
+    //     try {
+    //       const body = req.body;
+    //       const userId = new ObjectId(req.user.id);
+    //       const oldBillId = body.bill_id;
+      
+    //       const oldBill = await billModel.findById(oldBillId).session(session);
+    //       if (!oldBill) throw new Error("Old bill not found");
+      
+    //       const newBill = oldBill.toObject();
+    //       delete newBill._id;
+      
+    //       newBill.bill_type = "RE-CREATED";
+    //       newBill.date = new Date();
+    //       newBill.items = [...newBill.items];
+    //       let total = 0;
+    //       let expected_profit = 0;
+      
+    //       for (let i = 0; i < newBill.items.length; i++) {
+    //         const ref = newBill.items[i];
+    //         const returnItem = body.returnItems.find(item => item.item_id === ref.item_id.toString());
+    //         if (!returnItem) continue;
+      
+    //         const { item_id, return_type, quantity, description_key } = returnItem;
+      
+    //         const stock = await stockModel.findById(item_id).session(session);
+    //         if (!stock) throw new Error("Stock not found");
+      
+    //         if (return_type === "RETURN") {
+    //           ref.quantity -= quantity;
+    //           stock.quantity += quantity;
+      
+    //           if (!Array.isArray(stock.sell_details)) stock.sell_details = [];
+    //           const detail = stock.sell_details.find(d => d.bill_id.toString() === oldBillId.toString());
+      
+    //           if (!detail) throw new Error("Buyer not found in sell_details. No returned_quantity updated.");
+    //           detail.returned_quantity = (detail.returned_quantity || 0) + quantity;
+      
+    //           await stock.save({ session });
+    //         } else if (return_type === "EXCHANGE") {
+    //           const exchangeQty = quantity;
+      
+    //           const stockList = await stockModel.find({
+    //             company_id: new ObjectId(newBill.company_id),
+    //             description_key: description_key
+    //           }).sort({ createdAt: 1 }).session(session);
+      
+    //           if (stockList.length === 0) throw new Error("No matching stocks found for exchange");
+      
+    //           let remainingQty = exchangeQty;
+      
+    //           for (let k = 0; k < stockList.length && remainingQty > 0; k++) {
+    //             const currentStock = stockList[k];
+      
+    //             if (currentStock.quantity <= 0) continue;
+      
+    //             const availableQty = currentStock._id.toString() === item_id ? currentStock.quantity : Math.min(currentStock.quantity, remainingQty);
+    //             const usedQty = Math.min(remainingQty, availableQty);
+      
+    //             if (usedQty <= 0) continue;
+      
+    //             // Deduct from current stock if it’s not the matched one
+    //             if (currentStock._id.toString() !== item_id) {
+    //               currentStock.quantity -= usedQty;
+    //             }
+      
+    //             if (!Array.isArray(currentStock.sell_details)) currentStock.sell_details = [];
+    //             const detail = currentStock.sell_details.find(d => d.bill_id.toString() === oldBillId.toString());
+      
+    //             if (detail) {
+    //               detail.replaced_quantity = (detail.replaced_quantity || 0) + usedQty;
+    //             } else {
+    //               currentStock.sell_details.push({
+    //                 bill_id: oldBillId,
+    //                 buyer_id: newBill.buyer_id,
+    //                 sell_price: 0,
+    //                 quantity: 0,
+    //                 returned_quantity: 0,
+    //                 replaced_quantity: usedQty,
+    //                 profit: 0,
+    //                 sold_at: new Date()
+    //               });
+    //             }
+      
+    //             await currentStock.save({ session });
+    //             remainingQty -= usedQty;
+    //           }
+      
+    //           if (remainingQty > 0) {
+    //             throw new Error("Insufficient stock to complete exchange");
+    //           }
+    //         }
+      
+    //         total += ref.sell_price * ref.quantity;
+    //         expected_profit += (ref.sell_price - ref.buy_price) * ref.quantity;
+    //       }
+      
+    //       for (let i = 0; i < body.newAddedItems.length; i++) {
+    //         const ref = body.newAddedItems[i];
+    //         ref.item_id = new ObjectId(ref.item_id);
+      
+    //         const stock = await stockModel.findById(ref.item_id).session(session);
+    //         if (!stock) throw new Error("Stock not found");
+      
+    //         if (stock.quantity < ref.quantity) throw new Error("Not enough stock available");
+      
+    //         stock.quantity -= ref.quantity;
+    //         if (!Array.isArray(stock.sell_details)) stock.sell_details = [];
+      
+    //         const profit = (ref.sell_price - ref.buy_price) * ref.quantity;
+    //         stock.sell_details.push({
+    //           bill_id: oldBillId,
+    //           buyer_id: newBill.buyer_id,
+    //           sell_price: ref.sell_price,
+    //           quantity: ref.quantity,
+    //           returned_quantity: 0,
+    //           replaced_quantity: 0,
+    //           profit: profit,
+    //           sold_at: new Date()
+    //         });
+      
+    //         await stock.save({ session });
+      
+    //         total += ref.sell_price * ref.quantity;
+    //         expected_profit += profit;
+    //         newBill.items.push(ref);
+    //       }
+      
+    //       newBill.total = total;
+    //       newBill.expected_profit = expected_profit;
+    //       newBill.grand_total = (total + newBill.additional_charges) - newBill.discount;
+    //       newBill.total_profit = newBill.expected_profit - newBill.paid_amount;
+    //       newBill.remaining_amount = newBill.grand_total - newBill.paid_amount;
+      
+    //       const newBillDoc = await billModel.create([newBill], { session });
+    //       await billModel.findByIdAndUpdate(oldBillId, { bill_type: "CANCELLED" }, { session });
+      
+    //       await session.commitTransaction();
+    //       session.endSession();
+      
+    //       res.status(200).json({ status: true, doc: newBillDoc[0] });
+    //     } catch (err) {
+    //       await session.abortTransaction();
+    //       session.endSession();
+    //       console.error("Transaction error:", err.message);
+    //       console.log(err)
+    //       res.status(400).json({ status: false, msg: err.message });
+    //     }
+    // },
+
+    billReCreate: async (req, res) => {
+        const sessionActions = []; // rollback stack
+        try {
+            const body = req.body;
+            const userId = new ObjectId(req.user.id);
+            const oldBillId = body.bill_id;
+            const oldBill = await billModel.findById({ _id: oldBillId });
+            const newBill = oldBill.toObject();
+            delete newBill._id;
+            newBill.bill_type = "RE-CREATED";
+            newBill.date = new Date();
+            
+            let total = 0;
+            let expected_profit = 0;
+    
+            for (let i = 0; i < newBill.items.length; i++) {
+                const ref = newBill.items[i];
+    
+                for (let j = 0; j < body.returnItems.length; j++) {
+                    const innerRef = body.returnItems[j];
+                    if (ref.item_id.toString() === innerRef.item_id) {
+                        const stock = await stockModel.findById(innerRef.item_id);
+                        if (!stock) throw new Error("Stock not found");
+    
+                        if (innerRef.return_type === "RETURN") {
+                            ref.quantity -= innerRef.quantity;
+                            const oldQty = stock.quantity;
+                            stock.quantity += innerRef.quantity;
+    
+                            // Initialize sell_details
+                            if (!Array.isArray(stock.sell_details)) stock.sell_details = [];
+    
+                            const detailIndex = stock.sell_details.findIndex(d => d.bill_id.toString() === oldBillId.toString());
+                            if (detailIndex !== -1) {
+                                const originalReturned = stock.sell_details[detailIndex].returned_quantity || 0;
+                                stock.sell_details[detailIndex].returned_quantity = originalReturned + innerRef.quantity;
+                            } else {
+                                throw new Error("Buyer not found in sell_details");
+                            }
+    
+                            await stock.save();
+    
+                            // Rollback info
+                            sessionActions.push(async () => {
+                                stock.quantity = oldQty;
+                                stock.sell_details[detailIndex].returned_quantity -= innerRef.quantity;
+                                await stock.save();
+                            });
+    
+                        } else if (innerRef.return_type === "EXCHANGE") {
+                            const requiredQty = innerRef.quantity;
+                            let remainingQty = requiredQty;
+                            const stocks = await stockModel.find({
+                                company_id: new ObjectId(newBill.company_id),
+                                description_key: innerRef.description_key
+                            }).sort({ createdAt: 1 });
+    
+                            if (!stocks.length) throw new Error("No matching stock found for exchange");
+    
+                            const usedStocks = [];
+    
+                            for (const stock of stocks) {
+                                if (stock.quantity <= 0) continue;
+                                const usedQty = Math.min(stock.quantity, remainingQty);
+                                const oldQty = stock.quantity;
+                                stock.quantity -= usedQty;
+    
+                                if (!Array.isArray(stock.sell_details)) stock.sell_details = [];
+    
+                                const detailIndex = stock.sell_details.findIndex(d => d.bill_id.toString() === oldBillId.toString());
+    
+                                if (detailIndex !== -1) {
+                                    stock.sell_details[detailIndex].replaced_quantity =
+                                        (stock.sell_details[detailIndex].replaced_quantity || 0) + usedQty;
+                                } else {
+                                    stock.sell_details.push({
+                                        bill_id: oldBillId,
+                                        buyer_id: newBill.buyer_id,
+                                        sell_price: 0,
+                                        quantity: 0,
+                                        returned_quantity: 0,
+                                        replaced_quantity: usedQty,
+                                        profit: 0,
+                                        sold_at: new Date()
+                                    });
+                                }
+    
+                                await stock.save();
+                                usedStocks.push({ stock, oldQty, usedQty });
+                                remainingQty -= usedQty;
+                                if (remainingQty === 0) break;
+                            }
+    
+                            if (remainingQty > 0) throw new Error(`Only partial stock (${requiredQty - remainingQty}/${requiredQty}) available for exchange`);
+    
+                            sessionActions.push(async () => {
+                                for (const { stock, oldQty } of usedStocks) {
+                                    stock.quantity = oldQty;
+                                    const index = stock.sell_details.findIndex(d => d.bill_id.toString() === oldBillId.toString());
+                                    if (index !== -1) {
+                                        stock.sell_details[index].replaced_quantity -= usedStocks.find(u => u.stock._id.equals(stock._id)).usedQty;
+                                    }
+                                    await stock.save();
+                                }
+                            });
+                        }
+                    }
+                }
+    
+                total += (ref.sell_price * ref.quantity);
+                expected_profit += (ref.sell_price - ref.buy_price) * ref.quantity;
+            }
+    
+            for (let i = 0; i < body.newAddedItems.length; i++) {
+                const ref = body.newAddedItems[i];
+                ref.item_id = new ObjectId(ref.item_id);
+                const stock = await stockModel.findById(ref.item_id);
+                if (!stock) throw new Error("Stock not found");
+    
+                if (stock.quantity < ref.quantity) throw new Error("Not enough stock");
+    
+                const oldQty = stock.quantity;
+                stock.quantity -= ref.quantity;
+    
+                if (!Array.isArray(stock.sell_details)) stock.sell_details = [];
+    
+                const profit = (ref.sell_price - ref.buy_price) * ref.quantity;
+                stock.sell_details.push({
+                    buyer_id: newBill.buyer_id,
+                    sell_price: ref.sell_price,
+                    quantity: ref.quantity,
+                    profit
+                });
+    
+                await stock.save();
+                sessionActions.push(async () => {
+                    stock.quantity = oldQty;
+                    stock.sell_details.pop(); // remove last entry
+                    await stock.save();
+                });
+    
+                total += ref.sell_price * ref.quantity;
+                expected_profit += profit;
+                newBill.items.push(ref);
+            }
+    
+            newBill.total = total;
+            newBill.expected_profit = expected_profit;
+            newBill.grand_total = (total + newBill.additional_charges) - newBill.discount;
+            newBill.total_profit = newBill.expected_profit - newBill.paid_amount;
+            newBill.remaining_amount = newBill.grand_total - newBill.paid_amount;
+    
+            const newBillDoc = await billModel.create(newBill);
+            sessionActions.push(async () => await billModel.findByIdAndDelete(newBillDoc._id));
+    
+            const updatedOld = await billModel.findByIdAndUpdate(oldBillId, { bill_type: "CANCELLED" }, { new: true });
+            sessionActions.push(async () => await billModel.findByIdAndUpdate(oldBillId, { bill_type: oldBill.bill_type }));
+    
+            res.status(200).json({ status: true, doc: newBillDoc });
+        } catch (err) {
+            console.error("Error occurred. Rolling back...", err.message);
+            for (let i = sessionActions.length - 1; i >= 0; i--) {
+                try {
+                    await sessionActions[i]();
+                } catch (rollbackErr) {
+                    console.error("Rollback failed at step", i, rollbackErr.message);
+                }
+            }
+            res.status(500).json({ status: false, msg: err.message });
+        }
+    }
+    
+      
 }
