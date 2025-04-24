@@ -39,6 +39,7 @@ module.exports = {
           ],
           margin: [0, 10]
         },
+        { text: `${doc.bill_type}`, fontSize: 13, alignment: "center" , margin: [0, 0, 0, 2]},
         {
           columns: [
             { text: `Bill No: ${doc.bill_no ? doc.bill_no : "N/A"}`, alignment: "left"  },

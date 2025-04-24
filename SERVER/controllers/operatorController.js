@@ -497,7 +497,8 @@ module.exports = {
                     remaining_amount: 1,
                     info: 1,
                     installation_status: 1,
-                    payments: 1
+                    payments: 1,
+                    bill_type: 1
                 }
             
             if (userType === "COMPANY") {

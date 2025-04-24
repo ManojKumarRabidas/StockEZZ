@@ -265,7 +265,7 @@ function AppContent({ isAuthenticated, userType }) {
               <Route path='/sellers/*' element={(user_type === 'OPERATOR' || user_type === 'COMPANY') ? <Seller /> : <Unauthorized />} />
               <Route path='/stocks/*' element={(user_type === 'OPERATOR' || user_type === 'COMPANY') ? <Stocks /> : <Unauthorized />} />
               <Route path='/billing-area/*' element={user_type === 'OPERATOR' ? <BillingArea /> : <Unauthorized />} />
-              <Route path='/manage-stock/*' element={user_type === 'OPERATOR' ? <ManageStock /> : <Unauthorized />} />
+              <Route path='/manage-stock/*' element={(user_type === 'OPERATOR' || user_type === 'COMPANY') ? <ManageStock /> : <Unauthorized />} />
               <Route path='/manage-bills/*' element={(user_type === 'OPERATOR' || user_type === 'COMPANY') ? <ManageBills /> : <Unauthorized />} />
               <Route path='/manage-installation/*' element={user_type === 'OPERATOR' ? <ManageInstallation /> : <Unauthorized />} />
             </Routes>

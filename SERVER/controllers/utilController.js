@@ -181,6 +181,12 @@ module.exports = {
                     matchStage.quantity = {$lte: 0}
                 } else if(sold_status == "ALL"){
                     matchStage.quantity = {$gte: 0}
+                } else if(sold_status == "DAMAGED"){
+                    matchStage.$expr = { $gt: [{ $size: "$damages" }, 0] };
+                } else if(sold_status == "RETURNED"){
+                    matchStage.$expr = { $gt: [{ $size: "$returns_to_seller" }, 0] };
+                } else if(sold_status == "CLEARED"){
+                    matchStage.$expr = { $gt: [{ $size: "$clears" }, 0] };
                 }
                 projectionStage = { _id: 1,
                     sl_no: 1,
@@ -206,6 +212,9 @@ module.exports = {
                     item_sell_price: 1,
                     warrantee_guarantee: 1,
                     warrantee_guarantee_duration: 1,
+                    damages: 1,
+                    returns_to_seller: 1, 
+                    clears: 1
 
                 }
             }
@@ -237,29 +246,72 @@ module.exports = {
                 {$match: cmpMatchStage},
                 
             ]);
-            if(docs.length>0){
-                for(let i=0; i<docs.length; i++){
-                  const ref = docs[i];
-                  ref.challan_no = ref.challan_no ? ref.challan_no: "N/A";
-                  ref.brand = ref.brand ? ref.brand: "N/A";
-                  ref.model = ref.model ? ref.model: "N/A";
-                  ref.color = ref.color ? ref.color: "N/A";
-                  ref.capacity = ref.capacity ? ref.capacity: "N/A";
-                  ref.height = ref.height ?  ref.height: "N/A";
-                  ref.power = ref.power ? ref.power: "N/A";
-                  ref.seller = ref.seller ? ref.seller: "N/A";
-                  ref.date = moment(ref.date).format('DD/MM/YYYY');
-                  ref.sl_no = ref.sl_no ? ref.sl_no: "N/A";
-                  ref.item_sell_price = ref.item_sell_price ? ref.item_sell_price: 0;
-                  ref.description = ref.description ? ref.description: "N/A";
-                  ref.remarks = ref.remarks ? ref.remarks: "N/A";
-                  ref.mfg_date = ref.mfg_date ? moment(ref.mfg_date).format('DD/MM/YYYY'): "N/A";
-                  ref.exp_date = ref.exp_date ? moment(ref.exp_date).format('DD/MM/YYYY'): "N/A";
-                  ref.warrantee_guarantee = ref.warrantee_guarantee ? ref.warrantee_guarantee: "N/A";
-                  ref.warrantee_guarantee_duration = ref.warrantee_guarantee_duration ? `${ref.warrantee_guarantee_duration} Months`: "N/A";
-                } 
-              }
-            res.status(200).json({ docs: docs });
+            let finalDocs = [];
+
+            if (docs.length > 0) {
+                for (let i = 0; i < docs.length; i++) {
+                    const ref = docs[i];
+
+                    const baseData = {
+                        ...ref,
+                        challan_no: ref.challan_no || "N/A",
+                        brand: ref.brand || "N/A",
+                        model: ref.model || "N/A",
+                        color: ref.color || "N/A",
+                        capacity: ref.capacity || "N/A",
+                        height: ref.height || "N/A",
+                        power: ref.power || "N/A",
+                        seller: ref.seller || "N/A",
+                        sl_no: ref.sl_no || "N/A",
+                        item_sell_price: ref.item_sell_price || 0,
+                        description: ref.description || "N/A",
+                        remarks: ref.remarks || "N/A",
+                        mfg_date: ref.mfg_date ? moment(ref.mfg_date).format('DD/MM/YYYY') : "N/A",
+                        exp_date: ref.exp_date ? moment(ref.exp_date).format('DD/MM/YYYY') : "N/A",
+                        warrantee_guarantee: ref.warrantee_guarantee || "N/A",
+                        warrantee_guarantee_duration: ref.warrantee_guarantee_duration
+                            ? `${ref.warrantee_guarantee_duration} Months`
+                            : "N/A"
+                    };
+
+                    if (sold_status === "DAMAGED" && Array.isArray(ref.damages) && ref.damages.length > 0) {
+                        ref.damages.forEach(d => {
+                            finalDocs.push({
+                                ...baseData,
+                                quantity: d.quantity,
+                                date: moment(d.updatedAt).format('DD/MM/YYYY'),
+                                reason: d.reason || "N/A",
+                                type: "DAMAGED"
+                            });
+                        });
+                    } else if (sold_status === "CLEARED" && Array.isArray(ref.clears) && ref.clears.length > 0) {
+                        ref.clears.forEach(c => {
+                            finalDocs.push({
+                                ...baseData,
+                                quantity: c.quantity,
+                                date: moment(c.updatedAt).format('DD/MM/YYYY'),
+                                reason: c.reason || "N/A",
+                                type: "CLEARED"
+                            });
+                        });
+                    } else if (sold_status === "RETURNED" && Array.isArray(ref.returns_to_seller) && ref.returns_to_seller.length > 0) {
+                        ref.returns_to_seller.forEach(c => {
+                            finalDocs.push({
+                                ...baseData,
+                                quantity: c.quantity,
+                                date: moment(c.updatedAt).format('DD/MM/YYYY'),
+                                reason: c.reason || "N/A",
+                                type: "RETURNED"
+                            });
+                        });
+                    } else {
+                        baseData.date = moment(ref.date).format('DD/MM/YYYY');
+                        finalDocs.push(baseData);
+                    }
+                }
+            }
+
+            res.status(200).json({ docs: finalDocs });
         } catch (err) {
             res.status(400).json({ msg: err.message });
         }
@@ -273,6 +325,7 @@ module.exports = {
             let matchStage ={}
             let tempMatchStage ={}
             let projectionStage = { _id: 1,
+                    bill_type: 1,
                     bill_no: 1,
                     date: 1,
                     items: 1,
@@ -299,7 +352,9 @@ module.exports = {
                 tempMatchStage.companyId = new ObjectId(operator.company)
             }
 
-            if(bill_type && bill_type!="ALL"){
+            if (bill_type && bill_type == "FRESH-AND-RE-CREATED"){
+                matchStage.bill_type = {$in: ["FRESH", "RE-CREATED"]}
+            } else if(bill_type && bill_type!="ALL"){
                 matchStage.bill_type = bill_type
             }
             const docs = await billModel.aggregate([
@@ -374,7 +429,8 @@ module.exports = {
                     info: 1,
                     installation_status: 1,
                     expected_profit: 1,
-                    total_profit: 1
+                    total_profit: 1,
+                    payments: 1
                 }
             
             if (userType === "COMPANY") {
@@ -422,7 +478,8 @@ module.exports = {
                 for(let i=0; i<docs.length; i++){
                   const outerRef = docs[i];
                   outerRef.date = moment(outerRef.date).format('DD/MM/YYYY');
-                  outerRef.buyer = outerRef.buyer ? outerRef.buyer : {name: "Not available",phone: "Not available",email: "Not available",aadhar: "Not available",pin: "Not available",address: "Not available",};
+                //   outerRef.buyer = outerRef.buyer ? outerRef.buyer : {name: "Not available",phone: "Not available",email: "Not available",aadhar: "Not available",pin: "Not available",address: "Not available",};
+                //   outerRef.buyer = outerRef.buyer ? outerRef.buyer : "Not-available";
                   outerRef.installation_status = outerRef.installation_status ? outerRef.installation_status : "N/A";
                   for(let j=0; j<outerRef.items.length; j++){
                     const ref = outerRef.items[j].item;
@@ -449,6 +506,10 @@ module.exports = {
                     ref.power = ref.power ? ref.power: "N/A";
                     ref.description = ref.description ? ref.description: "N/A";
                     ref.model = ref.model ? ref.model: "N/A";
+                }
+                for(let j=0; j<outerRef.payments.length; j++){
+                    const ref = outerRef.payments[j];
+                    ref.billed_at = moment(ref.billed_at).format('DD/MM/YYYY');
                 }
               } 
             }

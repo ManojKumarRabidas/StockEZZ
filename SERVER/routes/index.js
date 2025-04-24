@@ -79,7 +79,7 @@ router.get("/stock-list", authorizeRole(['COMPANY', 'OPERATOR']), utilController
 router.get("/get-company-details", authorizeRole(['COMPANY','OPERATOR']), utilController.fetchCompanyDetails);
 
 router.post("/save-stock-details", authorizeRole(['OPERATOR']), operatorController.saveStockDetails);
-router.patch("/stock-bulk-update", authorizeRole(['OPERATOR']), operatorController.stockBulkUpdate);
+router.patch("/stock-bulk-update", authorizeRole(['COMPANY']), operatorController.stockBulkUpdate);
 
 router.post("/bill-create", authorizeRole(['OPERATOR']), operatorController.billCreate);
 router.post("/bill-recreate", authorizeRole(['OPERATOR']), operatorController.billReCreate);
