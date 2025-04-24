@@ -19,7 +19,7 @@ function ManageBills() {
   const inputRef = useRef(null);
   const [data, setData] = useState([]);
   const [globalFilter, setGlobalFilter] = useState("");
-  const [filters, setFilters] = useState({bill_type: "FRESH"});
+  const [filters, setFilters] = useState({bill_type: "FRESH-AND-RE-CREATED"});
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const [sorting, setSorting] = useState([]); // State to manage sorting
@@ -63,7 +63,7 @@ function ManageBills() {
 
   useEffect(() => {
     // getData();
-    changeFilter("FRESH", "bill_type")
+    changeFilter("FRESH-AND-RE-CREATED", "bill_type")
   }, []);
 
   const changeFilter = (value, type) => {
@@ -332,7 +332,6 @@ function ManageBills() {
       setReturnStep1(false);
       setNewSelectedItemList([]);
     } else if (step == "STEP2"){
-      toastr.info("Ganja Ganjaaaa")
       const returnItems = [];
       const newAddedItems = [];
       for(let i=0; i<selectedData.items.length; i++){
@@ -462,6 +461,12 @@ function ManageBills() {
         enableSorting: false,
       },
       {
+        header: "Bill Type",
+        accessorKey: "bill_type",
+        sortingFn: "alphanumeric",
+        enableSorting: true,
+      },
+      {
         header: "Date",
         accessorKey: "date",
         sortingFn: "alphanumeric",
@@ -506,27 +511,33 @@ function ManageBills() {
       },
     
       {
-        header: "Action",
+        header: "Actions",
         id: "action",
         enableSorting: false,
         headerClassName: "ei-text-center-imp",
         cell: ({ row }) => (
           <div className="text-center py-2">
-            <span onClick={() => managePaymentAndReturn(row.original, "PAYMENT")} className="p-2 mx-1 cursor-pointer rounded" style={{background: "white", border: "2px solid #f2f2f2"}}>
+            {(row.original.bill_type)!="CANCELLED" && <span onClick={() => managePaymentAndReturn(row.original, "PAYMENT")} className="p-2 mx-1 cursor-pointer rounded" style={{background: "white", border: "2px solid #f2f2f2"}}>
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-cash" viewBox="0 0 16 16">
                 <path d="M8 10a2 2 0 1 0 0-4 2 2 0 0 0 0 4"/>
                 <path d="M0 4a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H1a1 1 0 0 1-1-1zm3 0a2 2 0 0 1-2 2v4a2 2 0 0 1 2 2h10a2 2 0 0 1 2-2V6a2 2 0 0 1-2-2z"/>
               </svg>
-            </span>
-            <span onClick={() => managePaymentAndReturn(row.original, "RETURN")} className="p-2 mx-1 cursor-pointer rounded" style={{background: "white", border: "2px solid #f2f2f2"}}>
+            </span> }
+            {(row.original.bill_type)!="CANCELLED" && <span onClick={() => managePaymentAndReturn(row.original, "RETURN")} className="p-2 mx-1 cursor-pointer rounded" style={{background: "white", border: "2px solid #f2f2f2"}}>
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-arrow-return-left" viewBox="0 0 16 16">
                 <path fill-rule="evenodd" d="M14.5 1.5a.5.5 0 0 1 .5.5v4.8a2.5 2.5 0 0 1-2.5 2.5H2.707l3.347 3.346a.5.5 0 0 1-.708.708l-4.2-4.2a.5.5 0 0 1 0-.708l4-4a.5.5 0 1 1 .708.708L2.707 8.3H12.5A1.5 1.5 0 0 0 14 6.8V2a.5.5 0 0 1 .5-.5"/>
               </svg>
-            </span>
+            </span>}
             <span onClick={() => details(row.original._id)} className="p-2 mx-1 cursor-pointer rounded" style={{background: "white", border: "2px solid #f2f2f2"}}>
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-eye" viewBox="0 0 16 16">
                 <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8M1.173 8a13 13 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5s3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5s-3.879-1.168-5.168-2.457A13 13 0 0 1 1.172 8z"/>
                 <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0"/>
+              </svg>
+            </span>
+            <span onClick={() => generateBillPdf(row.original._id)} className="p-2 mx-1 cursor-pointer rounded" style={{background: "white", border: "2px solid #f2f2f2"}}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-file-earmark-arrow-down" viewBox="0 0 16 16">
+                <path d="M8.5 6.5a.5.5 0 0 0-1 0v3.793L6.354 9.146a.5.5 0 1 0-.708.708l2 2a.5.5 0 0 0 .708 0l2-2a.5.5 0 0 0-.708-.708L8.5 10.293z"/>
+                <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2M9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5z"/>
               </svg>
             </span>
             {/* <button type="button" className="btn btn-outline-light" style={{ color: "blue", backgroundColor: "ghostwhite" }} onClick={() => details(row.original._id)} >Details </button> */}
@@ -611,10 +622,11 @@ function ManageBills() {
           <div className="col-3 d-flex align-items-center">
             <label className="form-label me-2 text-nowrap">Bill Type :</label>
             <select className="form-select" aria-label="Default select example" name="bill_type" value={filters.bill_type} onChange={(e) => changeFilter(e.target.value, "bill_type")}>
-                <option value="FRESH">Fresh</option>
-                <option value="CANCELLED">Cancelled</option>
-                <option value="RE-CREATED">Re-Created</option>
-                <option value="ALL">All</option>
+                <option value="FRESH-AND-RE-CREATED">Fresh & Re-Created</option>
+                <option value="FRESH">Only Fresh</option>
+                <option value="RE-CREATED">Only Re-Created</option>
+                <option value="CANCELLED">Only Cancelled</option>
+                <option value="ALL">All Bills</option>
             </select> 
           </div>
         </div>
@@ -694,7 +706,7 @@ function ManageBills() {
                                 <td className="p-2 text-end"> {item.sell_price * item.quantity}</td>
                             </tr>
                             ))}
-                            <tr></tr>
+                            <tr className="border"></tr>
                             <tr >
                                 <td></td>
                                 <td></td>
@@ -729,63 +741,70 @@ function ManageBills() {
                 </div>}
                 <div className="row my-2">
                     <div className="col d-flex flex-row align-items-center flex-nowrap">
-                        <label className="form-label me-2 text-nowrap">Date: {detailsBill.date}</label>
-                    </div>
-                    <div className="col d-flex flex-row align-items-center flex-nowrap">
-                        <label className="form-label me-2 text-nowrap">Payment type : {detailsBill.payment_mode}</label>
-                    </div>
-                    <div className="col d-flex flex-row align-items-center flex-nowrap">
-                        {!billEditingStatus &&<label className="form-label me-2 text-nowrap">Paid amount : {detailsBill.paid_amount}</label>}
-                        {billEditingStatus && <label className="form-label me-2 text-nowrap d-flex align-items-center">Paid amount : <input name="paid_amount" placeholder="Paid amount"  type="text" maxLength={70} className="form-control text-end ms-2" aria-describedby="emailHelp" value={detailsBill.paid_amount} onChange={(e) => changeDetails(e.target.value, "paid_amount")}/></label>}
+                        <label className="form-label me-2 text-nowrap">Paid amount : {detailsBill.paid_amount}</label>
                     </div>
                     <div className="col d-flex flex-row align-items-center flex-nowrap">
                         <label className="form-label me-2 text-nowrap">Remaining amount : {detailsBill.remaining_amount}</label>
                     </div>
                     <div className="col d-flex flex-row align-items-center flex-nowrap">
-                      {!billEditingStatus && <label className="form-label me-2 text-nowrap">Installation : {detailsBill.installation_status}</label>}
-                      {billEditingStatus && <div className="d-flex align-items-center"><label className="form-label me-2 text-nowrap">Installation :</label>
-                        <select className="form-select" aria-label="Default select example" name="installation_status" value={detailsBill.installation_status} onChange={(e) => changeDetails(e.target.value, "installation_status")}>
-                            <option>Not applicable</option>
-                            <option value="PENDING">Pending</option>
-                            <option value="COMPLETE">Complete</option>
-                        </select> </div>}
+                      <label className="form-label me-2 text-nowrap">Installation : {detailsBill.installation_status}</label>
                     </div>
                 </div>
-                <div className="row my-2">
-                  {!billEditingStatus && <label className="form-label me-2 text-nowrap d-flex flex-start">Info : {detailsBill.info}</label>}
-                  {billEditingStatus && <div className="d-flex align-items-center">Info: <input name="info" placeholder="Enter any additional information releted to sell or product or installation."  type="text" maxLength={255} className="form-control ms-2" aria-describedby="emailHelp" value={detailsBill.info} onChange={(e) => changeDetails(e.target.value, "info")}/></div>}
+                <div className="p-3 mb-3" style={{background: "white"}}>
+                  <h5>Installment details</h5>
+                  <hr />
+                  {detailsBill.payments.map((item)=>(
+                    <div className="row my-2">
+                      <div className="col d-flex flex-row align-items-center flex-nowrap">
+                      <label className="form-label me-2 text-nowrap">Date: {item.billed_at}</label>
+                      </div>
+                      <div className="col d-flex flex-row align-items-center flex-nowrap">
+                          <label className="form-label me-2 text-nowrap">Payment Mode : {item.payment_mode}</label>
+                      </div>
+                      <div className="col d-flex flex-row align-items-center flex-nowrap">
+                          <label className="form-label me-2 text-nowrap">Paid Amount : {item.paid_amount}</label>
+                      </div>
+                      <div className="col d-flex flex-row align-items-center flex-nowrap">
+                          <label className="form-label me-2 text-nowrap">Info : {item.info}</label>
+                      </div>
+                    </div>
+                  ))}
                 </div>
                 <h5>Buyer Details</h5>
                 <hr />
-                <div className="row text-start my-2">
-                    <div className="col">
-                      <label className="form-label me-2 text-nowrap"> Phone : {detailsBill.buyer.phone}</label></div>
-                    <div className="col">
-                      <label className="form-label me-2 text-nowrap"> Name : {detailsBill.buyer.name}</label>
-                    </div>
-                    <div className="col">
-                      <label className="form-label me-2 text-nowrap"> Aadhar : {detailsBill.buyer.aadhar}</label>
-                    </div>
-                </div>
-                <div className="row my-2 text-start">
-                    <div className="col">
-                      <label className="form-label me-2 text-nowrap"> Email : {detailsBill.buyer.email}</label>
-                    </div>
-                    <div className="col">
-                      <label className="form-label me-2 text-nowrap"> Pin : {detailsBill.buyer.pin}</label>
-                    </div>
-                    <div className="col">
-                      <label className="form-label me-2 text-nowrap"> Address : {detailsBill.buyer.address}</label>
-                    </div>
-                </div>
+                {detailsBill.buyer!=null? 
+                <div>
+                  <div className="row text-start my-2">
+                      <div className="col">
+                        <label className="form-label me-2 text-nowrap"> Phone : {detailsBill.buyer.phone}</label>
+                      </div>
+                      <div className="col">
+                        <label className="form-label me-2 text-nowrap"> Name : {detailsBill.buyer.name}</label>
+                      </div>
+                      <div className="col">
+                        <label className="form-label me-2 text-nowrap"> Aadhar : {detailsBill.buyer.aadhar}</label>
+                      </div>
+                  </div>
+                  <div className="row my-2 text-start">
+                      <div className="col">
+                        <label className="form-label me-2 text-nowrap"> Email : {detailsBill.buyer.email}</label>
+                      </div>
+                      <div className="col">
+                        <label className="form-label me-2 text-nowrap"> Pin : {detailsBill.buyer.pin}</label>
+                      </div>
+                      <div className="col">
+                        <label className="form-label me-2 text-nowrap"> Address : {detailsBill.buyer.address}</label>
+                      </div>
+                  </div>
+                </div> : "Not Available"}
             </div>
             <div className="d-flex justify-content-end mt-3 mb-5">
                 <button className="form-control mx-2" style={{maxWidth: "100px"}} onClick={() => backToBillList()} >Back</button>
                 {/* {!billEditingStatus && (detailsBill.userType == "OPERATOR") && <button className="form-control mx-2" style={{maxWidth: "100px"}} onClick={() => setBillEditingStatus(true)} >Edit</button>} */}
                 {/* {billEditingStatus && <button className="form-control mx-2" style={{maxWidth: "100px"}} onClick={() => updateBillDetails(detailsBill._id)} >Submit</button>} */}
-                {!billEditingStatus && (detailsBill.userType == "OPERATOR") && <button className="form-control mx-2" style={{maxWidth: "130px"}} onClick={() => generateBillPdf(detailsBill._id)} >Save as Pdf</button>}
-                {!billEditingStatus && (detailsBill.userType == "OPERATOR") && <button className="form-control mx-2" style={{maxWidth: "130px"}} onClick={() => generateBillPdf(detailsBill._id)} >Print</button>}
-                {!billEditingStatus && (detailsBill.userType == "OPERATOR") && <button className="form-control mx-2 bc-green-imp" style={{maxWidth: "130px"}} onClick={() => whatsappBill(true)} >Whatsapp</button>}
+                { (detailsBill.userType == "OPERATOR") && <button className="form-control mx-2" style={{maxWidth: "130px"}} onClick={() => generateBillPdf(detailsBill._id)} >Save as Pdf</button>}
+                {(detailsBill.userType == "OPERATOR") && <button className="form-control mx-2" style={{maxWidth: "130px"}} onClick={() => generateBillPdf(detailsBill._id)} >Print</button>}
+                {(detailsBill.userType == "OPERATOR") && <button className="form-control mx-2 bc-green-imp" style={{maxWidth: "130px"}} onClick={() => whatsappBill(true)} >Whatsapp</button>}
             </div>
       </div>}
       {returnModal && (

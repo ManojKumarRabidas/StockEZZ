@@ -10,6 +10,7 @@ import {
 
 import toastr from 'toastr';
 const token = sessionStorage.getItem('token');
+const userType = sessionStorage.getItem('seUserType');
 const HOST = import.meta.env.VITE_HOST;
 const PORT = import.meta.env.VITE_PORT;
 
@@ -43,7 +44,6 @@ function StockDetails() {
   useEffect(() => {
     changeFilter("UNSOLD", "sold_status")
   }, []);
-
 
   const changeTableValue = (_id, value, type) => {
     for(let i=0; i<data.length; i++){
@@ -113,8 +113,8 @@ function StockDetails() {
   }
 
   // Define table columns with proper accessorKeys
-  const columns = useMemo(
-    () => [
+  const columns = useMemo(() => {
+    const baseColumns = [
       {
         header: "Sl No",
         accessorFn: (row, i) => i + 1 + pageIndex * pageSize,
@@ -168,40 +168,77 @@ function StockDetails() {
         sortingFn: "alphanumeric",
         enableSorting: true,
       },
-      {
-        header: "Sell Price",
-        id: "item_sell_price",
-        accessorKey: "item_sell_price",
+    ];
+
+      // Inject extra column conditionally
+    if (filters.sold_status === "RETURNED" || filters.sold_status === "DAMAGED" || filters.sold_status === "CLEARED") {
+      baseColumns.push({
+        header: filters.sold_status === "RETURNED" ? "Return Reason" : (filters.sold_status == "CLEARED" ? "Clear Reason" : "Damage Reason"),
+        accessorKey: "reason",
         sortingFn: "alphanumeric",
-        enableSorting: true,
-        headerClassName: "ei-text-center-imp",
-        cell: ({ row }) => {
-          const value = row.getValue("item_sell_price");
-          const handleChange = (e) => {
-            const newValue = e.target.value;
-            // setValue(newValue);
-            changeTableValue(row.original._id, newValue, "SELLPRICE");
-            row.original.item_sell_price = newValue;
-            setData((prev) =>
-              prev.map((item) =>
-                item._id === row.original._id ? { ...item, item_sell_price: newValue } : item
-              )
+        enableSorting: false,
+      });
+    }
+    if (!(filters.sold_status === "RETURNED" || filters.sold_status === "DAMAGED" || filters.sold_status === "CLEARED")) {
+      baseColumns.push(
+        {
+          header: "Sell Price",
+          id: "item_sell_price",
+          accessorKey: "item_sell_price",
+          sortingFn: "alphanumeric",
+          enableSorting: true,
+          headerClassName: "ei-text-center-imp",
+          cell: ({ row }) => {
+            const value = row.getValue("item_sell_price");
+            const handleChange = (e) => {
+              const newValue = e.target.value;
+              // setValue(newValue);
+              changeTableValue(row.original._id, newValue, "SELLPRICE");
+              row.original.item_sell_price = newValue;
+              setData((prev) =>
+                prev.map((item) =>
+                  item._id === row.original._id ? { ...item, item_sell_price: newValue } : item
+                )
+              );
+            };
+        
+            return (
+              <div style={{ textAlign: "center" }}>
+                {!editableTable? <label>{value}</label>:
+                <div> <input name="item_sell_price" defaultValue={value} onChange={handleChange} /></div>}
+              </div>
             );
-          };
-      
-          return (
-            <div style={{ textAlign: "center" }}>
-              {!editableTable? <label>{value}</label>:
-              <div> <input name="item_sell_price" defaultValue={value} onChange={handleChange} /></div>}
-            </div>
-          );
+          },
         },
-      },
+      )
+    }
+    baseColumns.push(
+     
       {
         header: "Item Status",
+        id: "item_status",
         accessorKey: "item_status",
         sortingFn: "alphanumeric",
         enableSorting: true,
+        cell: ({ row }) => {
+          const originalStatus = row.getValue("item_status");
+          const showStatus =
+              filters.sold_status === "RETURNED"
+              ? "RETURNED"
+              : filters.sold_status === "DAMAGED"
+              ? "DAMAGED"
+              : filters.sold_status === "CLEARED"
+              ? "CLEARED"
+              : filters.sold_status === "SOLD"
+              ? "SOLD"
+              : originalStatus;
+      
+          return (
+            <div style={{ textAlign: "center" }}>
+              <label>{showStatus}</label>
+            </div>
+          );
+        },
       },
       {
         header: "Remarks",
@@ -239,20 +276,27 @@ function StockDetails() {
         enableSorting: true,
       },
       {
-        header: "Entry Date",
+        header:
+        filters.sold_status === "RETURNED"
+            ? "Returned Date"
+            : filters.sold_status === "DAMAGED"
+            ? "Damaged Date"
+            : filters.sold_status === "CLEARED"
+            ? "Clearance Date"
+            : "Entry Date",
         accessorKey: "date",
-        sortingFn: "alphanumeric",
-        enableSorting: true,
-      },
-      {
-        header: "Item Sl No",
-        accessorKey: "sl_no",
         sortingFn: "alphanumeric",
         enableSorting: true,
       },
       {
         header: "Batch Id",
         accessorKey: "batch_id",
+        sortingFn: "alphanumeric",
+        enableSorting: true,
+      },
+      {
+        header: "Item Sl No",
+        accessorKey: "sl_no",
         sortingFn: "alphanumeric",
         enableSorting: true,
       },
@@ -321,10 +365,9 @@ function StockDetails() {
         accessorKey: "warrantee_guarantee_duration",
         sortingFn: "alphanumeric",
         enableSorting: true,
-      },
-    ],
-    [ pageIndex, pageSize, editableTable] 
-  );
+      })
+    return baseColumns;
+  }, [pageIndex, pageSize, editableTable, filters.sold_status]);
 
   // Apply global filtering before pagination
   const filteredData = useMemo(() => {
@@ -402,24 +445,34 @@ function StockDetails() {
   return (
     <div className="container my-2">
       <div className="row">
-        <div className="col-7">
+        <div className={userType == "COMPANY"?"col-7":"col-9"}>
           <input value={globalFilter || ""} onChange={(e) => setGlobalFilter(e.target.value)} placeholder="Search by any field of table..." className="form-control my-3"/>
         </div>
-        <div className="col-3 d-flex align-items-center">
+        <div className="col-3 d-flex align-items-center justify-content-end">
           <label className="form-label me-2 text-nowrap">Status :</label>
           <select className="form-select" aria-label="Default select example" name="sold_status" value={filters.sold_status} onChange={(e) => changeFilter(e.target.value, "sold_status")}>
               <option value="UNSOLD">Unsold</option>
               <option value="SOLD">Sold</option>
-              <option value="ALL">Damaged</option>
-              <option value="ALL">Returned</option>
-              <option value="ALL">Cleared</option>
-              <option value="ALL">All</option>
+              <option value="ALL">All Sold & Unsold</option>
+              <option value="DAMAGED">Damaged</option>
+              <option value="RETURNED">Returned</option>
+              <option value="CLEARED">Cleared</option>
           </select> 
         </div>
-        <div className="col-2 d-flex align-items-center justify-content-end">
-          {!editableTable && <button className="btn btn-secondary" disabled={data.length<=0} onClick={() => editableStatus(true)}>Bulk Edit</button>}
-          {editableTable && <button className="btn btn-secondary" onClick={() => editableStatus(false)}>Save</button>}
-        </div>
+        {userType == "COMPANY" && <div className="col-2 d-flex align-items-center justify-content-end">
+          {!editableTable && <button className="btn btn-secondary" disabled={data.length<=0} onClick={() => editableStatus(true)}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pencil-square" viewBox="0 0 16 16">
+              <path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"/>
+              <path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5z"/>
+            </svg> Edit 
+          </button>}
+          {editableTable && <button className="btn btn-secondary" onClick={() => editableStatus(false)}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-floppy" viewBox="0 0 16 16">
+              <path d="M11 2H9v3h2z"/>
+              <path d="M1.5 0h11.586a1.5 1.5 0 0 1 1.06.44l1.415 1.414A1.5 1.5 0 0 1 16 2.914V14.5a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 14.5v-13A1.5 1.5 0 0 1 1.5 0M1 1.5v13a.5.5 0 0 0 .5.5H2v-4.5A1.5 1.5 0 0 1 3.5 9h9a1.5 1.5 0 0 1 1.5 1.5V15h.5a.5.5 0 0 0 .5-.5V2.914a.5.5 0 0 0-.146-.353l-1.415-1.415A.5.5 0 0 0 13.086 1H13v4.5A1.5 1.5 0 0 1 11.5 7h-7A1.5 1.5 0 0 1 3 5.5V1H1.5a.5.5 0 0 0-.5.5m3 4a.5.5 0 0 0 .5.5h7a.5.5 0 0 0 .5-.5V1H4zM3 15h10v-4.5a.5.5 0 0 0-.5-.5h-9a.5.5 0 0 0-.5.5z"/>
+            </svg> Save
+          </button>}
+        </div>}
       </div>
       {data.length>0 && <div>
         <div className="scroll-hidden">
@@ -462,9 +515,19 @@ function StockDetails() {
             <strong> {pageIndex + 1} of {table.getPageCount()} </strong>
           </span>
           <div className="btn-group mx-2">
-            <button className="btn btn-secondary" onClick={() => table.previousPage()}disabled={!table.getCanPreviousPage()} >Previous</button>
-            <button className="btn btn-secondary" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}> Next </button>
-          </div>
+              <span className="btn btn-secondary " onClick={() => table.previousPage()}disabled={!table.getCanPreviousPage()}>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-chevron-double-left" viewBox="0 0 16 16">
+                  <path fill-rule="evenodd" d="M8.354 1.646a.5.5 0 0 1 0 .708L2.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0"/>
+                  <path fill-rule="evenodd" d="M12.354 1.646a.5.5 0 0 1 0 .708L6.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0"/>
+                </svg>
+              </span>
+              <span className="btn btn-secondary" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-chevron-double-right" viewBox="0 0 16 16">
+                  <path fill-rule="evenodd" d="M3.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L9.293 8 3.646 2.354a.5.5 0 0 1 0-.708"/>
+                  <path fill-rule="evenodd" d="M7.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L13.293 8 7.646 2.354a.5.5 0 0 1 0-.708"/>
+                </svg>
+              </span>
+              </div>
         </div>
       </div>}
       {data.length<=0 && <div className="text-center mt-5">No stock available.</div>}
