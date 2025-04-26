@@ -369,6 +369,7 @@ function ManageBills() {
             if (response.ok) {
               toastr.success("Bill details updated successfully.");
               setReturnModal(false);
+              getData();
             } else {
               toastr.error(result.msg);
             }
@@ -799,12 +800,28 @@ function ManageBills() {
                 </div> : "Not Available"}
             </div>
             <div className="d-flex justify-content-end mt-3 mb-5">
-                <button className="form-control mx-2" style={{maxWidth: "100px"}} onClick={() => backToBillList()} >Back</button>
-                {/* {!billEditingStatus && (detailsBill.userType == "OPERATOR") && <button className="form-control mx-2" style={{maxWidth: "100px"}} onClick={() => setBillEditingStatus(true)} >Edit</button>} */}
-                {/* {billEditingStatus && <button className="form-control mx-2" style={{maxWidth: "100px"}} onClick={() => updateBillDetails(detailsBill._id)} >Submit</button>} */}
-                { (detailsBill.userType == "OPERATOR") && <button className="form-control mx-2" style={{maxWidth: "130px"}} onClick={() => generateBillPdf(detailsBill._id)} >Save as Pdf</button>}
-                {(detailsBill.userType == "OPERATOR") && <button className="form-control mx-2" style={{maxWidth: "130px"}} onClick={() => generateBillPdf(detailsBill._id)} >Print</button>}
-                {(detailsBill.userType == "OPERATOR") && <button className="form-control mx-2 bc-green-imp" style={{maxWidth: "130px"}} onClick={() => whatsappBill(true)} >Whatsapp</button>}
+                <button className="form-control mx-2 bg-primary border-0" style={{maxWidth: "100px"}} onClick={() => backToBillList()} >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-skip-backward-circle" viewBox="0 0 16 16">
+                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
+                    <path d="M11.729 5.055a.5.5 0 0 0-.52.038L8.5 7.028V5.5a.5.5 0 0 0-.79-.407L5 7.028V5.5a.5.5 0 0 0-1 0v5a.5.5 0 0 0 1 0V8.972l2.71 1.935a.5.5 0 0 0 .79-.407V8.972l2.71 1.935A.5.5 0 0 0 12 10.5v-5a.5.5 0 0 0-.271-.445"/>
+                  </svg> Back
+                </button>
+                { (detailsBill.userType == "OPERATOR") && <button className="form-control mx-2 bg-info border-0" style={{maxWidth: "140px"}} onClick={() => generateBillPdf(detailsBill._id)} >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-filetype-pdf" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M14 4.5V14a2 2 0 0 1-2 2h-1v-1h1a1 1 0 0 0 1-1V4.5h-2A1.5 1.5 0 0 1 9.5 3V1H4a1 1 0 0 0-1 1v9H2V2a2 2 0 0 1 2-2h5.5zM1.6 11.85H0v3.999h.791v-1.342h.803q.43 0 .732-.173.305-.175.463-.474a1.4 1.4 0 0 0 .161-.677q0-.375-.158-.677a1.2 1.2 0 0 0-.46-.477q-.3-.18-.732-.179m.545 1.333a.8.8 0 0 1-.085.38.57.57 0 0 1-.238.241.8.8 0 0 1-.375.082H.788V12.48h.66q.327 0 .512.181.185.183.185.522m1.217-1.333v3.999h1.46q.602 0 .998-.237a1.45 1.45 0 0 0 .595-.689q.196-.45.196-1.084 0-.63-.196-1.075a1.43 1.43 0 0 0-.589-.68q-.396-.234-1.005-.234zm.791.645h.563q.371 0 .609.152a.9.9 0 0 1 .354.454q.118.302.118.753a2.3 2.3 0 0 1-.068.592 1.1 1.1 0 0 1-.196.422.8.8 0 0 1-.334.252 1.3 1.3 0 0 1-.483.082h-.563zm3.743 1.763v1.591h-.79V11.85h2.548v.653H7.896v1.117h1.606v.638z"/>
+                  </svg> Save as Pdf
+                </button>}
+                {(detailsBill.userType == "OPERATOR") && <button className="form-control mx-2 bg-secondary border-0" style={{maxWidth: "130px"}} onClick={() => generateBillPdf(detailsBill._id)} >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-printer" viewBox="0 0 16 16">
+                    <path d="M2.5 8a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1"/>
+                    <path d="M5 1a2 2 0 0 0-2 2v2H2a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1v1a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-1h1a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-1V3a2 2 0 0 0-2-2zM4 3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2H4zm1 5a2 2 0 0 0-2 2v1H2a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v-1a2 2 0 0 0-2-2zm7 2v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1"/>
+                  </svg> Print
+                </button>}
+                {(detailsBill.userType == "OPERATOR") && <button className="form-control mx-2 bg-success border-0" style={{maxWidth: "130px"}} onClick={() => whatsappBill(true)} >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-whatsapp" viewBox="0 0 16 16">
+                    <path d="M13.601 2.326A7.85 7.85 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.9 7.9 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.9 7.9 0 0 0 13.6 2.326zM7.994 14.521a6.6 6.6 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.56 6.56 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592m3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.73.73 0 0 0-.529.247c-.182.198-.691.677-.691 1.654s.71 1.916.81 2.049c.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232"/>
+                  </svg> Whatsapp
+                </button>}
             </div>
       </div>}
       {returnModal && (
@@ -900,8 +917,8 @@ function ManageBills() {
                 </div> }
               </div>
               <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setReturnModal(false)}>Cancel</button>
-                <button type="button" className="btn btn-secondary" onClick={() => handleReturnSubmit("STEP1")}>Next</button>
+                <button type="button" className="btn btn-secondary border-0 bg-danger" onClick={() => setReturnModal(false)}>Cancel</button>
+                <button type="button" className="btn btn-secondary border-0 bg-success" onClick={() => handleReturnSubmit("STEP1")}>Next</button>
               </div>
             </div>}
             {!returnStep1 && <div className="modal-content">
@@ -1048,10 +1065,9 @@ function ManageBills() {
                 </div> }
               </div>
               <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setReturnStep1(true)}>Back</button>
-                <button type="button" className="btn btn-secondary" onClick={() => setReturnModal(false)}>Cancel</button>
-                <button type="button" className="btn btn-secondary" onClick={() => handleReturnSubmit("STEP2")}>Save</button>
-                <button type="button" className="btn btn-secondary" onClick={() => handleReturnSubmit("STEP2")}>Regenarate Bill</button>
+                <button type="button" className="btn btn-secondary bg-info border-0" onClick={() => setReturnStep1(true)}>Back</button>
+                <button type="button" className="btn btn-secondary bg-danger border-0" onClick={() => setReturnModal(false)}>Cancel</button>
+                <button type="button" className="btn btn-secondary bg-success border-0" onClick={() => handleReturnSubmit("STEP2")}>Save</button>
               </div>
             </div>}
           </div>
@@ -1164,8 +1180,8 @@ function ManageBills() {
                 </div> }
               </div>
               <div className="modal-footer">
-              {selectedData.remaining_amount!=0 && <button type="button" className="btn btn-secondary" onClick={() => handlePaymentSubmit()}>Save</button>}
-                <button type="button" className="btn btn-secondary" onClick={() => setPaymentModal(false)}>Cancel</button>
+                <button type="button" className="btn btn-secondary bg-danger border-0" onClick={() => setPaymentModal(false)}>Cancel</button>
+              {selectedData.remaining_amount!=0 && <button type="button" className="btn btn-secondary bg-success border-0" onClick={() => handlePaymentSubmit()}>Save</button>}
               </div>
             </div>
           </div>

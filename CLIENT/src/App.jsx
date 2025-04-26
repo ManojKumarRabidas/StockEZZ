@@ -89,7 +89,7 @@ export default function App() {
     if (session) {
       await getUserType(session); // Fetch user type
     }
-    setIsAuthenticated(!!session);
+    setIsAuthenticated(session);
     setLoading(false); // End loading
   };
 
