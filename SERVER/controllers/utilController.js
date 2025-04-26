@@ -191,6 +191,7 @@ module.exports = {
                 projectionStage = { _id: 1,
                     sl_no: 1,
                     date: 1,
+                    sub_category: 1,
                     challan_no: 1,
                     item: "$item.name",
                     brand_name: { $ifNull: ["$brand.name", "N/A"] },
@@ -202,6 +203,7 @@ module.exports = {
                     height: 1,
                     power: 1,
                     seller_name: { $ifNull: ["$seller.name", "N/A"] },
+                    total_quantity: 1,
                     quantity: 1,
                     batch_no: 1,
                     item_status: 1,
@@ -775,127 +777,159 @@ module.exports = {
             let {threshold} = req.query;
             if(!threshold){return res.status(400).json({ msg: "Missing Parameters!" });}
             threshold = Number(threshold);
-            const docs = await itemModel.aggregate([
-                // Match items for the specific company
-                { $match: { companyId: company_id } },
+            // const docs = await itemModel.aggregate([
+            //     // Match items for the specific company
+            //     { $match: { companyId: company_id } },
                 
-                // Left join with stocks collection
+            //     // Left join with stocks collection
+            //     { $lookup: {
+            //         from: 'stocks',
+            //         let: { item_id: '$_id' },
+            //         pipeline: [
+            //             { $match: { $expr: { $eq: ['$item_id', '$$item_id'] } } },
+            //             // Lookup sellers
+            //             { $lookup: {
+            //                 from: 'sellers',
+            //                 localField: 'seller_id',
+            //                 foreignField: '_id',
+            //                 as: 'seller'
+            //             }},
+            //             { $unwind: { path: "$seller", preserveNullAndEmptyArrays: true } },
+            //             // Project stock fields
+            //             { $project: {
+            //                 batch_id: 1,
+            //                 quantity: 1,
+            //                 date: 1,
+            //                 seller: '$seller.name',
+            //                 description: 1,
+            //                 description_key: 1,
+            //                 _id: 0
+            //             }}
+            //         ],
+            //         as: 'stocks'
+            //     }},
+                
+            //     // Add a field to check if all quantities exceed threshold
+            //     { $addFields: {
+            //         allStocksExceedThreshold: {
+            //             $cond: {
+            //                 if: { $eq: [{ $size: '$stocks' }, 0] },  // If no stocks
+            //                 then: false,                             // Don't exclude (will show as 0)
+            //                 else: {
+            //                     $eq: [
+            //                         { $size: '$stocks' },
+            //                         { $size: { $filter: {
+            //                             input: '$stocks',
+            //                             cond: { $gt: ['$$this.quantity', threshold] }
+            //                         }}}
+            //                     ]
+            //                 }
+            //             }
+            //         }
+            //     }},
+                
+            //     // Filter out items where all stocks exceed threshold
+            //     { $match: { allStocksExceedThreshold: false } },
+                
+            //     // Filter stocks to only show quantities <= threshold
+            //     { $project: {
+            //         name: '$name',
+            //         code: 1,
+            //         stocks: {
+            //             $filter: {
+            //                 input: '$stocks',
+            //                 as: 'stock',
+            //                 cond: { $lte: ['$$stock.quantity', threshold] }
+            //             }
+            //         }
+            //     }},
+                
+            //     // Final projection
+            //     { $project: {
+            //         name: '$name',
+            //         code: 1,
+            //         total_available: { $sum: '$stocks.quantity' },
+            //         stocks: {
+            //             $map: {
+            //                 input: '$stocks',
+            //                 as: 'stock',
+            //                 in: {
+            //                     batch_id: '$$stock.batch_id',
+            //                     quantity: '$$stock.quantity',
+            //                     entry_date: '$$stock.date',
+            //                     seller: '$$stock.seller',
+            //                     description: '$$stock.description'
+            //                 }
+            //             }
+            //         }
+            //     }}
+            // ]);
+
+            const docs = await itemModel.aggregate([
+                { $match: { companyId: company_id } },
+            
                 { $lookup: {
                     from: 'stocks',
                     let: { item_id: '$_id' },
                     pipeline: [
                         { $match: { $expr: { $eq: ['$item_id', '$$item_id'] } } },
-                        // Lookup brands
-                        { $lookup: {
-                            from: 'brands',
-                            localField: 'brand_id',
-                            foreignField: '_id',
-                            as: 'brand'
-                        }},
-                        { $unwind: { path: "$brand", preserveNullAndEmptyArrays: true } },
-                        // Lookup sellers
-                        { $lookup: {
-                            from: 'sellers',
-                            localField: 'seller_id',
-                            foreignField: '_id',
-                            as: 'seller'
-                        }},
-                        { $unwind: { path: "$seller", preserveNullAndEmptyArrays: true } },
-                        // Project stock fields
                         { $project: {
-                            batch_id: 1,
                             quantity: 1,
-                            brand: '$brand.name',
-                            color: 1,
-                            capacity: 1,
-                            height: 1,
-                            power: 1,
-                            model: 1,
-                            date: 1,
-                            seller: '$seller.name',
                             description: 1,
+                            description_key: 1,
                             _id: 0
                         }}
                     ],
                     as: 'stocks'
                 }},
-                
-                // Add a field to check if all quantities exceed threshold
-                { $addFields: {
-                    allStocksExceedThreshold: {
-                        $cond: {
-                            if: { $eq: [{ $size: '$stocks' }, 0] },  // If no stocks
-                            then: false,                             // Don't exclude (will show as 0)
-                            else: {
-                                $eq: [
-                                    { $size: '$stocks' },
-                                    { $size: { $filter: {
-                                        input: '$stocks',
-                                        cond: { $gt: ['$$this.quantity', threshold] }
-                                    }}}
-                                ]
-                            }
-                        }
-                    }
+            
+                // Unwind stocks
+                { $unwind: { path: "$stocks", preserveNullAndEmptyArrays: true } },
+            
+                // Group by (item + description_key) to sum quantities
+                { $group: {
+                    _id: {
+                        itemId: "$_id",
+                        name: "$name",
+                        code: "$code",
+                        description_key: "$stocks.description_key",
+                        description: "$stocks.description"
+                    },
+                    available_quantity: { $sum: "$stocks.quantity" }  // renamed field
                 }},
-                
-                // Filter out items where all stocks exceed threshold
-                { $match: { allStocksExceedThreshold: false } },
-                
-                // Filter stocks to only show quantities <= threshold
-                { $project: {
-                    name: '$name',
-                    code: 1,
-                    stocks: {
-                        $filter: {
-                            input: '$stocks',
-                            as: 'stock',
-                            cond: { $lte: ['$$stock.quantity', threshold] }
+            
+                // Filter only those descriptions where available quantity <= threshold
+                { $match: { available_quantity: { $lte: threshold } } },
+            
+                // Regroup by item to prepare lowStockDescriptions array
+                { $group: {
+                    _id: {
+                        itemId: "$_id.itemId",
+                        name: "$_id.name",
+                        code: "$_id.code"
+                    },
+                    lowStockDescriptions: {
+                        $push: {
+                            description_key: "$_id.description_key",
+                            description: "$_id.description",
+                            available_quantity: "$available_quantity"
                         }
-                    }
+                    },
+                    total_quantity: { $sum: "$available_quantity" }  // sum all available_quantity
                 }},
-                
+            
                 // Final projection
                 { $project: {
-                    name: '$name',
-                    code: 1,
-                    total_available: { $sum: '$stocks.quantity' },
-                    stocks: {
-                        $map: {
-                            input: '$stocks',
-                            as: 'stock',
-                            in: {
-                                batch_id: '$$stock.batch_id',
-                                quantity: '$$stock.quantity',
-                                brand: '$$stock.brand',
-                                color: '$$stock.color',
-                                capacity: '$$stock.capacity',
-                                height: '$$stock.height',
-                                power: '$$stock.power',
-                                model: '$$stock.model',
-                                entry_date: '$$stock.date',
-                                seller: '$$stock.seller',
-                                description: '$$stock.description'
-                            }
-                        }
-                    }
+                    _id: 0,
+                    name: "$_id.name",
+                    code: "$_id.code",
+                    lowStockDescriptions: 1,
+                    total_quantity: 1
                 }}
             ]);
+            
 
-            for(let i=0; i<docs.length; i++){
-                for(let j=0; j<docs[i].stocks.length; j++){
-                    const ref = docs[i].stocks[j];
-                    ref.brand = ref.brand ? ref.brand: "N/A";
-                    ref.color = ref.color ? ref.color: "N/A";
-                    ref.capacity = ref.capacity ? ref.capacity: "N/A";
-                    ref.height = ref.height ? ref.height: "N/A";
-                    ref.power = ref.power ? ref.power: "N/A";
-                    ref.model = ref.model ? ref.model: "N/A";
-                    ref.entry_date = moment(ref.entry_date).format('DD/MM/YYYY');
-                    ref.seller = ref.seller ? ref.seller: "N/A";
-                    ref.description = ref.description ? ref.description: "N/A";
-                }
-            }
+            console.log(docs)
             res.status(200).json({status: true, docs: docs})
         } catch(err){
             res.status(400).json({ msg: err.message });

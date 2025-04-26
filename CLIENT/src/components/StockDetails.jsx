@@ -157,7 +157,13 @@ function StockDetails() {
         },
       },
       {
-        header: "Quantity",
+        header: "Total",
+        accessorKey: "total_quantity",
+        sortingFn: "alphanumeric",
+        enableSorting: true,
+      },
+      {
+        header: "Available",
         accessorKey: "quantity",
         sortingFn: "alphanumeric",
         enableSorting: true,
@@ -291,6 +297,12 @@ function StockDetails() {
       {
         header: "Batch Id",
         accessorKey: "batch_id",
+        sortingFn: "alphanumeric",
+        enableSorting: true,
+      },
+      {
+        header: "Sub Category",
+        accessorKey: "sub_category",
         sortingFn: "alphanumeric",
         enableSorting: true,
       },

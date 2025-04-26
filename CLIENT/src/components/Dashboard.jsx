@@ -109,6 +109,7 @@ const Dashboard = () => {
       );
       const result = await response.json();
       if (response.ok) {
+        console.log("result.docs", result.docs)
         setlowStockData(result.docs)
       } else {
         toastr.error(result.msg);
@@ -189,36 +190,18 @@ const Dashboard = () => {
 
   // CSV Export Data
   const lowStockCSVData = lowStockData?.flatMap(item => 
-    item.stocks.length > 0 
-        ? item.stocks.map(stock => ({
+    item.lowStockDescriptions.length > 0 
+        ? item.lowStockDescriptions.map(stock => ({
             "Item Code": item.code,
             "Item Name": item.name,
-            "Batch Id": stock.batch_id,
             "Quantity": stock.quantity,
-            "Brand": stock.brand,
-            "Color": stock.color,
-            "Capacity": stock.capacity,
-            "Height/Width": stock.height,
-            "Power/Watt": stock.power,
-            "Model": stock.model,
-            "Entry Date": stock.entry_date,
-            "Seller": stock.seller,
             "Description": stock.description,
             "Status": stock.quantity === 0 ? 'Out of Stock' : 'Low Stock'
         }))
         : [{
             "Item Code": item.code,
             "Item Name": item.name,
-            "Batch Id": "N/A",
             "Quantity": 0,
-            "Brand": "N/A",
-            "Color": "N/A",
-            "Capacity": "N/A",
-            "Height/Width": "N/A",
-            "Power/Watt": "N/A",
-            "Model": "N/A",
-            "Entry Date": "N/A",
-            "Seller": "N/A",
             "Description": "N/A",
             "Status": 'Out of Stock'
         }]
@@ -407,7 +390,7 @@ const Dashboard = () => {
                 <select style={{maxWidth: "15rem"}} className="form-select" aria-label="Default select example" value={itemName} name="itemName" onChange={(e) => handleStockMovement(e.target.value)}>
                     <option>--Select item--</option>
                     {financialData?.stockMovement.map((item)=>(
-                      <option key={item.item} value={item.item}>{item.item}</option>
+                      <option key={item.item} value={item.item}>{item.item} - {item.sub_category ? item.sub_category : "Not Available"}</option>
                     ))}
                 </select>
               </div> 
@@ -493,7 +476,7 @@ const Dashboard = () => {
                     {lowStockData?.map((item) => (
                       <tr key={item._id}>
                         <td>{item.name}</td>
-                        <td>{item.total_available}</td>
+                        <td>{item.total_quantity}</td>
                         <td>
                           <span className={`badge ${item.total_available === 0 ? 'bg-danger' : 'bg-warning'}`}>
                             {item.total_available === 0 ? 'Out of Stock' : 'Low Stock'}
@@ -598,36 +581,18 @@ const Dashboard = () => {
                     </tbody>
                   </table>
                   <hr />
-                  {selectedItem.stocks.length>0 && <table className="table table-striped">
+                  {selectedItem.lowStockDescriptions.length>0 && <table className="table table-striped">
                     <thead>
                       <tr>
-                        <th>Batch Id</th>
-                        <th>Quantity</th>
-                        <th>Brand</th>
-                        <th>Color</th>
-                        <th>Capacity</th>
-                        <th>Height</th>
-                        <th>Power</th>
-                        <th>Model</th>
-                        <th>Entry Date</th>
-                        <th>Seller</th>
                         <th>Description</th>
+                        <th>Quantity</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {selectedItem.stocks.map((item)=>(
+                      {selectedItem.lowStockDescriptions.map((item)=>(
                       <tr>
-                        <td>{item.batch_id}</td>
-                        <td>{item.quantity}</td>
-                        <td>{item.brand}</td>
-                        <td>{item.color}</td>
-                        <td>{item.capacity}</td>
-                        <td>{item.height}</td>
-                        <td>{item.power}</td>
-                        <td>{item.model}</td>
-                        <td>{item.entry_date}</td>
-                        <td>{item.seller}</td>
                         <td>{item.description}</td>
+                        <td>{item.available_quantity}</td>
                       </tr>
                       ))}
                     </tbody>
