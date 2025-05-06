@@ -200,6 +200,7 @@ function Login() {
             <button type="submit" className="btn btn-primary my-3">Log In</button>
             <a className="my-2" onClick={() =>setStage(2)}>Forgot Password</a>
             <a className="my-2" onClick={() =>setStage(1)}>Forgot Login Id</a>
+            <a className="my-2" href="/">Back to home</a>
           </div>
         </form>
       </div>}

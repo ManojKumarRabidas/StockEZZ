@@ -65,18 +65,18 @@ module.exports = {
         try {
             const userId = new ObjectId(req.user.id);
             const userType = req.user.user_type;
-            let companyId;
+            let company_id;
             if (userType === "COMPANY") {
-                companyId = userId;
+                company_id = userId;
             } else if(userType === "OPERATOR"){
                 let operator = await userModel.findOne({_id: userId}, {company: 1});
-                companyId = new ObjectId(operator.company)
+                company_id = new ObjectId(operator.company)
             }
-            if (!companyId){
+            if (!company_id){
                 res.status(400).json({ msg: "We are facing some technical error! Please try again later 1." });
                 return;
             }
-            const company = await companyModel.findById({ _id: new ObjectId(companyId) },{name: 1, phone: 1, address: 1, gstNo: 1, company_type: 1, company_subtype: 1});
+            const company = await companyModel.findById({ _id: new ObjectId(company_id) },{name: 1, phone: 1, address: 1, gstNo: 1, company_type: 1, company_subtype: 1});
             if (!(company && company.company_type)){
                 res.status(400).json({ msg: "We are facing some technical error! Please try again later 2." });
                 return;
@@ -106,12 +106,12 @@ module.exports = {
             const userId = new ObjectId(req.user.id);
             const userType = req.user.user_type;
             if (userType === "COMPANY") {
-                companyId = userId;
+                company_id = userId;
             } else if(userType === "OPERATOR"){
                 let operator = await userModel.findOne({_id: userId}, {company: 1});
-                companyId = new ObjectId(operator.company)
+                company_id = new ObjectId(operator.company)
             }
-            let stockStructure = await stockStructureModel.findOne({companyId: companyId});
+            let stockStructure = await stockStructureModel.findOne({company_id: company_id});
             res.status(200).json({ stockStructure: stockStructure });
           } catch (err) {
             res.status(500).json({ msg: "Failed to retrieve stock structure" });
@@ -120,27 +120,25 @@ module.exports = {
     saveCustomizeAddStockDetails: async(req, res)=>{
         try{
             const body = req.body;
-            let companyId;
+            let company_id;
             if (req.user.user_type === "COMPANY") {
-                companyId = new ObjectId(req.user.id);;
+                company_id = new ObjectId(req.user.id);;
             } else if(req.user.user_type === "OPERATOR"){
                 let operator = await userModel.findOne({_id: req.user.id}, {company: 1});
-                companyId = new ObjectId(operator.company)
+                company_id = new ObjectId(operator.company)
             }
-            body.companyId = companyId;
-            body.sl_no = true;
+            body.company_id = company_id;
             body.date = true;
             body.item = true;
             body.total_quantity = true;
             body.batch_buy_price = true;
-            body.item_status = true;
-            if(body.unique_code || body.model || body.brand || body.color || body.capacity || body.height || body.power || body.description || body.mfg_date || body.exp_date || body.item_buy_price || body.item_sell_price || body.warrantee_guarantee || body.warrantee_guarantee_duration){
+            if(body.unique_code || body.model || body.brand || body.color || body.capacity || body.height || body.power || body.watt || body.description || body.extended_description || body.location || body.mfg_date || body.exp_date || body.item_buy_price || body.item_sell_price || body.form || body.remarks || body.warrantee_guarantee || body.warrantee_guarantee_duration){
                 body.quantity = true;
             } else{
                 body.quantity = false;
             }
             body.updatedBy = new ObjectId(req.user.id);
-            const doc = await stockStructureModel.updateOne({companyId: body.companyId},{$set: body}, {upsert: true, new: true});
+            const doc = await stockStructureModel.updateOne({company_id: body.company_id},{$set: body}, {upsert: true, new: true});
             res.status(201).json({ status: true, msg: "Structure saved successfully.", doc:doc});
         } catch(err){
             res.status(500).json({ msg: "Failed to save stock structure" });
@@ -168,10 +166,8 @@ module.exports = {
                 if(!manage && !exchange){
                     projectionStage = {batch_id:1, batch_no:1, description: 1, quantity: 1,item_sell_price: 1, item_buy_price: 1, mfg_date: 1, exp_date: 1, warrantee_guarantee: 1, warrantee_guarantee_duration: 1}
                 } else if(exchange){
-                    cmpMatchStage.item_status = "RECEIVED";
                     projectionStage = {description: 1, description_key: 1,quantity: 1, item_status: 1}
                 } else{
-                    cmpMatchStage.item_status = "RECEIVED";
                     projectionStage = {date: 1, description: 1, challan_no: 1, item_buy_price: 1, quantity: 1, remarks: 1, seller_name: { $ifNull: ["$seller.name", "N/A"] }, batch_id: 1, batch_no: 1, item_status: 1}
                 }
             } else if(sold_status){
@@ -202,10 +198,12 @@ module.exports = {
                     capacity: 1,
                     height: 1,
                     power: 1,
+                    watt: 1,
                     seller_name: { $ifNull: ["$seller.name", "N/A"] },
                     total_quantity: 1,
                     quantity: 1,
                     batch_no: 1,
+                    location: 1,
                     item_status: 1,
                     remarks: 1,
                     mfg_date: 1,
@@ -240,9 +238,8 @@ module.exports = {
                 {$unwind: { path: "$brand", preserveNullAndEmptyArrays: true}},
                 {$lookup: {from: "sellers",
                         let: { seller_id: "$seller_id" },
-                        pipeline: [{$match: {$expr: {$eq: ["$_id", "$$seller_id"]
-                                    }}}],
-                                    as: "seller"}},
+                        pipeline: [{$match: {$expr: {$eq: ["$_id", "$$seller_id"]}}}],
+                        as: "seller"}},
                 {$unwind: {path: "$seller",preserveNullAndEmptyArrays: true}},
                 {$project: projectionStage},
                 {$match: cmpMatchStage},
@@ -256,6 +253,7 @@ module.exports = {
 
                     const baseData = {
                         ...ref,
+                        sub_category: ref.sub_category || "N/A",
                         challan_no: ref.challan_no || "N/A",
                         brand: ref.brand || "N/A",
                         model: ref.model || "N/A",
@@ -263,17 +261,18 @@ module.exports = {
                         capacity: ref.capacity || "N/A",
                         height: ref.height || "N/A",
                         power: ref.power || "N/A",
+                        watt: ref.watt || "N/A",
+                        form: ref.form || "N/A",
                         seller: ref.seller || "N/A",
                         sl_no: ref.sl_no || "N/A",
                         item_sell_price: ref.item_sell_price || 0,
                         description: ref.description || "N/A",
                         remarks: ref.remarks || "N/A",
+                        location: ref.location || "N/A",
                         mfg_date: ref.mfg_date ? moment(ref.mfg_date).format('DD/MM/YYYY') : "N/A",
                         exp_date: ref.exp_date ? moment(ref.exp_date).format('DD/MM/YYYY') : "N/A",
                         warrantee_guarantee: ref.warrantee_guarantee || "N/A",
-                        warrantee_guarantee_duration: ref.warrantee_guarantee_duration
-                            ? `${ref.warrantee_guarantee_duration} Months`
-                            : "N/A"
+                        warrantee_guarantee_duration: ref.warrantee_guarantee_duration ? `${ref.warrantee_guarantee_duration} Months` : "N/A"
                     };
 
                     if (sold_status === "DAMAGED" && Array.isArray(ref.damages) && ref.damages.length > 0) {
@@ -347,11 +346,11 @@ module.exports = {
             
             if (userType === "COMPANY") {
                 matchStage.company_id = userId;
-                tempMatchStage.companyId = userId;
+                tempMatchStage.company_id = userId;
             } else if(userType === "OPERATOR"){
                 let operator = await userModel.findOne({_id: userId}, {company: 1});
                 matchStage.company_id = new ObjectId(operator.company)
-                tempMatchStage.companyId = new ObjectId(operator.company)
+                tempMatchStage.company_id = new ObjectId(operator.company)
             }
 
             if (bill_type && bill_type == "FRESH-AND-RE-CREATED"){
@@ -401,7 +400,8 @@ module.exports = {
                     }
                 }
             }
-            res.status(200).json({ docs: docs });
+            const finalDoc = {user_type: userType, bills: docs}
+            res.status(200).json({ doc: finalDoc });
         } catch (err) {
             res.status(400).json({ msg: err.message });
         }
@@ -436,10 +436,10 @@ module.exports = {
                 }
             
             if (userType === "COMPANY") {
-                tempMatchStage.companyId = userId;
+                tempMatchStage.company_id = userId;
             } else if(userType === "OPERATOR"){
                 let operator = await userModel.findOne({_id: userId}, {company: 1});
-                tempMatchStage.companyId = new ObjectId(operator.company)
+                tempMatchStage.company_id = new ObjectId(operator.company)
             }
             const docs = await billModel.aggregate([
                 {$match: matchStage},
@@ -640,10 +640,9 @@ module.exports = {
                     month: { $dateToString: { format: "%Y-%m", date: "$date" } },
                     // stockIn: "$quantity",
                     stockIn: "$total_quantity",
-                    sub_category: 1,
                     item: "$item.name"}},
                 {$group: {
-                    _id: { month: "$month", sub_category: "$sub_category", item: "$item" },
+                    _id: { month: "$month", item: "$item" },
                     totalStockIn: { $sum: "$stockIn" }}},
                 {$sort: { "_id.month": 1 }}
             ];
@@ -658,11 +657,10 @@ module.exports = {
                 {$unwind: "$item"},
                 {$project: {
                     month: { $dateToString: { format: "%Y-%m", date: "$sell_details.sold_at" } },
-                    sub_category: 1,
-                    stockOut: "$sell_details.quantity",
+                    stockOut: {$subtract: ["$sell_details.quantity", "$sell_details.returned_quantity"]},
                     item: "$item.name"}},
                 {$group: {
-                    _id: { month: "$month", sub_category: "$sub_category", item: "$item" },
+                    _id: { month: "$month", item: "$item" },
                     totalStockOut: { $sum: "$stockOut" }}},
                 {$sort: { "_id.month": 1}}
             ];
@@ -694,11 +692,10 @@ module.exports = {
         
             // Process stockInResult
             stockInResult.forEach(stockIn => {
-                const key = `${stockIn._id.sub_category}-${stockIn._id.item}`;
+                const key = stockIn._id.item;
                 const formattedMonth = formatMonth(stockIn._id.month);
                 const existing = combinedMap.get(key) || {
                     item: stockIn._id.item,
-                    sub_category: stockIn._id.sub_category,
                     stockInOut: []
                 };
         
@@ -715,14 +712,13 @@ module.exports = {
             stockOutResult.forEach(stockOut => {
                 if (!stockOut.totalStockOut) return;
         
-                const key = `${stockOut._id.sub_category}-${stockOut._id.item}`;
+                const key = stockOut._id.item;
                 const formattedMonth = formatMonth(stockOut._id.month);
                 let existing = combinedMap.get(key);
         
                 if (!existing) {
                     existing = {
                         item: stockOut._id.item,
-                        sub_category: stockOut._id.sub_category,
                         stockInOut: []
                     };
                 }
@@ -777,97 +773,9 @@ module.exports = {
             let {threshold} = req.query;
             if(!threshold){return res.status(400).json({ msg: "Missing Parameters!" });}
             threshold = Number(threshold);
-            // const docs = await itemModel.aggregate([
-            //     // Match items for the specific company
-            //     { $match: { companyId: company_id } },
-                
-            //     // Left join with stocks collection
-            //     { $lookup: {
-            //         from: 'stocks',
-            //         let: { item_id: '$_id' },
-            //         pipeline: [
-            //             { $match: { $expr: { $eq: ['$item_id', '$$item_id'] } } },
-            //             // Lookup sellers
-            //             { $lookup: {
-            //                 from: 'sellers',
-            //                 localField: 'seller_id',
-            //                 foreignField: '_id',
-            //                 as: 'seller'
-            //             }},
-            //             { $unwind: { path: "$seller", preserveNullAndEmptyArrays: true } },
-            //             // Project stock fields
-            //             { $project: {
-            //                 batch_id: 1,
-            //                 quantity: 1,
-            //                 date: 1,
-            //                 seller: '$seller.name',
-            //                 description: 1,
-            //                 description_key: 1,
-            //                 _id: 0
-            //             }}
-            //         ],
-            //         as: 'stocks'
-            //     }},
-                
-            //     // Add a field to check if all quantities exceed threshold
-            //     { $addFields: {
-            //         allStocksExceedThreshold: {
-            //             $cond: {
-            //                 if: { $eq: [{ $size: '$stocks' }, 0] },  // If no stocks
-            //                 then: false,                             // Don't exclude (will show as 0)
-            //                 else: {
-            //                     $eq: [
-            //                         { $size: '$stocks' },
-            //                         { $size: { $filter: {
-            //                             input: '$stocks',
-            //                             cond: { $gt: ['$$this.quantity', threshold] }
-            //                         }}}
-            //                     ]
-            //                 }
-            //             }
-            //         }
-            //     }},
-                
-            //     // Filter out items where all stocks exceed threshold
-            //     { $match: { allStocksExceedThreshold: false } },
-                
-            //     // Filter stocks to only show quantities <= threshold
-            //     { $project: {
-            //         name: '$name',
-            //         code: 1,
-            //         stocks: {
-            //             $filter: {
-            //                 input: '$stocks',
-            //                 as: 'stock',
-            //                 cond: { $lte: ['$$stock.quantity', threshold] }
-            //             }
-            //         }
-            //     }},
-                
-            //     // Final projection
-            //     { $project: {
-            //         name: '$name',
-            //         code: 1,
-            //         total_available: { $sum: '$stocks.quantity' },
-            //         stocks: {
-            //             $map: {
-            //                 input: '$stocks',
-            //                 as: 'stock',
-            //                 in: {
-            //                     batch_id: '$$stock.batch_id',
-            //                     quantity: '$$stock.quantity',
-            //                     entry_date: '$$stock.date',
-            //                     seller: '$$stock.seller',
-            //                     description: '$$stock.description'
-            //                 }
-            //             }
-            //         }
-            //     }}
-            // ]);
 
             const docs = await itemModel.aggregate([
-                { $match: { companyId: company_id } },
-            
+                { $match: { company_id: company_id } },
                 { $lookup: {
                     from: 'stocks',
                     let: { item_id: '$_id' },
@@ -883,7 +791,6 @@ module.exports = {
                     as: 'stocks'
                 }},
             
-                // Unwind stocks
                 { $unwind: { path: "$stocks", preserveNullAndEmptyArrays: true } },
             
                 // Group by (item + description_key) to sum quantities
@@ -895,13 +802,13 @@ module.exports = {
                         description_key: "$stocks.description_key",
                         description: "$stocks.description"
                     },
-                    available_quantity: { $sum: "$stocks.quantity" }  // renamed field
+                    available_quantity: { $sum: "$stocks.quantity" }
                 }},
             
                 // Filter only those descriptions where available quantity <= threshold
                 { $match: { available_quantity: { $lte: threshold } } },
             
-                // Regroup by item to prepare lowStockDescriptions array
+                // Regroup by item
                 { $group: {
                     _id: {
                         itemId: "$_id.itemId",
@@ -915,7 +822,17 @@ module.exports = {
                             available_quantity: "$available_quantity"
                         }
                     },
-                    total_quantity: { $sum: "$available_quantity" }  // sum all available_quantity
+                    total_quantity: { $sum: "$available_quantity" }
+                }},
+            
+                // Sort lowStockDescriptions array in ascending order by available_quantity
+                { $addFields: {
+                    lowStockDescriptions: {
+                        $sortArray: {
+                            input: "$lowStockDescriptions",
+                            sortBy: { description: 1 }  // 1 = ascending
+                        }
+                    }
                 }},
             
                 // Final projection
@@ -927,9 +844,6 @@ module.exports = {
                     total_quantity: 1
                 }}
             ]);
-            
-
-            console.log(docs)
             res.status(200).json({status: true, docs: docs})
         } catch(err){
             res.status(400).json({ msg: err.message });
@@ -1024,8 +938,8 @@ module.exports = {
                     as: "auth"}},
                 {$unwind: "$auth"},
                 {$lookup: {from: "companies",
-                        let: {companyId: "$company"},
-                        pipeline: [{$match: {$expr: {$eq: ["$_id", "$$companyId"]}}},
+                        let: {company_id: "$company"},
+                        pipeline: [{$match: {$expr: {$eq: ["$_id", "$$company_id"]}}},
                         {$project: {_id: 1, name: 1}}],
                         as: "company"}},
                 {$unwind: "$company"},
@@ -1103,19 +1017,19 @@ module.exports = {
             let matchStage = {};
             let projectionStage = {};
             if (userType === "COMPANY") {
-                companyId = userId;
+                company_id = userId;
             } else if(userType === "OPERATOR"){
                 if(!req.headers.company_id){
                     res.status(400).json({ msg: "Unable to find company details! Please try again later." });
                     return;
                 }
-                companyId = new ObjectId(req.headers.company_id)
+                company_id = new ObjectId(req.headers.company_id)
             }
             if(activeStatus && cmpVal){
-                matchStage = {companyId: companyId, active: true, phone: {$regex: cmpVal, $options: "i"}} 
+                matchStage = {company_id: company_id, active: true, phone: {$regex: cmpVal, $options: "i"}} 
                 projectionStage = {name: 1, phone: 1, email: 1, address: 1, pin: 1, aadhar: 1}
             } else{
-                matchStage = {companyId: companyId}
+                matchStage = {company_id: company_id}
             }
             const docs = await buyerModel.find(matchStage, projectionStage);
             res.status(200).json({ docs: docs });
@@ -1135,12 +1049,12 @@ module.exports = {
             const userId = new ObjectId(req.user.id);
             const userType = req.user.user_type;
             if (userType === "COMPANY") {
-                companyId = userId;
+                company_id = userId;
             } else if(userType === "OPERATOR"){
                 let user = await userModel.findById(userId, {company:1});
-                companyId = new ObjectId(user.company)
+                company_id = new ObjectId(user.company)
             }
-            body.companyId= companyId;
+            body.company_id= company_id;
             const codeGenerator =await require("../controllers/utilController").createCode("BUYER");
             // const codeGenerator = createCode("BUYER");
             body.code = codeGenerator.code
@@ -1220,18 +1134,18 @@ module.exports = {
             let matchStage = {};
             let projectionStage = {};
             if (userType === "COMPANY") {
-                companyId = userId;
+                company_id = userId;
             } else if(userType === "OPERATOR"){
                 let user = await userModel.findById(userId, {company:1});
-                companyId = new ObjectId(user.company)
+                company_id = new ObjectId(user.company)
             }
             if(activeStatus && cmpVal){
-                matchStage = {companyId: companyId, active: true, name: {$regex: cmpVal, $options: "i"}} 
+                matchStage = {company_id: company_id, active: true, name: {$regex: cmpVal, $options: "i"}} 
                 projectionStage = {name: 1}
             } else if(activeStatus){
-                matchStage = {companyId: companyId,  active: true}
+                matchStage = {company_id: company_id,  active: true}
             } else{
-                matchStage = {companyId: companyId}
+                matchStage = {company_id: company_id}
             }
             const docs = await sellerModel.find(matchStage, projectionStage);
             res.status(200).json({ docs: docs });
@@ -1251,12 +1165,12 @@ module.exports = {
             const userId = new ObjectId(req.user.id);
             const userType = req.user.user_type;
             if (userType === "COMPANY") {
-                companyId = userId;
+                company_id = userId;
             } else if(userType === "OPERATOR"){
                 let user = await userModel.findById(userId, {company:1});
-                companyId = new ObjectId(user.company)
+                company_id = new ObjectId(user.company)
             }
-            body.companyId= companyId;
+            body.company_id= company_id;
             const codeGenerator =await require("../controllers/utilController").createCode("SELLER");
             body.code = codeGenerator.code
             const doc = await sellerModel.create(body);
@@ -1334,25 +1248,25 @@ module.exports = {
             const activeStatus = req.headers.active;
             let matchStage = {};
             let projectionStage = {};
-            let companyIds;
+            let company_ids;
             if (userType === "COMPANY") {
-                companyIds = [userId, new ObjectId("67a826f87c2ba5493e1d7a1f")];
+                company_ids = [userId, new ObjectId("67a826f87c2ba5493e1d7a1f")];
             } else if(userType === "OPERATOR"){
                 let user = await userModel.findById(userId, {company:1});
-                companyIds = [new ObjectId(user.company), new ObjectId("67a826f87c2ba5493e1d7a1f")]
+                company_ids = [new ObjectId(user.company), new ObjectId("67a826f87c2ba5493e1d7a1f")]
             }
             if(activeStatus && cmpVal){
-                matchStage = {companyId: {$in: companyIds}, active: true, name: {$regex: cmpVal, $options: "i"}} 
+                matchStage = {company_id: {$in: company_ids}, active: true, name: {$regex: cmpVal, $options: "i"}} 
                 projectionStage = {name: 1}
             } else if(activeStatus){
-                matchStage = {companyId: {$in: companyIds},  active: true}
+                matchStage = {company_id: {$in: company_ids},  active: true}
                 projectionStage = {code: 1, name: 1, category: "$category.category", sub_category: 1, active: 1}
             } else{
                 projectionStage = {code: 1,name: 1, category: "$category.category", sub_category: 1, active: 1}
                 if (userType == ("ADMIN" || "SUPPORTADMIN")) {
                     matchStage = {}
                 } else {
-                    matchStage = {companyId: {$in: companyIds}}
+                    matchStage = {company_id: {$in: company_ids}}
                 }
             }
             const docs = await itemModel.aggregate([
@@ -1380,12 +1294,12 @@ module.exports = {
             const userId = new ObjectId(req.user.id);
             const userType = req.user.user_type;
             if (userType === ("ADMIN" || "SUPPORTADMIN")) {
-                body.companyId = new ObjectId("67a826f87c2ba5493e1d7a1f"); // Id of Admin user
+                body.company_id = new ObjectId("67a826f87c2ba5493e1d7a1f"); // Id of Admin user
             } else if (userType === "COMPANY") {
-                body.companyId = userId;
+                body.company_id = userId;
             } else if(userType === "OPERATOR"){
                 let user = await userModel.findById(userId, {company:1});
-                body.companyId = new ObjectId(user.company)
+                body.company_id = new ObjectId(user.company)
             }
             body.createdBy = new ObjectId(req.user.id);
             body.updatedBy = new ObjectId(req.user.id);
@@ -1461,14 +1375,14 @@ module.exports = {
     brandList: async(req, res)=>{
         try {
             const cmpVal = req.body.value;
-            const companyId = req.body.companyId;
+            const company_id = req.body.company_id;
             let matchStage = {};
             let projectionStage = {};
             if(cmpVal){
-                matchStage = {companyId: companyId, name: {$regex: cmpVal, $options: "i"}} 
+                matchStage = {company_id: company_id, name: {$regex: cmpVal, $options: "i"}} 
                 projectionStage = {name: 1}
             } else{
-                matchStage = {companyId: companyId}
+                matchStage = {company_id: company_id}
             }
             const docs = await brandModel.find(matchStage, projectionStage);
             res.status(200).json({ docs: docs });

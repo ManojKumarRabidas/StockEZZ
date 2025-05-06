@@ -18,6 +18,7 @@ const PORT = import.meta.env.VITE_PORT;
 function ManageBills() {
   const inputRef = useRef(null);
   const [data, setData] = useState([]);
+  const [userType, setUserType] = useState("");
   const [globalFilter, setGlobalFilter] = useState("");
   const [filters, setFilters] = useState({bill_type: "FRESH-AND-RE-CREATED"});
   const [pageIndex, setPageIndex] = useState(0);
@@ -52,7 +53,9 @@ function ManageBills() {
 
       const result = await response.json();
       if (response.ok) {
-        setData(result.docs);
+        console.log("result.doc", result.doc)
+        setData(result.doc.bills);
+        setUserType(result.doc.user_type);
       } else {
         toastr.error(result.msg);
       }
@@ -62,7 +65,6 @@ function ManageBills() {
   }
 
   useEffect(() => {
-    // getData();
     changeFilter("FRESH-AND-RE-CREATED", "bill_type")
   }, []);
 
@@ -89,51 +91,6 @@ function ManageBills() {
         toastr.error(result.msg);
       }
     } catch (err) {
-      toastr.error("We are unable to process now. Please try again later.");
-    }
-  }
-
-  const changeDetails = (value, type) => {
-    const tempObj = {...detailsBill};
-    if (type == "paid_amount"){
-        tempObj.paid_amount = value;
-        tempObj.remaining_amount = Number(tempObj.grand_total) - value;
-    } else if (type == "info"){
-        tempObj.info = value;
-    }else if (type == "installation_status"){
-        tempObj.installation_status = value;
-    }
-    setDetailsBill(tempObj)
-  }
-
-  const updateBillDetails = async(id)=>{
-    const updatedBillDetails  = {expected_profit: detailsBill.expected_profit, paid_amount: detailsBill.paid_amount, remaining_amount: detailsBill.remaining_amount, info: detailsBill.info, installation_status: detailsBill.installation_status };
-    if (updatedBillDetails.paid_amount == "" ){
-      toastr.error("There must be some 'Paid amount'");
-      return;
-    }
-    try {
-      const response = await fetch(`${HOST}:${PORT}/server/bill-update/${id}`, {
-        method: "PATCH",
-        body: JSON.stringify(updatedBillDetails),
-        headers: {
-          'Content-Type': 'application/json',
-          'authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (response) {
-        const result = await response.json();
-        if (response.ok) {
-          toastr.success("Bill details updated successfully.");
-          setBillEditingStatus(false);
-        } else {
-          toastr.error(result.msg);
-        }
-      } else {
-        toastr.error("We are unable to process now. Please try again later.");
-      }
-    } catch (error) {
       toastr.error("We are unable to process now. Please try again later.");
     }
   }
@@ -205,7 +162,6 @@ function ManageBills() {
     }));
   };
   
-
   const handlePaymentSubmit = async () => {
     if (newPaymentEntries.paid_amount == "" ){
       toastr.error("There must be some 'Paying amount'");
@@ -385,7 +341,6 @@ function ManageBills() {
     }
   }
 
-  
   const searchNewItems = async (value) => {
     setNewItem(value)
     setNewItemList([]);
@@ -518,15 +473,15 @@ function ManageBills() {
         headerClassName: "ei-text-center-imp",
         cell: ({ row }) => (
           <div className="text-center py-2">
-            {(row.original.bill_type)!="CANCELLED" && <span onClick={() => managePaymentAndReturn(row.original, "PAYMENT")} className="p-2 mx-1 cursor-pointer rounded" style={{background: "white", border: "2px solid #f2f2f2"}}>
+            {(row.original.bill_type)!="CANCELLED" && (userType == "OPERATOR") && <span onClick={() => managePaymentAndReturn(row.original, "PAYMENT")} className="p-2 mx-1 cursor-pointer rounded" style={{background: "white", border: "2px solid #f2f2f2"}}>
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-cash" viewBox="0 0 16 16">
                 <path d="M8 10a2 2 0 1 0 0-4 2 2 0 0 0 0 4"/>
                 <path d="M0 4a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H1a1 1 0 0 1-1-1zm3 0a2 2 0 0 1-2 2v4a2 2 0 0 1 2 2h10a2 2 0 0 1 2-2V6a2 2 0 0 1-2-2z"/>
               </svg>
             </span> }
-            {(row.original.bill_type)!="CANCELLED" && <span onClick={() => managePaymentAndReturn(row.original, "RETURN")} className="p-2 mx-1 cursor-pointer rounded" style={{background: "white", border: "2px solid #f2f2f2"}}>
+            {(row.original.bill_type)!="CANCELLED" && (userType == "OPERATOR") && <span onClick={() => managePaymentAndReturn(row.original, "RETURN")} className="p-2 mx-1 cursor-pointer rounded" style={{background: "white", border: "2px solid #f2f2f2"}}>
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-arrow-return-left" viewBox="0 0 16 16">
-                <path fill-rule="evenodd" d="M14.5 1.5a.5.5 0 0 1 .5.5v4.8a2.5 2.5 0 0 1-2.5 2.5H2.707l3.347 3.346a.5.5 0 0 1-.708.708l-4.2-4.2a.5.5 0 0 1 0-.708l4-4a.5.5 0 1 1 .708.708L2.707 8.3H12.5A1.5 1.5 0 0 0 14 6.8V2a.5.5 0 0 1 .5-.5"/>
+                <path fillRule="evenodd" d="M14.5 1.5a.5.5 0 0 1 .5.5v4.8a2.5 2.5 0 0 1-2.5 2.5H2.707l3.347 3.346a.5.5 0 0 1-.708.708l-4.2-4.2a.5.5 0 0 1 0-.708l4-4a.5.5 0 1 1 .708.708L2.707 8.3H12.5A1.5 1.5 0 0 0 14 6.8V2a.5.5 0 0 1 .5-.5"/>
               </svg>
             </span>}
             <span onClick={() => details(row.original._id)} className="p-2 mx-1 cursor-pointer rounded" style={{background: "white", border: "2px solid #f2f2f2"}}>
@@ -535,12 +490,12 @@ function ManageBills() {
                 <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0"/>
               </svg>
             </span>
-            <span onClick={() => generateBillPdf(row.original._id)} className="p-2 mx-1 cursor-pointer rounded" style={{background: "white", border: "2px solid #f2f2f2"}}>
+            {(userType == "OPERATOR") && <span onClick={() => generateBillPdf(row.original._id)} className="p-2 mx-1 cursor-pointer rounded" style={{background: "white", border: "2px solid #f2f2f2"}}>
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-file-earmark-arrow-down" viewBox="0 0 16 16">
                 <path d="M8.5 6.5a.5.5 0 0 0-1 0v3.793L6.354 9.146a.5.5 0 1 0-.708.708l2 2a.5.5 0 0 0 .708 0l2-2a.5.5 0 0 0-.708-.708L8.5 10.293z"/>
                 <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2M9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5z"/>
               </svg>
-            </span>
+            </span>}
             {/* <button type="button" className="btn btn-outline-light" style={{ color: "blue", backgroundColor: "ghostwhite" }} onClick={() => details(row.original._id)} >Details </button> */}
           </div>
         ),
@@ -674,14 +629,14 @@ function ManageBills() {
             <div className="btn-group mx-2">
               <span className="btn btn-secondary " onClick={() => table.previousPage()}disabled={!table.getCanPreviousPage()}>
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-chevron-double-left" viewBox="0 0 16 16">
-                  <path fill-rule="evenodd" d="M8.354 1.646a.5.5 0 0 1 0 .708L2.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0"/>
-                  <path fill-rule="evenodd" d="M12.354 1.646a.5.5 0 0 1 0 .708L6.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0"/>
+                  <path fillRule="evenodd" d="M8.354 1.646a.5.5 0 0 1 0 .708L2.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0"/>
+                  <path fillRule="evenodd" d="M12.354 1.646a.5.5 0 0 1 0 .708L6.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0"/>
                 </svg>
               </span>
               <span className="btn btn-secondary" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-chevron-double-right" viewBox="0 0 16 16">
-                  <path fill-rule="evenodd" d="M3.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L9.293 8 3.646 2.354a.5.5 0 0 1 0-.708"/>
-                  <path fill-rule="evenodd" d="M7.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L13.293 8 7.646 2.354a.5.5 0 0 1 0-.708"/>
+                  <path fillRule="evenodd" d="M3.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L9.293 8 3.646 2.354a.5.5 0 0 1 0-.708"/>
+                  <path fillRule="evenodd" d="M7.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L13.293 8 7.646 2.354a.5.5 0 0 1 0-.708"/>
                 </svg>
               </span>
               </div>
@@ -808,7 +763,7 @@ function ManageBills() {
                 </button>
                 { (detailsBill.userType == "OPERATOR") && <button className="form-control mx-2 bg-info border-0" style={{maxWidth: "140px"}} onClick={() => generateBillPdf(detailsBill._id)} >
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-filetype-pdf" viewBox="0 0 16 16">
-                    <path fill-rule="evenodd" d="M14 4.5V14a2 2 0 0 1-2 2h-1v-1h1a1 1 0 0 0 1-1V4.5h-2A1.5 1.5 0 0 1 9.5 3V1H4a1 1 0 0 0-1 1v9H2V2a2 2 0 0 1 2-2h5.5zM1.6 11.85H0v3.999h.791v-1.342h.803q.43 0 .732-.173.305-.175.463-.474a1.4 1.4 0 0 0 .161-.677q0-.375-.158-.677a1.2 1.2 0 0 0-.46-.477q-.3-.18-.732-.179m.545 1.333a.8.8 0 0 1-.085.38.57.57 0 0 1-.238.241.8.8 0 0 1-.375.082H.788V12.48h.66q.327 0 .512.181.185.183.185.522m1.217-1.333v3.999h1.46q.602 0 .998-.237a1.45 1.45 0 0 0 .595-.689q.196-.45.196-1.084 0-.63-.196-1.075a1.43 1.43 0 0 0-.589-.68q-.396-.234-1.005-.234zm.791.645h.563q.371 0 .609.152a.9.9 0 0 1 .354.454q.118.302.118.753a2.3 2.3 0 0 1-.068.592 1.1 1.1 0 0 1-.196.422.8.8 0 0 1-.334.252 1.3 1.3 0 0 1-.483.082h-.563zm3.743 1.763v1.591h-.79V11.85h2.548v.653H7.896v1.117h1.606v.638z"/>
+                    <path fillRule="evenodd" d="M14 4.5V14a2 2 0 0 1-2 2h-1v-1h1a1 1 0 0 0 1-1V4.5h-2A1.5 1.5 0 0 1 9.5 3V1H4a1 1 0 0 0-1 1v9H2V2a2 2 0 0 1 2-2h5.5zM1.6 11.85H0v3.999h.791v-1.342h.803q.43 0 .732-.173.305-.175.463-.474a1.4 1.4 0 0 0 .161-.677q0-.375-.158-.677a1.2 1.2 0 0 0-.46-.477q-.3-.18-.732-.179m.545 1.333a.8.8 0 0 1-.085.38.57.57 0 0 1-.238.241.8.8 0 0 1-.375.082H.788V12.48h.66q.327 0 .512.181.185.183.185.522m1.217-1.333v3.999h1.46q.602 0 .998-.237a1.45 1.45 0 0 0 .595-.689q.196-.45.196-1.084 0-.63-.196-1.075a1.43 1.43 0 0 0-.589-.68q-.396-.234-1.005-.234zm.791.645h.563q.371 0 .609.152a.9.9 0 0 1 .354.454q.118.302.118.753a2.3 2.3 0 0 1-.068.592 1.1 1.1 0 0 1-.196.422.8.8 0 0 1-.334.252 1.3 1.3 0 0 1-.483.082h-.563zm3.743 1.763v1.591h-.79V11.85h2.548v.653H7.896v1.117h1.606v.638z"/>
                   </svg> Save as Pdf
                 </button>}
                 {(detailsBill.userType == "OPERATOR") && <button className="form-control mx-2 bg-secondary border-0" style={{maxWidth: "130px"}} onClick={() => generateBillPdf(detailsBill._id)} >

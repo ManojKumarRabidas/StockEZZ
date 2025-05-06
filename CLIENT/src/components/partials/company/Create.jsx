@@ -198,7 +198,7 @@ function Create() {
             </div>}
         </div>
         <button type="submit" className="btn btn-primary mx-2">Create</button>
-        <button onClick={handleClear} type="button" className="btn btn-primary mx-2">Celar</button>
+        <button onClick={handleClear} type="button" className="btn btn-primary mx-2">Clear</button>
       </form>
     </div>
   );

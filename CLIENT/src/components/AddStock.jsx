@@ -20,12 +20,16 @@ function AddStock() {
   const [batch_capacity, setBatchCapacity] = useState("");
   const [batch_height, setBatchHeight] = useState("");
   const [batch_power, setBatchPower] = useState("");
+  const [batch_watt, setBatchWatt] = useState("");
   const [batch_description, setBatchDescription] = useState("");
+  const [batch_extended_description, setBatchExtendedDescription] = useState("");
   const [batch_model, setBatchModel] = useState("");
+  const [batch_form, setBatchForm] = useState("");
   const [seller, setSeller] = useState("");
   const [seller_id, setSellerId] = useState("");
   const [total_quantity, setTotalQuantity] = useState("");
   const [batch_no, setBatchNo] = useState("");
+  const [batch_location, setBatchLocation] = useState("");
   const [batch_buy_price, setBatchBuyPrice] = useState("");
   const [batch_sell_price, setBatchSellPrice] = useState("");
   const [per_piece_buy_price, setPerPeaceBuyPrice] = useState("");
@@ -34,9 +38,7 @@ function AddStock() {
   const [batch_exp_date, setBatchExpDate] = useState("");
   const [batch_warrantee_guarantee, setBatchWarranteeGuarente] = useState("")
   const [batch_warrantee_guarantee_duration, setBatchWarranteeGuarenteDuration] = useState("")
-  const [item_status, setItemStatus] = useState("RECEIVED");
-  const [return_reason, setReturnReason] = useState("");
-  const [remarks, setRemarks] = useState("");
+  const [batch_remarks, setBatchRemarks] = useState("");
   const [lowerPartEntries, setLowerPartEntries] = useState([
     {
       unique_code: "",
@@ -47,14 +49,19 @@ function AddStock() {
       capacity: "",
       height: "",
       power: "",
+      watt: "",
+      form: "",
       description: "",
+      extended_description: "",
+      location: "",
       quantity: "",
       mfg_date: "",
       exp_date: "",
       item_buy_price: "",
       item_sell_price: "",
       warrantee_guarantee: "",
-      warrantee_guarantee_duration: ""
+      warrantee_guarantee_duration: "",
+      remarks: "",
     }
   ]);
 
@@ -66,6 +73,7 @@ function AddStock() {
   const [brands, setBrands] = useState([]);
   const [sellers, setSellers] = useState([]);
   const [brandIndex, setBrandIndex] = useState(-1);
+  const [clearHeader, setClearHeader] = useState(true);
 
   const addLowerPartEntry = () => {
     setLowerPartEntries([
@@ -79,14 +87,19 @@ function AddStock() {
         capacity: "",
         height: "",
         power: "",
+        watt: "",
+        form: "",
         description: "",
+        extended_description: "",
+        location: "",
         quantity: "",
         mfg_date: "",
         exp_date: "",
         item_buy_price: "",
         item_sell_price: "",
         warrantee_guarantee: "",
-        warrantee_guarantee_duration: ""
+        warrantee_guarantee_duration: "",
+        remarks: "",
       }
     ]);
   };
@@ -98,12 +111,12 @@ function AddStock() {
     setLowerPartEntries(updatedEntries);
   };
 
-    // Function to remove a lower part entry
-    const removeLowerPartEntry = (index) => {
-      if (lowerPartEntries.length > 1) {
-        setLowerPartEntries(lowerPartEntries.filter((_, i) => i !== index));
-      }
-    };
+  // Function to remove a lower part entry
+  const removeLowerPartEntry = (index) => {
+    if (lowerPartEntries.length > 1) {
+      setLowerPartEntries(lowerPartEntries.filter((_, i) => i !== index));
+    }
+  };
 
   const fetchCompanyDetails = async (value) => {
     try {
@@ -129,11 +142,11 @@ function AddStock() {
       toastr.error("Failed to load details. Please try again later.");
     }
   };
-  const fetchStructureDetails = async (companyId) => {
+  const fetchStructureDetails = async (company_id) => {
     try {
         const response = await fetch(`${HOST}:${PORT}/server/customize-add-stock-details`, {
             method: "PATCH",
-            body: JSON.stringify({companyId: companyId}),
+            body: JSON.stringify({company_id: company_id}),
             headers: {  "Content-Type": "application/json", 'authorization': `Bearer ${token}`}
           });
           if (response) {
@@ -210,7 +223,7 @@ function AddStock() {
     try {
       const response = await fetch(`${HOST}:${PORT}/server/brand-list`, {
             method: "PATCH",
-            body: JSON.stringify({value: value, companyId: company_details._id}),
+            body: JSON.stringify({value: value, company_id: company_details._id}),
             headers: {  'Content-Type': 'application/json','authorization': `Bearer ${token}`},
           });
           if (response) {
@@ -311,37 +324,41 @@ function AddStock() {
       }
     }
   };
-  const handleReset = () => {
-    setSlNo("");
-    setDate(new Date());
-    setTime(new Date());
-    setSubCategory("")
-    setChallanNo("")
-    setItem("")
-    setItemId("")
-    setBatchBrand("")
-    setBatchBrandId("")
-    setBatchColor("")
-    setBatchCapacity("")
-    setBatchHeight("")
-    setBatchPower("")
-    setBatchDescription("")
-    setBatchModel("")
-    setSeller("")
-    setSellerId("")
-    setTotalQuantity("")
-    setBatchNo("")
-    setBatchBuyPrice("")
-    setBatchSellPrice("")
-    setPerPeaceBuyPrice("")
-    setPerPeaceSellPrice("")
-    setBatchMfgDate("")
-    setBatchExpDate("")
-    setBatchWarranteeGuarente("")
-    setBatchWarranteeGuarenteDuration("")
-    setItemStatus("RECEIVED")
-    setReturnReason("")
-    setRemarks("")
+  const handleReset = (type) => {
+    if((type == "SUBMIT" && clearHeader) || (type !="SUBMIT")){
+      setSlNo("");
+      setDate(new Date());
+      setTime(new Date());
+      setSubCategory("")
+      setChallanNo("")
+      setItem("")
+      setItemId("")
+      setBatchBrand("")
+      setBatchBrandId("")
+      setBatchColor("")
+      setBatchCapacity("")
+      setBatchHeight("")
+      setBatchPower("")
+      setBatchWatt("")
+      setBatchDescription("")
+      setBatchExtendedDescription("")
+      setBatchModel("")
+      setBatchForm("")
+      setSeller("")
+      setSellerId("")
+      setTotalQuantity("")
+      setBatchNo("")
+      setBatchLocation("")
+      setBatchBuyPrice("")
+      setBatchSellPrice("")
+      setPerPeaceBuyPrice("")
+      setPerPeaceSellPrice("")
+      setBatchMfgDate("")
+      setBatchExpDate("")
+      setBatchWarranteeGuarente("")
+      setBatchWarranteeGuarenteDuration("")
+      setBatchRemarks("")
+    }
     setLowerPartEntries([
       {
         unique_code: "",
@@ -352,22 +369,27 @@ function AddStock() {
         capacity: "",
         height: "",
         power: "",
+        watt: "",
+        form: "",
         description: "",
+        extended_description: "",
+        location: "",
         quantity: "",
         mfg_date: "",
         exp_date: "",
         item_buy_price: "",
         item_sell_price: "",
         warrantee_guarantee: "",
-        warrantee_guarantee_duration: ""
+        warrantee_guarantee_duration: "",
+        remarks: "",
       }
     ])
   };
   const handleSubmit = async (event) => {
     event.preventDefault();
-    const data = {sl_no, date, time, sub_category, challan_no, item, item_id, seller, seller_id, total_quantity, batch_no, item_status, return_reason, remarks, stock_details: lowerPartEntries};
-    const additionalData = {batch_brand, batch_brand_id, batch_color, batch_capacity, batch_height, batch_power, batch_description, batch_model, batch_buy_price, batch_sell_price, per_piece_buy_price, per_piece_sell_price, batch_mfg_date, batch_exp_date, batch_warrantee_guarantee, batch_warrantee_guarantee_duration}
-    if(!data.date || !data.item || !data.total_quantity || !additionalData.batch_buy_price || !data.item_status){
+    const data = {sl_no, date, time, sub_category, challan_no, item, item_id, seller, seller_id, total_quantity, batch_no, stock_details: lowerPartEntries};
+    const additionalData = {batch_brand, batch_brand_id, batch_color, batch_capacity, batch_height, batch_power, batch_watt, batch_description, batch_extended_description, batch_model, batch_form, batch_location, batch_buy_price, batch_sell_price, per_piece_buy_price, per_piece_sell_price, batch_mfg_date, batch_exp_date, batch_warrantee_guarantee, batch_warrantee_guarantee_duration, batch_remarks}
+    if(!data.date || !data.item || !data.total_quantity || !additionalData.batch_buy_price ){
       toastr.error("Please enter all required field.");
       return;
     }
@@ -386,7 +408,7 @@ function AddStock() {
       const result = await response.json();
       if (response.ok) {
         toastr.success(result.msg);
-        handleReset()
+        handleReset("SUBMIT")
       } else {
         toastr.error(result.msg);
       }
@@ -409,7 +431,7 @@ function AddStock() {
     if (stockStructure.date) {
       fields.push(
         <div className="col mb-3 d-flex flex-column" key="date">
-          <label className="form-label mx-3">Received Date <span className="ei-col-red">*</span></label>
+          <label className="form-label mx-3">Receving Date <span className="ei-col-red">*</span></label>
           <DatePicker
             required
             name="date"
@@ -627,9 +649,9 @@ function AddStock() {
     if (stockStructure.batch_power) {
       fields.push(
         <div className="col mb-3" key="batch_power">
-          <label className="form-label mx-3">Power/Watt</label>
+          <label className="form-label mx-3">Power</label>
           <input
-            placeholder="Enter power/watt (if required)"
+            placeholder="Enter power (if required)"
             name="batch_power"
             type="text"
             maxLength={70}
@@ -637,6 +659,24 @@ function AddStock() {
             aria-describedby="emailHelp"
             value={batch_power}
             onChange={(e) => setBatchPower(e.target.value)}
+          />
+        </div>
+      );
+    }
+
+    if (stockStructure.batch_watt) {
+      fields.push(
+        <div className="col mb-3" key="batch_power">
+          <label className="form-label mx-3">Watt</label>
+          <input
+            placeholder="Enter watt (if required)"
+            name="batch_watt"
+            type="text"
+            maxLength={70}
+            className="form-control"
+            aria-describedby="emailHelp"
+            value={batch_watt}
+            onChange={(e) => setBatchWatt(e.target.value)}
           />
         </div>
       );
@@ -660,6 +700,15 @@ function AddStock() {
       );
     }
 
+    if (stockStructure.batch_form) {
+      fields.push(
+        <div className="col mb-3" key="batch_model">
+          <label className="form-label mx-3">Form</label>
+          <input placeholder="Enter model number (if available)" name="batch_form" type="text" maxLength={70} className="form-control"  aria-describedby="emailHelp" value={batch_form} onChange={(e) => setBatchForm(e.target.value)}/>
+        </div>
+      );
+    }
+
     if (stockStructure.batch_description) {
       fields.push(
         <div className="col mb-3" key="batch_description">
@@ -678,6 +727,47 @@ function AddStock() {
             aria-describedby="emailHelp"
             value={batch_description}
             onChange={(e) => setBatchDescription(e.target.value)}
+          />
+        </div>
+      );
+    }
+
+    if (stockStructure.batch_extended_description) {
+      fields.push(
+        <div className="col mb-3" key="batch_extended_description">
+          <label className="form-label mx-3">Extended Description <span className="title-class" data-tooltip="If you left the field empty, our system will autometically generate a description for the item."><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-info-circle" viewBox="0 0 16 16">
+              <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
+              <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0"/>
+              </svg>
+            </span>
+          </label>
+          <input
+            placeholder="Enter description (it will help to find the item)"
+            name="batch_extended_description"
+            type="text"
+            maxLength={70}
+            className="form-control"
+            aria-describedby="emailHelp"
+            value={batch_extended_description}
+            onChange={(e) => setBatchExtendedDescription(e.target.value)}
+          />
+        </div>
+      );
+    }
+
+    if (stockStructure.batch_location) {
+      fields.push(
+        <div className="col mb-3" key="batch_location">
+          <label className="form-label mx-3">Location </label>
+          <input
+            placeholder="Enter batch number"
+            name="batch_location"
+            type="text"
+            maxLength={70}
+            className="form-control"
+            aria-describedby="emailHelp"
+            value={batch_location}
+            onChange={(e) => setBatchLocation(e.target.value)}
           />
         </div>
       );
@@ -903,56 +993,19 @@ function AddStock() {
       );
     }
 
-    if (stockStructure.item_status) {
+    if (stockStructure.batch_remarks) {
       fields.push(
-        <div className="col mb-3" key="item_status">
-          <label className="form-label">Item Status <span className="ei-col-red">*</span></label>
-          <select
-            required
-            className="form-select"
-            aria-label="Default select example"
-            name="item_status"
-            value={item_status}
-            onChange={(e) => setItemStatus(e.target.value)}
-          >
-            <option value="RECEIVED">Received</option>
-            <option value="RETURNED">Returned</option>
-          </select>
-        </div>
-      );
-    }
-
-    if (stockStructure.return_reason && item_status === "RETURNED") {
-      fields.push(
-        <div className="col mb-3" key="return_reason">
-          <label className="form-label mx-3">Return Reason</label>
-          <input
-            placeholder="Describe return reason"
-            name="return_reason"
-            type="text"
-            maxLength={70}
-            className="form-control"
-            aria-describedby="emailHelp"
-            value={return_reason}
-            onChange={(e) => setReturnReason(e.target.value)}
-          />
-        </div>
-      );
-    }
-
-    if (stockStructure.remarks) {
-      fields.push(
-        <div className="col mb-3" key="remarks">
+        <div className="col mb-3" key="batch_remarks">
           <label className="form-label mx-3">Remarks (If any)</label>
           <input
             placeholder="Enter remarks if any"
-            name="remarks"
+            name="batch_remarks"
             type="text"
             maxLength={70}
             className="form-control"
             aria-describedby="emailHelp"
-            value={remarks}
-            onChange={(e) => setRemarks(e.target.value)}
+            value={batch_remarks}
+            onChange={(e) => setBatchRemarks(e.target.value)}
           />
         </div>
       );
@@ -1070,9 +1123,9 @@ function AddStock() {
     if (stockStructure.power) {
       fields.push(
         <div className="col mb-3" key={`power_${index}`}>
-          <label className="form-label mx-3">Power/Watt</label>
+          <label className="form-label mx-3">Power</label>
           <input
-            placeholder="Enter power/watt (if required)"
+            placeholder="Enter power (if required)"
             name="power"
             type="text"
             maxLength={70}
@@ -1080,6 +1133,24 @@ function AddStock() {
             aria-describedby="emailHelp"
             value={entry.power}
             onChange={(e) => handleLowerPartChange(index, "power", e.target.value)}
+          />
+        </div>
+      );
+    }
+
+    if (stockStructure.watt) {
+      fields.push(
+        <div className="col mb-3" key={`watt_${index}`}>
+          <label className="form-label mx-3">Watt</label>
+          <input
+            placeholder="Enter watt (if required)"
+            name="watt"
+            type="text"
+            maxLength={70}
+            className="form-control"
+            aria-describedby="emailHelp"
+            value={entry.watt}
+            onChange={(e) => handleLowerPartChange(index, "watt", e.target.value)}
           />
         </div>
       );
@@ -1112,6 +1183,46 @@ function AddStock() {
             aria-describedby="emailHelp"
             value={entry.description}
             onChange={(e) => handleLowerPartChange(index, "description", e.target.value)}
+          />
+        </div>
+      );
+    }
+
+    if (stockStructure.extended_description) {
+      fields.push(
+        <div className="col mb-3" key={`extended_description_${index}`}>
+          <label className="form-label mx-3">Extended Description <span className="title-class" data-tooltip="If you left the field empty, our system will autometically generate a description for the item."><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-info-circle" viewBox="0 0 16 16">
+              <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
+              <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0"/>
+              </svg>
+            </span>
+          </label>
+          <input
+            placeholder="Enter extended description (it will help to find the item)"
+            name="extended_description"
+            type="text"
+            maxLength={70}
+            className="form-control"
+            aria-describedby="emailHelp"
+            value={entry.extended_description}
+            onChange={(e) => handleLowerPartChange(index, "extended_description", e.target.value)}
+          />
+        </div>
+      );
+    }
+
+    if (stockStructure.location) {
+      fields.push(
+        <div className="col mb-3" key={`location_${index}`}>
+          <label className="form-label mx-3">Location</label>
+          <input
+            placeholder="Enter location"
+            name="location"
+            type="text"
+            className="form-control"
+            aria-describedby="emailHelp"
+            value={entry.location}
+            onChange={(e) => handleLowerPartChange(index, "location", e.target.value)}
           />
         </div>
       );
@@ -1258,70 +1369,96 @@ function AddStock() {
       );
     }
 
+    if (stockStructure.remarks) {
+      fields.push(
+        <div className="col mb-3" key={`remarks_${index}`}>
+          <label className="form-label">Remarks</label>
+          <input
+            placeholder="Enter remarks"
+            name="remarks"
+            type="text"
+            className="form-control"
+            aria-describedby="emailHelp"
+            value={entry.remarks}
+            onChange={(e) => handleLowerPartChange(index, "remarks", e.target.value)}
+          />
+        </div>
+      );
+    }
+
     return fields;
   };
 
   return (
     <div className="container my-2">
       {isStockStructure && (
-        <form onSubmit={handleSubmit}>
-          {/* Upper part: Render visible fields in rows of 3 */}
-          {chunkArray(getUpperPartVisibleFields(), 3).map((rowFields, rowIndex) => (
-            <div className="row" key={`upper_row_${rowIndex}`}>
-              {rowFields}
-            </div>
-          ))}
-
-          {/* Lower part: Render visible fields for each entry in rows of 3 */}
-          {(stockStructure.unique_code || stockStructure.mfg_date || stockStructure.exp_date || stockStructure.item_buy_price || stockStructure.item_sell_price || stockStructure.warrantee_guarantee || stockStructure.warrantee_guarantee_duration || stockStructure.brand || stockStructure.color || stockStructure.capacity || stockStructure.height || stockStructure.power || stockStructure.model || stockStructure.description || stockStructure.quantity) && (
+        <div>
+          <div className="mb-3 form-switch d-flex justify-content-end " style={{paddingLeft: "0"}}>
+            <label className="form-label mx-2">Clear Header </label>
             <div>
-              <hr />
-              <h6>Fill the below form if any specific item has any specific properties. You can specify multiple items with 
-                <span className="border-0 bg-success btn btn-primary mx-2">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-circle-dotted" viewBox="0 0 16 16">
-                    <path d="M8 0q-.264 0-.523.017l.064.998a7 7 0 0 1 .918 0l.064-.998A8 8 0 0 0 8 0M6.44.152q-.52.104-1.012.27l.321.948q.43-.147.884-.237L6.44.153zm4.132.271a8 8 0 0 0-1.011-.27l-.194.98q.453.09.884.237zm1.873.925a8 8 0 0 0-.906-.524l-.443.896q.413.205.793.459zM4.46.824q-.471.233-.905.524l.556.83a7 7 0 0 1 .793-.458zM2.725 1.985q-.394.346-.74.74l.752.66q.303-.345.648-.648zm11.29.74a8 8 0 0 0-.74-.74l-.66.752q.346.303.648.648zm1.161 1.735a8 8 0 0 0-.524-.905l-.83.556q.254.38.458.793l.896-.443zM1.348 3.555q-.292.433-.524.906l.896.443q.205-.413.459-.793zM.423 5.428a8 8 0 0 0-.27 1.011l.98.194q.09-.453.237-.884zM15.848 6.44a8 8 0 0 0-.27-1.012l-.948.321q.147.43.237.884zM.017 7.477a8 8 0 0 0 0 1.046l.998-.064a7 7 0 0 1 0-.918zM16 8a8 8 0 0 0-.017-.523l-.998.064a7 7 0 0 1 0 .918l.998.064A8 8 0 0 0 16 8M.152 9.56q.104.52.27 1.012l.948-.321a7 7 0 0 1-.237-.884l-.98.194zm15.425 1.012q.168-.493.27-1.011l-.98-.194q-.09.453-.237.884zM.824 11.54a8 8 0 0 0 .524.905l.83-.556a7 7 0 0 1-.458-.793zm13.828.905q.292-.434.524-.906l-.896-.443q-.205.413-.459.793zm-12.667.83q.346.394.74.74l.66-.752a7 7 0 0 1-.648-.648zm11.29.74q.394-.346.74-.74l-.752-.66q-.302.346-.648.648zm-1.735 1.161q.471-.233.905-.524l-.556-.83a7 7 0 0 1-.793.458zm-7.985-.524q.434.292.906.524l.443-.896a7 7 0 0 1-.793-.459zm1.873.925q.493.168 1.011.27l.194-.98a7 7 0 0 1-.884-.237zm4.132.271a8 8 0 0 0 1.012-.27l-.321-.948a7 7 0 0 1-.884.237l.194.98zm-2.083.135a8 8 0 0 0 1.046 0l-.064-.998a7 7 0 0 1-.918 0zM8.5 4.5a.5.5 0 0 0-1 0v3h-3a.5.5 0 0 0 0 1h3v3a.5.5 0 0 0 1 0v-3h3a.5.5 0 0 0 0-1h-3z"/>
-                  </svg> 
-                </span> button</h6>
-              {lowerPartEntries.map((entry, index) => (
-                <div key={index} className="border p-3 mb-3">
-                  {/* Render visible fields for this entry in rows of 3 */}
-                  {chunkArray(getLowerPartVisibleFields(entry, index), 3).map((rowFields, rowIndex) => (
-                    <div className="row" key={`lower_entry_${index}_row_${rowIndex}`}>
-                      {rowFields}
-                    </div>
-                  ))}
-                  {/* Add/Remove buttons */}
-                  <div className="d-flex justify-content-end mt-3">
-                    <button type="button" className="border-0 bg-success btn btn-primary mx-2" onClick={addLowerPartEntry}>
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-circle-dotted" viewBox="0 0 16 16">
-                        <path d="M8 0q-.264 0-.523.017l.064.998a7 7 0 0 1 .918 0l.064-.998A8 8 0 0 0 8 0M6.44.152q-.52.104-1.012.27l.321.948q.43-.147.884-.237L6.44.153zm4.132.271a8 8 0 0 0-1.011-.27l-.194.98q.453.09.884.237zm1.873.925a8 8 0 0 0-.906-.524l-.443.896q.413.205.793.459zM4.46.824q-.471.233-.905.524l.556.83a7 7 0 0 1 .793-.458zM2.725 1.985q-.394.346-.74.74l.752.66q.303-.345.648-.648zm11.29.74a8 8 0 0 0-.74-.74l-.66.752q.346.303.648.648zm1.161 1.735a8 8 0 0 0-.524-.905l-.83.556q.254.38.458.793l.896-.443zM1.348 3.555q-.292.433-.524.906l.896.443q.205-.413.459-.793zM.423 5.428a8 8 0 0 0-.27 1.011l.98.194q.09-.453.237-.884zM15.848 6.44a8 8 0 0 0-.27-1.012l-.948.321q.147.43.237.884zM.017 7.477a8 8 0 0 0 0 1.046l.998-.064a7 7 0 0 1 0-.918zM16 8a8 8 0 0 0-.017-.523l-.998.064a7 7 0 0 1 0 .918l.998.064A8 8 0 0 0 16 8M.152 9.56q.104.52.27 1.012l.948-.321a7 7 0 0 1-.237-.884l-.98.194zm15.425 1.012q.168-.493.27-1.011l-.98-.194q-.09.453-.237.884zM.824 11.54a8 8 0 0 0 .524.905l.83-.556a7 7 0 0 1-.458-.793zm13.828.905q.292-.434.524-.906l-.896-.443q-.205.413-.459.793zm-12.667.83q.346.394.74.74l.66-.752a7 7 0 0 1-.648-.648zm11.29.74q.394-.346.74-.74l-.752-.66q-.302.346-.648.648zm-1.735 1.161q.471-.233.905-.524l-.556-.83a7 7 0 0 1-.793.458zm-7.985-.524q.434.292.906.524l.443-.896a7 7 0 0 1-.793-.459zm1.873.925q.493.168 1.011.27l.194-.98a7 7 0 0 1-.884-.237zm4.132.271a8 8 0 0 0 1.012-.27l-.321-.948a7 7 0 0 1-.884.237l.194.98zm-2.083.135a8 8 0 0 0 1.046 0l-.064-.998a7 7 0 0 1-.918 0zM8.5 4.5a.5.5 0 0 0-1 0v3h-3a.5.5 0 0 0 0 1h3v3a.5.5 0 0 0 1 0v-3h3a.5.5 0 0 0 0-1h-3z"/>
-                      </svg>
-                    </button>
-                    <button type="button" className="border-0 btn bg-danger btn-denger mx-2" onClick={() => removeLowerPartEntry(index)}>
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-trash" viewBox="0 0 16 16">
-                        <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/>
-                        <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z"/>
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-              ))}
+                <input className="form-check-input cursor-pointer" style={{ marginLeft: "0" }} type="checkbox" role="switch" id="clearHeaderSwitch" checked={clearHeader} onChange={(e) => setClearHeader( e.target.checked)}/>
+                <label className="form-check-label mx-3" htmlFor="clearHeaderSwitch"></label>
             </div>
-          )}
+          </div>
+          <form onSubmit={handleSubmit}>
+            {/* Upper part: Render visible fields in rows of 3 */}
+            {chunkArray(getUpperPartVisibleFields(), 3).map((rowFields, rowIndex) => (
+              <div className="row" key={`upper_row_${rowIndex}`}>
+                {rowFields}
+              </div>
+            ))}
 
-          <button type="submit" className="btn btn-primary border-0 bg-success">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-floppy" viewBox="0 0 16 16">
-                <path d="M11 2H9v3h2z"/>
-                <path d="M1.5 0h11.586a1.5 1.5 0 0 1 1.06.44l1.415 1.414A1.5 1.5 0 0 1 16 2.914V14.5a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 14.5v-13A1.5 1.5 0 0 1 1.5 0M1 1.5v13a.5.5 0 0 0 .5.5H2v-4.5A1.5 1.5 0 0 1 3.5 9h9a1.5 1.5 0 0 1 1.5 1.5V15h.5a.5.5 0 0 0 .5-.5V2.914a.5.5 0 0 0-.146-.353l-1.415-1.415A.5.5 0 0 0 13.086 1H13v4.5A1.5 1.5 0 0 1 11.5 7h-7A1.5 1.5 0 0 1 3 5.5V1H1.5a.5.5 0 0 0-.5.5m3 4a.5.5 0 0 0 .5.5h7a.5.5 0 0 0 .5-.5V1H4zM3 15h10v-4.5a.5.5 0 0 0-.5-.5h-9a.5.5 0 0 0-.5.5z"/>
-            </svg> Save
-          </button>
-          <button type="button" className="border-0 bg-danger btn btn-primary ms-4" onClick={handleReset}>
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-clockwise" viewBox="0 0 16 16">
-              <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2z"/>
-              <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466"/>
-            </svg> Reset
-          </button>
-        </form>
+            {/* Lower part: Render visible fields for each entry in rows of 3 */}
+            {(stockStructure.unique_code || stockStructure.mfg_date || stockStructure.exp_date || stockStructure.item_buy_price || stockStructure.item_sell_price || stockStructure.warrantee_guarantee || stockStructure.warrantee_guarantee_duration || stockStructure.brand || stockStructure.color || stockStructure.capacity || stockStructure.height || stockStructure.power || stockStructure.model || stockStructure.description || stockStructure.quantity) && (
+              <div>
+                <hr />
+                <h6>Fill the below form if any specific item has any specific properties. You can specify multiple items with 
+                  <span className="border-0 bg-success btn btn-primary mx-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-circle-dotted" viewBox="0 0 16 16">
+                      <path d="M8 0q-.264 0-.523.017l.064.998a7 7 0 0 1 .918 0l.064-.998A8 8 0 0 0 8 0M6.44.152q-.52.104-1.012.27l.321.948q.43-.147.884-.237L6.44.153zm4.132.271a8 8 0 0 0-1.011-.27l-.194.98q.453.09.884.237zm1.873.925a8 8 0 0 0-.906-.524l-.443.896q.413.205.793.459zM4.46.824q-.471.233-.905.524l.556.83a7 7 0 0 1 .793-.458zM2.725 1.985q-.394.346-.74.74l.752.66q.303-.345.648-.648zm11.29.74a8 8 0 0 0-.74-.74l-.66.752q.346.303.648.648zm1.161 1.735a8 8 0 0 0-.524-.905l-.83.556q.254.38.458.793l.896-.443zM1.348 3.555q-.292.433-.524.906l.896.443q.205-.413.459-.793zM.423 5.428a8 8 0 0 0-.27 1.011l.98.194q.09-.453.237-.884zM15.848 6.44a8 8 0 0 0-.27-1.012l-.948.321q.147.43.237.884zM.017 7.477a8 8 0 0 0 0 1.046l.998-.064a7 7 0 0 1 0-.918zM16 8a8 8 0 0 0-.017-.523l-.998.064a7 7 0 0 1 0 .918l.998.064A8 8 0 0 0 16 8M.152 9.56q.104.52.27 1.012l.948-.321a7 7 0 0 1-.237-.884l-.98.194zm15.425 1.012q.168-.493.27-1.011l-.98-.194q-.09.453-.237.884zM.824 11.54a8 8 0 0 0 .524.905l.83-.556a7 7 0 0 1-.458-.793zm13.828.905q.292-.434.524-.906l-.896-.443q-.205.413-.459.793zm-12.667.83q.346.394.74.74l.66-.752a7 7 0 0 1-.648-.648zm11.29.74q.394-.346.74-.74l-.752-.66q-.302.346-.648.648zm-1.735 1.161q.471-.233.905-.524l-.556-.83a7 7 0 0 1-.793.458zm-7.985-.524q.434.292.906.524l.443-.896a7 7 0 0 1-.793-.459zm1.873.925q.493.168 1.011.27l.194-.98a7 7 0 0 1-.884-.237zm4.132.271a8 8 0 0 0 1.012-.27l-.321-.948a7 7 0 0 1-.884.237l.194.98zm-2.083.135a8 8 0 0 0 1.046 0l-.064-.998a7 7 0 0 1-.918 0zM8.5 4.5a.5.5 0 0 0-1 0v3h-3a.5.5 0 0 0 0 1h3v3a.5.5 0 0 0 1 0v-3h3a.5.5 0 0 0 0-1h-3z"/>
+                    </svg> 
+                  </span> button</h6>
+                {lowerPartEntries.map((entry, index) => (
+                  <div key={index} className="border p-3 mb-3">
+                    {/* Render visible fields for this entry in rows of 3 */}
+                    {chunkArray(getLowerPartVisibleFields(entry, index), 3).map((rowFields, rowIndex) => (
+                      <div className="row" key={`lower_entry_${index}_row_${rowIndex}`}>
+                        {rowFields}
+                      </div>
+                    ))}
+                    {/* Add/Remove buttons */}
+                    <div className="d-flex justify-content-end mt-3">
+                      <button type="button" className="border-0 bg-success btn btn-primary mx-2" onClick={addLowerPartEntry}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-circle-dotted" viewBox="0 0 16 16">
+                          <path d="M8 0q-.264 0-.523.017l.064.998a7 7 0 0 1 .918 0l.064-.998A8 8 0 0 0 8 0M6.44.152q-.52.104-1.012.27l.321.948q.43-.147.884-.237L6.44.153zm4.132.271a8 8 0 0 0-1.011-.27l-.194.98q.453.09.884.237zm1.873.925a8 8 0 0 0-.906-.524l-.443.896q.413.205.793.459zM4.46.824q-.471.233-.905.524l.556.83a7 7 0 0 1 .793-.458zM2.725 1.985q-.394.346-.74.74l.752.66q.303-.345.648-.648zm11.29.74a8 8 0 0 0-.74-.74l-.66.752q.346.303.648.648zm1.161 1.735a8 8 0 0 0-.524-.905l-.83.556q.254.38.458.793l.896-.443zM1.348 3.555q-.292.433-.524.906l.896.443q.205-.413.459-.793zM.423 5.428a8 8 0 0 0-.27 1.011l.98.194q.09-.453.237-.884zM15.848 6.44a8 8 0 0 0-.27-1.012l-.948.321q.147.43.237.884zM.017 7.477a8 8 0 0 0 0 1.046l.998-.064a7 7 0 0 1 0-.918zM16 8a8 8 0 0 0-.017-.523l-.998.064a7 7 0 0 1 0 .918l.998.064A8 8 0 0 0 16 8M.152 9.56q.104.52.27 1.012l.948-.321a7 7 0 0 1-.237-.884l-.98.194zm15.425 1.012q.168-.493.27-1.011l-.98-.194q-.09.453-.237.884zM.824 11.54a8 8 0 0 0 .524.905l.83-.556a7 7 0 0 1-.458-.793zm13.828.905q.292-.434.524-.906l-.896-.443q-.205.413-.459.793zm-12.667.83q.346.394.74.74l.66-.752a7 7 0 0 1-.648-.648zm11.29.74q.394-.346.74-.74l-.752-.66q-.302.346-.648.648zm-1.735 1.161q.471-.233.905-.524l-.556-.83a7 7 0 0 1-.793.458zm-7.985-.524q.434.292.906.524l.443-.896a7 7 0 0 1-.793-.459zm1.873.925q.493.168 1.011.27l.194-.98a7 7 0 0 1-.884-.237zm4.132.271a8 8 0 0 0 1.012-.27l-.321-.948a7 7 0 0 1-.884.237l.194.98zm-2.083.135a8 8 0 0 0 1.046 0l-.064-.998a7 7 0 0 1-.918 0zM8.5 4.5a.5.5 0 0 0-1 0v3h-3a.5.5 0 0 0 0 1h3v3a.5.5 0 0 0 1 0v-3h3a.5.5 0 0 0 0-1h-3z"/>
+                        </svg>
+                      </button>
+                      <button type="button" className="border-0 btn bg-danger btn-denger mx-2" onClick={() => removeLowerPartEntry(index)}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-trash" viewBox="0 0 16 16">
+                          <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/>
+                          <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <button type="submit" className="btn btn-primary border-0 bg-success">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-floppy" viewBox="0 0 16 16">
+                  <path d="M11 2H9v3h2z"/>
+                  <path d="M1.5 0h11.586a1.5 1.5 0 0 1 1.06.44l1.415 1.414A1.5 1.5 0 0 1 16 2.914V14.5a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 14.5v-13A1.5 1.5 0 0 1 1.5 0M1 1.5v13a.5.5 0 0 0 .5.5H2v-4.5A1.5 1.5 0 0 1 3.5 9h9a1.5 1.5 0 0 1 1.5 1.5V15h.5a.5.5 0 0 0 .5-.5V2.914a.5.5 0 0 0-.146-.353l-1.415-1.415A.5.5 0 0 0 13.086 1H13v4.5A1.5 1.5 0 0 1 11.5 7h-7A1.5 1.5 0 0 1 3 5.5V1H1.5a.5.5 0 0 0-.5.5m3 4a.5.5 0 0 0 .5.5h7a.5.5 0 0 0 .5-.5V1H4zM3 15h10v-4.5a.5.5 0 0 0-.5-.5h-9a.5.5 0 0 0-.5.5z"/>
+              </svg> Save
+            </button>
+            <button type="button" className="border-0 bg-danger btn btn-primary ms-4" onClick={handleReset}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-clockwise" viewBox="0 0 16 16">
+                <path fillRule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2z"/>
+                <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466"/>
+              </svg> Reset
+            </button>
+          </form>
+        </div>
       )}
       {!isStockStructure && <div>
         <h3>No form configuration found !!</h3>  <br />

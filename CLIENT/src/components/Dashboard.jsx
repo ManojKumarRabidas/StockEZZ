@@ -109,7 +109,6 @@ const Dashboard = () => {
       );
       const result = await response.json();
       if (response.ok) {
-        console.log("result.docs", result.docs)
         setlowStockData(result.docs)
       } else {
         toastr.error(result.msg);
@@ -144,7 +143,7 @@ const Dashboard = () => {
   useEffect(() => {
     if(!(userType == "ADMIN" || userType == "SUPPORTADMIN")){fetchFinancialData();}
     
-  }, [dateRange, stockFilter]);
+  }, [dateRange]);
 
   useEffect(() => {
     if(!(userType == "ADMIN" || userType == "SUPPORTADMIN")){fetchLowStockItems();}
@@ -194,7 +193,7 @@ const Dashboard = () => {
         ? item.lowStockDescriptions.map(stock => ({
             "Item Code": item.code,
             "Item Name": item.name,
-            "Quantity": stock.quantity,
+            "Quantity": stock.available_quantity,
             "Description": stock.description,
             "Status": stock.quantity === 0 ? 'Out of Stock' : 'Low Stock'
         }))
@@ -388,9 +387,8 @@ const Dashboard = () => {
               <div className="d-flex justify-content-between align-items-center">
                 <h5 className="card-title mb-2">Stock Movement</h5>
                 <select style={{maxWidth: "15rem"}} className="form-select" aria-label="Default select example" value={itemName} name="itemName" onChange={(e) => handleStockMovement(e.target.value)}>
-                    <option>--Select item--</option>
                     {financialData?.stockMovement.map((item)=>(
-                      <option key={item.item} value={item.item}>{item.item} - {item.sub_category ? item.sub_category : "Not Available"}</option>
+                      <option key={item.item} value={item.item}>{item.item}</option>
                     ))}
                 </select>
               </div> 
@@ -478,8 +476,8 @@ const Dashboard = () => {
                         <td>{item.name}</td>
                         <td>{item.total_quantity}</td>
                         <td>
-                          <span className={`badge ${item.total_available === 0 ? 'bg-danger' : 'bg-warning'}`}>
-                            {item.total_available === 0 ? 'Out of Stock' : 'Low Stock'}
+                          <span className={`badge ${item.total_quantity === 0 ? 'bg-danger' : 'bg-warning'}`}>
+                            {item.total_quantity === 0 ? 'Out of Stock' : 'Low Stock'}
                           </span>
                         </td>
                         <td className="d-flex align-items-center justify-content-center">
@@ -557,13 +555,6 @@ const Dashboard = () => {
                   <button type="button" className="btn-close" onClick={() => setSelectedItem(null)}></button>
                 </div>
                 <div className="modal-body">
-                  {/* <input
-                    type="number"
-                    value={reorderQuantity}
-                    onChange={(e) => setReorderQuantity(parseInt(e.target.value))}
-                    className="form-control mb-2"
-                    placeholder="Reorder Quantity"
-                  /> */}
                   <table className="table table-striped">
                     <tbody>
                       <tr>
@@ -572,7 +563,7 @@ const Dashboard = () => {
                       </tr>
                       <tr>
                         <td>Current Stock</td>
-                        <td>: {selectedItem.total_available}</td>
+                        <td>: {selectedItem.total_quantity}</td>
                       </tr>
                       <tr>
                         <td>Minimum Stock Level</td>
@@ -581,33 +572,27 @@ const Dashboard = () => {
                     </tbody>
                   </table>
                   <hr />
-                  {selectedItem.lowStockDescriptions.length>0 && <table className="table table-striped">
-                    <thead>
-                      <tr>
-                        <th>Description</th>
-                        <th>Quantity</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {selectedItem.lowStockDescriptions.map((item)=>(
-                      <tr>
-                        <td>{item.description}</td>
-                        <td>{item.available_quantity}</td>
-                      </tr>
-                      ))}
-                    </tbody>
-                  </table>}
+                  {selectedItem.lowStockDescriptions.length>0 && <div className="scroll-hidden-2" style={{maxHeight: "46vh"}}>
+                    <table className="table table-striped">
+                      <thead>
+                        <tr>
+                          <th>Description</th>
+                          <th>Quantity</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {selectedItem.lowStockDescriptions.map((item)=>(
+                        <tr>
+                          <td className={item.available_quantity === 0 ? "bg-danger text-light": ""}>{item.description}</td>
+                          <td className={item.available_quantity === 0 ? "bg-danger text-light": ""}>{item.available_quantity}</td>
+                        </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>}
                 </div>
                 <div className="modal-footer">
                   <button type="button" className="btn btn-secondary" onClick={() => setSelectedItem(null)}>Cancel</button>
-                  {/* <button
-                    type="button"
-                    className="btn btn-primary"
-                    onClick={() => handleReorder(selectedItem)}
-                    disabled={reorderQuantity <= 0}
-                  >
-                    Reorder
-                  </button> */}
                 </div>
               </div>
             </div>
