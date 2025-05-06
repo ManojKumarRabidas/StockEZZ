@@ -22,7 +22,7 @@ module.exports = {
                 return;
             }
             let stockDetailsBody = body.stock_details;
-            if(!(stockDetailsBody[0].unique_code || stockDetailsBody[0].model || stockDetailsBody[0].brand || stockDetailsBody[0].color || stockDetailsBody[0].capacity || stockDetailsBody[0].height || stockDetailsBody[0].power || stockDetailsBody[0].description || stockDetailsBody[0].quantity || stockDetailsBody[0].mfg_date || stockDetailsBody[0].exp_date || stockDetailsBody[0].item_buy_price || stockDetailsBody[0].item_sell_price || stockDetailsBody[0].warrantee_guarantee || stockDetailsBody[0].warrantee_guarantee_duration)){
+            if(!(stockDetailsBody[0].unique_code || stockDetailsBody[0].model || stockDetailsBody[0].brand || stockDetailsBody[0].color || stockDetailsBody[0].capacity || stockDetailsBody[0].height || stockDetailsBody[0].power || stockDetailsBody[0].watt || stockDetailsBody[0].description || stockDetailsBody[0].extended_description || stockDetailsBody[0].location || stockDetailsBody[0].quantity || stockDetailsBody[0].mfg_date || stockDetailsBody[0].exp_date || stockDetailsBody[0].item_buy_price || stockDetailsBody[0].item_sell_price || stockDetailsBody[0].warrantee_guarantee || stockDetailsBody[0].warrantee_guarantee_duration || stockDetailsBody[0].remarks)){
                 stockDetailsBody = []
             }
             let detailsBodyTotalQuantity = 0
@@ -64,7 +64,7 @@ module.exports = {
                     name: body.item,
                     category : company.company_type_id,
                     sub_category : body.sub_category,
-                    companyId : body.company_id,
+                    company_id : body.company_id,
                     active: true
                 }
                 const codeGenerator = await require("../controllers/utilController").createCode("ITEM");
@@ -86,7 +86,7 @@ module.exports = {
             } else if(additionalData.batch_brand){
                 const newBrand = {
                     name: additionalData.batch_brand,
-                    companyId : body.company_id,
+                    company_id : body.company_id,
                     active: true
                 }
                 const doc = await brandModel.findOneAndUpdate(
@@ -102,12 +102,11 @@ module.exports = {
                 body.brand_id = doc._id;
             }
             if(body.seller_id){
-                
                 body.seller_id = new ObjectId(body.seller_id);
             } else if(body.seller){
                 const newSeller = {
                     name: body.seller,
-                    companyId : body.company_id,
+                    company_id : body.company_id,
                     active: true
                 }
                 const codeGenerator = await require("../controllers/utilController").createCode("SELLER");
@@ -151,7 +150,11 @@ module.exports = {
                 body.capacity = additionalData.batch_capacity ? additionalData.batch_capacity: null;
                 body.height = additionalData.batch_height ? additionalData.batch_height: null;
                 body.power = additionalData.batch_power ? additionalData.batch_power: null;
+                body.watt = additionalData.batch_watt ? additionalData.batch_watt: null;
+                body.form = additionalData.batch_form ? additionalData.batch_form: null;
                 body.description = additionalData.batch_description ? additionalData.batch_description: null;
+                body.extended_description = additionalData.batch_extended_description ? additionalData.batch_extended_description: null;
+                body.location = additionalData.batch_location ? additionalData.batch_location: null;
                 body.model = additionalData.batch_model ? additionalData.batch_model: null;
                 body.mfg_date = additionalData.batch_mfg_date ? new Date(additionalData.batch_mfg_date): null;
                 body.exp_date = additionalData.batch_exp_date ? new Date(additionalData.batch_exp_date): null;
@@ -159,6 +162,7 @@ module.exports = {
                 body.item_sell_price = additionalData.per_piece_sell_price ? Number(additionalData.per_piece_sell_price): 0;
                 body.warrantee_guarantee = additionalData.batch_warrantee_guarantee ? additionalData.batch_warrantee_guarantee: null;
                 body.warrantee_guarantee_duration = additionalData.batch_warrantee_guarantee_duration ? Number(additionalData.batch_warrantee_guarantee_duration): null;
+                body.remarks = additionalData.batch_remarks ? additionalData.batch_remarks: null;
                 body.quantity = itemQuantity - detailsBodyTotalQuantity;
                 body.total_quantity = itemQuantity - detailsBodyTotalQuantity;
 
@@ -200,7 +204,21 @@ module.exports = {
                     descriptionKeyParts.push(body.power.trim().replace(/\s+/g, ''));
                 }
 
+                if (body.watt && body.watt.trim() !== "") {
+                    descriptionParts.push(body.watt);
+                    descriptionKeyParts.push(body.watt.trim().replace(/\s+/g, ''));
+                }
+
+                if (body.form && body.form.trim() !== "") {
+                    descriptionParts.push(body.form);
+                    descriptionKeyParts.push(body.form.trim().replace(/\s+/g, ''));
+                }
+                
                 body.description_key = descriptionKeyParts.join("").toLowerCase();
+                
+                if (body.extended_description && body.extended_description.trim() !== "") {
+                    descriptionParts.push(body.extended_description);
+                }
 
                 if (!body.description || body.description.trim() == "") {
                     body.description = descriptionParts.join(" ");
@@ -219,7 +237,7 @@ module.exports = {
                     } else if(ref.brand){
                         const newBrand = {
                             name: ref.brand,
-                            companyId : body.company_id,
+                            company_id : body.company_id,
                             active: true
                         }
                         const doc = await brandModel.findOneAndUpdate(
@@ -241,7 +259,11 @@ module.exports = {
                     newBody.capacity = ref.capacity ? ref.capacity: additionalData.batch_capacity;
                     newBody.height = ref.height ? ref.height: additionalData.batch_height;
                     newBody.power = ref.power ? ref.power: additionalData.batch_power;
+                    newBody.watt = ref.watt ? ref.watt: additionalData.watt;
+                    newBody.form = ref.form ? ref.form: additionalData.form;
                     newBody.description = ref.description ? ref.description: additionalData.batch_description;
+                    newBody.extended_description = ref.extended_description ? ref.extended_description: additionalData.batch_extended_description;
+                    newBody.location = ref.location ? ref.location: additionalData.location;
                     newBody.model = ref.model ? ref.model: additionalData.batch_model;
                     newBody.unique_code = ref.unique_code ? ref.unique_code : "";
                     newBody.mfg_date = ref.mfg_date ? new Date(ref.mfg_date) : (additionalData.batch_mfg_date ? new Date(additionalData.batch_mfg_date): null);
@@ -250,6 +272,7 @@ module.exports = {
                     newBody.item_sell_price = ref.item_sell_price ? Number(ref.item_sell_price) : (additionalData.per_piece_sell_price ? Number(additionalData.per_piece_sell_price): 0);
                     newBody.warrantee_guarantee = ref.warrantee_guarantee ? ref.warrantee_guarantee : ((additionalData.batch_warrantee_guarantee ? additionalData.batch_warrantee_guarantee: null));
                     newBody.warrantee_guarantee_duration = ref.warrantee_guarantee_duration ? Number(ref.warrantee_guarantee_duration) : (((additionalData.batch_warrantee_guarantee_duration ? Number(additionalData.batch_warrantee_guarantee_duration): null)));
+                    newBody.remarks = ref.remarks ? ref.remarks : additionalData.remarks;
                     
                     const descriptionParts = [];
                     const descriptionKeyParts = [];
@@ -284,12 +307,23 @@ module.exports = {
                         descriptionParts.push(newBody.power);
                         descriptionKeyParts.push(newBody.power.trim().replace(/\s+/g, ''));
                     }
+                    if (newBody.watt && newBody.watt.trim() !== "") {
+                        descriptionParts.push(newBody.watt);
+                        descriptionKeyParts.push(newBody.watt.trim().replace(/\s+/g, ''));
+                    }
+                    if (newBody.form && newBody.form.trim() !== "") {
+                        descriptionParts.push(newBody.form);
+                        descriptionKeyParts.push(newBody.form.trim().replace(/\s+/g, ''));
+                    }
                     newBody.description_key = descriptionKeyParts.join("").toLowerCase();
 
                     if (newBody.unique_code && newBody.unique_code.trim() !== "") {
                         descriptionParts.push(newBody.unique_code);
                     }
-                    
+
+                    if (newBody.extended_description && newBody.extended_description.trim() !== "") {
+                        descriptionParts.push(newBody.extended_description);
+                    }
                     if (!newBody.description || newBody.description.trim() == "") {
                         newBody.description = descriptionParts.join(" ");
                     }
@@ -354,7 +388,7 @@ module.exports = {
                     await buyerModel.updateOne({_id: buyerExists._id}, {$set: buyerBody})
                     body.buyer_id = buyerExists._id;
                 } else{
-                    buyerBody.companyId= new ObjectId(body.company_id),
+                    buyerBody.company_id= new ObjectId(body.company_id),
                     buyerBody.active= true,
                     buyerBody.createdBy= new ObjectId(user.id);
                     const codeGenerator = await require("../controllers/utilController").createCode("BUYER");
@@ -502,10 +536,10 @@ module.exports = {
                 }
             
             if (userType === "COMPANY") {
-                tempMatchStage.companyId = userId;
+                tempMatchStage.company_id = userId;
             } else if(userType === "OPERATOR"){
                 let operator = await userModel.findOne({_id: userId}, {company: 1});
-                tempMatchStage.companyId = new ObjectId(operator.company)
+                tempMatchStage.company_id = new ObjectId(operator.company)
                 company = await companyModel.findOne({_id: operator.company}, {name: 1, phone: 1, email: 1, address: 1, gstNo: 1});
             }
             
@@ -726,6 +760,7 @@ module.exports = {
             res.status(500).json({ status: false, msg: err.message });
         }
     },
+
     // billReCreateOld1: async(req, res)=>{
     //     try{
     //         console.log(req.body)

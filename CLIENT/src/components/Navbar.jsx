@@ -38,7 +38,7 @@ function Navbar() {
       method: 'POST'
     });
     location.reload()
-    navigate('/login');
+    // navigate('/');
   };
 
   return (

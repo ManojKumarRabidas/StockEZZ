@@ -5,7 +5,7 @@ const itemSchema = new mongoose.Schema({
     name: {type: String, required: true},
     category: {type: mongoose.Schema.Types.ObjectId, required: true},
     sub_category: {type: String},
-    companyId: {type: mongoose.Schema.Types.ObjectId},
+    company_id: {type: mongoose.Schema.Types.ObjectId},
     active: {type: Boolean},
     createdBy: {type: mongoose.Schema.Types.ObjectId},
     updatedBy: {type: mongoose.Schema.Types.ObjectId}
