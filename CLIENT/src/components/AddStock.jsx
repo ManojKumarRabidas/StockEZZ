@@ -7,6 +7,8 @@ const PORT = import.meta.env.VITE_PORT;
 import toastr from "toastr";
 const token = sessionStorage.getItem("token");
 function AddStock() {
+  const [loading, setLoading] = useState(true)
+  const [buttonLoading, setButtonLoading] = useState(false)
   const [sl_no, setSlNo] = useState("");
   const [date, setDate] = useState(new Date());
   const [time, setTime] = useState(new Date());
@@ -66,7 +68,7 @@ function AddStock() {
   ]);
 
   const [company_details, setCompanyDetails] = useState({})
-  const [isStockStructure, setIsStockStructure] = useState(true)
+  const [isStockStructure, setIsStockStructure] = useState(false)
   const [stockStructure, setStockStructure] = useState({})
   const [sub_categories, setSubCategories] = useState([]);
   const [items, setItems] = useState([]);
@@ -128,18 +130,22 @@ function AddStock() {
             const result = await response.json();
             if (response.ok) {
                 setCompanyDetails(result.doc)
-                fetchStructureDetails(result.doc._id);
+                await fetchStructureDetails(result.doc._id);
                 if(result.company_subtype != ""){
                   setSubCategory(result.company_subtype)
                 }
+                setLoading(false)
             } else {
               toastr.error(result.msg);
+              setLoading(false)
             }
           } else {
             toastr.error("We are unable to process now. Please try again later.");
+            setLoading(false)
           }
     } catch (err) {
       toastr.error("Failed to load details. Please try again later.");
+      setLoading(false)
     }
   };
   const fetchStructureDetails = async (company_id) => {
@@ -243,6 +249,7 @@ function AddStock() {
     }
   };
   useEffect(() => {
+    setLoading(true)
     fetchCompanyDetails();
   }, []);
 
@@ -386,15 +393,17 @@ function AddStock() {
     ])
   };
   const handleSubmit = async (event) => {
+    setButtonLoading(true)
     event.preventDefault();
     const data = {sl_no, date, time, sub_category, challan_no, item, item_id, seller, seller_id, total_quantity, batch_no, stock_details: lowerPartEntries};
     const additionalData = {batch_brand, batch_brand_id, batch_color, batch_capacity, batch_height, batch_power, batch_watt, batch_description, batch_extended_description, batch_model, batch_form, batch_location, batch_buy_price, batch_sell_price, per_piece_buy_price, per_piece_sell_price, batch_mfg_date, batch_exp_date, batch_warrantee_guarantee, batch_warrantee_guarantee_duration, batch_remarks}
     if(!data.date || !data.item || !data.total_quantity || !additionalData.batch_buy_price ){
       toastr.error("Please enter all required field.");
+      setButtonLoading(false)
       return;
     }
     const confirmed = window.confirm("Are you sure you want to submit?");
-    if (!confirmed) return;
+    if (!confirmed) {setButtonLoading(false); return;};
     const finalData = {data: data, additionalData: additionalData, company: company_details};
     const response = await fetch(`${HOST}:${PORT}/server/save-stock-details`, {
       method: "POST",
@@ -412,8 +421,10 @@ function AddStock() {
       } else {
         toastr.error(result.msg);
       }
+      setButtonLoading(false)
     } else {
       toastr.error("We are unable to process now. Please try again later.");
+      setButtonLoading(false)
     }
   };
 
@@ -1389,84 +1400,101 @@ function AddStock() {
     return fields;
   };
 
-  return (
-    <div className="container my-2">
-      {isStockStructure && (
-        <div>
-          <div className="mb-3 form-switch d-flex justify-content-end " style={{paddingLeft: "0"}}>
-            <label className="form-label mx-2">Clear Header </label>
-            <div>
-                <input className="form-check-input cursor-pointer" style={{ marginLeft: "0" }} type="checkbox" role="switch" id="clearHeaderSwitch" checked={clearHeader} onChange={(e) => setClearHeader( e.target.checked)}/>
-                <label className="form-check-label mx-3" htmlFor="clearHeaderSwitch"></label>
-            </div>
+  if (loading) {
+    return (
+      <div className="container my-2 d-flex justify-content-center align-items-center" style={{height: "100%"}}>
+          <div className="spinner-border text-secondary" role="status">
+            <span className="visually-hidden">Loading...</span>
           </div>
-          <form onSubmit={handleSubmit}>
-            {/* Upper part: Render visible fields in rows of 3 */}
-            {chunkArray(getUpperPartVisibleFields(), 3).map((rowFields, rowIndex) => (
-              <div className="row" key={`upper_row_${rowIndex}`}>
-                {rowFields}
-              </div>
-            ))}
-
-            {/* Lower part: Render visible fields for each entry in rows of 3 */}
-            {(stockStructure.unique_code || stockStructure.mfg_date || stockStructure.exp_date || stockStructure.item_buy_price || stockStructure.item_sell_price || stockStructure.warrantee_guarantee || stockStructure.warrantee_guarantee_duration || stockStructure.brand || stockStructure.color || stockStructure.capacity || stockStructure.height || stockStructure.power || stockStructure.model || stockStructure.description || stockStructure.quantity) && (
-              <div>
-                <hr />
-                <h6>Fill the below form if any specific item has any specific properties. You can specify multiple items with 
-                  <span className="border-0 bg-success btn btn-primary mx-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-circle-dotted" viewBox="0 0 16 16">
-                      <path d="M8 0q-.264 0-.523.017l.064.998a7 7 0 0 1 .918 0l.064-.998A8 8 0 0 0 8 0M6.44.152q-.52.104-1.012.27l.321.948q.43-.147.884-.237L6.44.153zm4.132.271a8 8 0 0 0-1.011-.27l-.194.98q.453.09.884.237zm1.873.925a8 8 0 0 0-.906-.524l-.443.896q.413.205.793.459zM4.46.824q-.471.233-.905.524l.556.83a7 7 0 0 1 .793-.458zM2.725 1.985q-.394.346-.74.74l.752.66q.303-.345.648-.648zm11.29.74a8 8 0 0 0-.74-.74l-.66.752q.346.303.648.648zm1.161 1.735a8 8 0 0 0-.524-.905l-.83.556q.254.38.458.793l.896-.443zM1.348 3.555q-.292.433-.524.906l.896.443q.205-.413.459-.793zM.423 5.428a8 8 0 0 0-.27 1.011l.98.194q.09-.453.237-.884zM15.848 6.44a8 8 0 0 0-.27-1.012l-.948.321q.147.43.237.884zM.017 7.477a8 8 0 0 0 0 1.046l.998-.064a7 7 0 0 1 0-.918zM16 8a8 8 0 0 0-.017-.523l-.998.064a7 7 0 0 1 0 .918l.998.064A8 8 0 0 0 16 8M.152 9.56q.104.52.27 1.012l.948-.321a7 7 0 0 1-.237-.884l-.98.194zm15.425 1.012q.168-.493.27-1.011l-.98-.194q-.09.453-.237.884zM.824 11.54a8 8 0 0 0 .524.905l.83-.556a7 7 0 0 1-.458-.793zm13.828.905q.292-.434.524-.906l-.896-.443q-.205.413-.459.793zm-12.667.83q.346.394.74.74l.66-.752a7 7 0 0 1-.648-.648zm11.29.74q.394-.346.74-.74l-.752-.66q-.302.346-.648.648zm-1.735 1.161q.471-.233.905-.524l-.556-.83a7 7 0 0 1-.793.458zm-7.985-.524q.434.292.906.524l.443-.896a7 7 0 0 1-.793-.459zm1.873.925q.493.168 1.011.27l.194-.98a7 7 0 0 1-.884-.237zm4.132.271a8 8 0 0 0 1.012-.27l-.321-.948a7 7 0 0 1-.884.237l.194.98zm-2.083.135a8 8 0 0 0 1.046 0l-.064-.998a7 7 0 0 1-.918 0zM8.5 4.5a.5.5 0 0 0-1 0v3h-3a.5.5 0 0 0 0 1h3v3a.5.5 0 0 0 1 0v-3h3a.5.5 0 0 0 0-1h-3z"/>
-                    </svg> 
-                  </span> button</h6>
-                {lowerPartEntries.map((entry, index) => (
-                  <div key={index} className="border p-3 mb-3">
-                    {/* Render visible fields for this entry in rows of 3 */}
-                    {chunkArray(getLowerPartVisibleFields(entry, index), 3).map((rowFields, rowIndex) => (
-                      <div className="row" key={`lower_entry_${index}_row_${rowIndex}`}>
-                        {rowFields}
-                      </div>
-                    ))}
-                    {/* Add/Remove buttons */}
-                    <div className="d-flex justify-content-end mt-3">
-                      <button type="button" className="border-0 bg-success btn btn-primary mx-2" onClick={addLowerPartEntry}>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-circle-dotted" viewBox="0 0 16 16">
-                          <path d="M8 0q-.264 0-.523.017l.064.998a7 7 0 0 1 .918 0l.064-.998A8 8 0 0 0 8 0M6.44.152q-.52.104-1.012.27l.321.948q.43-.147.884-.237L6.44.153zm4.132.271a8 8 0 0 0-1.011-.27l-.194.98q.453.09.884.237zm1.873.925a8 8 0 0 0-.906-.524l-.443.896q.413.205.793.459zM4.46.824q-.471.233-.905.524l.556.83a7 7 0 0 1 .793-.458zM2.725 1.985q-.394.346-.74.74l.752.66q.303-.345.648-.648zm11.29.74a8 8 0 0 0-.74-.74l-.66.752q.346.303.648.648zm1.161 1.735a8 8 0 0 0-.524-.905l-.83.556q.254.38.458.793l.896-.443zM1.348 3.555q-.292.433-.524.906l.896.443q.205-.413.459-.793zM.423 5.428a8 8 0 0 0-.27 1.011l.98.194q.09-.453.237-.884zM15.848 6.44a8 8 0 0 0-.27-1.012l-.948.321q.147.43.237.884zM.017 7.477a8 8 0 0 0 0 1.046l.998-.064a7 7 0 0 1 0-.918zM16 8a8 8 0 0 0-.017-.523l-.998.064a7 7 0 0 1 0 .918l.998.064A8 8 0 0 0 16 8M.152 9.56q.104.52.27 1.012l.948-.321a7 7 0 0 1-.237-.884l-.98.194zm15.425 1.012q.168-.493.27-1.011l-.98-.194q-.09.453-.237.884zM.824 11.54a8 8 0 0 0 .524.905l.83-.556a7 7 0 0 1-.458-.793zm13.828.905q.292-.434.524-.906l-.896-.443q-.205.413-.459.793zm-12.667.83q.346.394.74.74l.66-.752a7 7 0 0 1-.648-.648zm11.29.74q.394-.346.74-.74l-.752-.66q-.302.346-.648.648zm-1.735 1.161q.471-.233.905-.524l-.556-.83a7 7 0 0 1-.793.458zm-7.985-.524q.434.292.906.524l.443-.896a7 7 0 0 1-.793-.459zm1.873.925q.493.168 1.011.27l.194-.98a7 7 0 0 1-.884-.237zm4.132.271a8 8 0 0 0 1.012-.27l-.321-.948a7 7 0 0 1-.884.237l.194.98zm-2.083.135a8 8 0 0 0 1.046 0l-.064-.998a7 7 0 0 1-.918 0zM8.5 4.5a.5.5 0 0 0-1 0v3h-3a.5.5 0 0 0 0 1h3v3a.5.5 0 0 0 1 0v-3h3a.5.5 0 0 0 0-1h-3z"/>
-                        </svg>
-                      </button>
-                      <button type="button" className="border-0 btn bg-danger btn-denger mx-2" onClick={() => removeLowerPartEntry(index)}>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-trash" viewBox="0 0 16 16">
-                          <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/>
-                          <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z"/>
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <button type="submit" className="btn btn-primary border-0 bg-success">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-floppy" viewBox="0 0 16 16">
-                  <path d="M11 2H9v3h2z"/>
-                  <path d="M1.5 0h11.586a1.5 1.5 0 0 1 1.06.44l1.415 1.414A1.5 1.5 0 0 1 16 2.914V14.5a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 14.5v-13A1.5 1.5 0 0 1 1.5 0M1 1.5v13a.5.5 0 0 0 .5.5H2v-4.5A1.5 1.5 0 0 1 3.5 9h9a1.5 1.5 0 0 1 1.5 1.5V15h.5a.5.5 0 0 0 .5-.5V2.914a.5.5 0 0 0-.146-.353l-1.415-1.415A.5.5 0 0 0 13.086 1H13v4.5A1.5 1.5 0 0 1 11.5 7h-7A1.5 1.5 0 0 1 3 5.5V1H1.5a.5.5 0 0 0-.5.5m3 4a.5.5 0 0 0 .5.5h7a.5.5 0 0 0 .5-.5V1H4zM3 15h10v-4.5a.5.5 0 0 0-.5-.5h-9a.5.5 0 0 0-.5.5z"/>
-              </svg> Save
-            </button>
-            <button type="button" className="border-0 bg-danger btn btn-primary ms-4" onClick={handleReset}>
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-clockwise" viewBox="0 0 16 16">
-                <path fillRule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2z"/>
-                <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466"/>
-              </svg> Reset
-            </button>
-          </form>
+      </div>
+    );
+  } else if(!isStockStructure && !stockStructure && !loading) {
+    return (
+      <div>
+          <h3>No form configuration found !!</h3>  <br />
+          <h3>First configure 'add stock form' to continue.</h3> <br /> <br />
+          <h5>Follow the below steps to configure 'add stock form'.</h5> <br /> 
+          <h5>Login {"->"} Customize Add Stock {"->"} Change the necessary {"->"} Save/Update</h5>  
         </div>
-      )}
-      {!isStockStructure && <div>
-        <h3>No form configuration found !!</h3>  <br />
-        <h3>First configure 'add stock form' to continue.</h3> <br /> <br />
-        <h5>Follow the below steps to configure 'add stock form'.</h5> <br /> 
-        <h5>Login {"->"} Customize Add Stock {"->"} Change the necessary {"->"} Save/Update</h5>  
-      </div>}
-    </div>
-  );
+    )
+  } else if(isStockStructure && stockStructure) {
+    return(
+     <div className="container my-2">
+          <div>
+            <div className="mb-3 form-switch d-flex justify-content-end " style={{paddingLeft: "0"}}>
+              <label className="form-label mx-2">Clear Header </label>
+              <div>
+                  <input className="form-check-input cursor-pointer" style={{ marginLeft: "0" }} type="checkbox" role="switch" id="clearHeaderSwitch" checked={clearHeader} onChange={(e) => setClearHeader( e.target.checked)}/>
+                  <label className="form-check-label mx-3" htmlFor="clearHeaderSwitch"></label>
+              </div>
+            </div>
+            <form onSubmit={handleSubmit}>
+              {/* Upper part: Render visible fields in rows of 3 */}
+              {chunkArray(getUpperPartVisibleFields(), 3).map((rowFields, rowIndex) => (
+                <div className="row" key={`upper_row_${rowIndex}`}>
+                  {rowFields}
+                </div>
+              ))}
+
+              {/* Lower part: Render visible fields for each entry in rows of 3 */}
+              {(stockStructure.unique_code || stockStructure.mfg_date || stockStructure.exp_date || stockStructure.item_buy_price || stockStructure.item_sell_price || stockStructure.warrantee_guarantee || stockStructure.warrantee_guarantee_duration || stockStructure.brand || stockStructure.color || stockStructure.capacity || stockStructure.height || stockStructure.power || stockStructure.model || stockStructure.description || stockStructure.quantity) && (
+                <div>
+                  <hr />
+                  <h6>Fill the below form if any specific item has any specific properties. You can specify multiple items with 
+                    <span className="border-0 bg-success btn btn-primary mx-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-circle-dotted" viewBox="0 0 16 16">
+                        <path d="M8 0q-.264 0-.523.017l.064.998a7 7 0 0 1 .918 0l.064-.998A8 8 0 0 0 8 0M6.44.152q-.52.104-1.012.27l.321.948q.43-.147.884-.237L6.44.153zm4.132.271a8 8 0 0 0-1.011-.27l-.194.98q.453.09.884.237zm1.873.925a8 8 0 0 0-.906-.524l-.443.896q.413.205.793.459zM4.46.824q-.471.233-.905.524l.556.83a7 7 0 0 1 .793-.458zM2.725 1.985q-.394.346-.74.74l.752.66q.303-.345.648-.648zm11.29.74a8 8 0 0 0-.74-.74l-.66.752q.346.303.648.648zm1.161 1.735a8 8 0 0 0-.524-.905l-.83.556q.254.38.458.793l.896-.443zM1.348 3.555q-.292.433-.524.906l.896.443q.205-.413.459-.793zM.423 5.428a8 8 0 0 0-.27 1.011l.98.194q.09-.453.237-.884zM15.848 6.44a8 8 0 0 0-.27-1.012l-.948.321q.147.43.237.884zM.017 7.477a8 8 0 0 0 0 1.046l.998-.064a7 7 0 0 1 0-.918zM16 8a8 8 0 0 0-.017-.523l-.998.064a7 7 0 0 1 0 .918l.998.064A8 8 0 0 0 16 8M.152 9.56q.104.52.27 1.012l.948-.321a7 7 0 0 1-.237-.884l-.98.194zm15.425 1.012q.168-.493.27-1.011l-.98-.194q-.09.453-.237.884zM.824 11.54a8 8 0 0 0 .524.905l.83-.556a7 7 0 0 1-.458-.793zm13.828.905q.292-.434.524-.906l-.896-.443q-.205.413-.459.793zm-12.667.83q.346.394.74.74l.66-.752a7 7 0 0 1-.648-.648zm11.29.74q.394-.346.74-.74l-.752-.66q-.302.346-.648.648zm-1.735 1.161q.471-.233.905-.524l-.556-.83a7 7 0 0 1-.793.458zm-7.985-.524q.434.292.906.524l.443-.896a7 7 0 0 1-.793-.459zm1.873.925q.493.168 1.011.27l.194-.98a7 7 0 0 1-.884-.237zm4.132.271a8 8 0 0 0 1.012-.27l-.321-.948a7 7 0 0 1-.884.237l.194.98zm-2.083.135a8 8 0 0 0 1.046 0l-.064-.998a7 7 0 0 1-.918 0zM8.5 4.5a.5.5 0 0 0-1 0v3h-3a.5.5 0 0 0 0 1h3v3a.5.5 0 0 0 1 0v-3h3a.5.5 0 0 0 0-1h-3z"/>
+                      </svg> 
+                    </span> button</h6>
+                  {lowerPartEntries.map((entry, index) => (
+                    <div key={index} className="border p-3 mb-3">
+                      {/* Render visible fields for this entry in rows of 3 */}
+                      {chunkArray(getLowerPartVisibleFields(entry, index), 3).map((rowFields, rowIndex) => (
+                        <div className="row" key={`lower_entry_${index}_row_${rowIndex}`}>
+                          {rowFields}
+                        </div>
+                      ))}
+                      {/* Add/Remove buttons */}
+                      <div className="d-flex justify-content-end mt-3">
+                        <button type="button" className="border-0 bg-success btn btn-primary mx-2" onClick={addLowerPartEntry}>
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-circle-dotted" viewBox="0 0 16 16">
+                            <path d="M8 0q-.264 0-.523.017l.064.998a7 7 0 0 1 .918 0l.064-.998A8 8 0 0 0 8 0M6.44.152q-.52.104-1.012.27l.321.948q.43-.147.884-.237L6.44.153zm4.132.271a8 8 0 0 0-1.011-.27l-.194.98q.453.09.884.237zm1.873.925a8 8 0 0 0-.906-.524l-.443.896q.413.205.793.459zM4.46.824q-.471.233-.905.524l.556.83a7 7 0 0 1 .793-.458zM2.725 1.985q-.394.346-.74.74l.752.66q.303-.345.648-.648zm11.29.74a8 8 0 0 0-.74-.74l-.66.752q.346.303.648.648zm1.161 1.735a8 8 0 0 0-.524-.905l-.83.556q.254.38.458.793l.896-.443zM1.348 3.555q-.292.433-.524.906l.896.443q.205-.413.459-.793zM.423 5.428a8 8 0 0 0-.27 1.011l.98.194q.09-.453.237-.884zM15.848 6.44a8 8 0 0 0-.27-1.012l-.948.321q.147.43.237.884zM.017 7.477a8 8 0 0 0 0 1.046l.998-.064a7 7 0 0 1 0-.918zM16 8a8 8 0 0 0-.017-.523l-.998.064a7 7 0 0 1 0 .918l.998.064A8 8 0 0 0 16 8M.152 9.56q.104.52.27 1.012l.948-.321a7 7 0 0 1-.237-.884l-.98.194zm15.425 1.012q.168-.493.27-1.011l-.98-.194q-.09.453-.237.884zM.824 11.54a8 8 0 0 0 .524.905l.83-.556a7 7 0 0 1-.458-.793zm13.828.905q.292-.434.524-.906l-.896-.443q-.205.413-.459.793zm-12.667.83q.346.394.74.74l.66-.752a7 7 0 0 1-.648-.648zm11.29.74q.394-.346.74-.74l-.752-.66q-.302.346-.648.648zm-1.735 1.161q.471-.233.905-.524l-.556-.83a7 7 0 0 1-.793.458zm-7.985-.524q.434.292.906.524l.443-.896a7 7 0 0 1-.793-.459zm1.873.925q.493.168 1.011.27l.194-.98a7 7 0 0 1-.884-.237zm4.132.271a8 8 0 0 0 1.012-.27l-.321-.948a7 7 0 0 1-.884.237l.194.98zm-2.083.135a8 8 0 0 0 1.046 0l-.064-.998a7 7 0 0 1-.918 0zM8.5 4.5a.5.5 0 0 0-1 0v3h-3a.5.5 0 0 0 0 1h3v3a.5.5 0 0 0 1 0v-3h3a.5.5 0 0 0 0-1h-3z"/>
+                          </svg>
+                        </button>
+                        <button type="button" className="border-0 btn bg-danger btn-denger mx-2" onClick={() => removeLowerPartEntry(index)}>
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-trash" viewBox="0 0 16 16">
+                            <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/>
+                            <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z"/>
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <button type="submit" className="btn btn-primary button border-0 bg-success">
+                {!buttonLoading && 
+                <span>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-floppy" viewBox="0 0 16 16">
+                      <path d="M11 2H9v3h2z"/>
+                      <path d="M1.5 0h11.586a1.5 1.5 0 0 1 1.06.44l1.415 1.414A1.5 1.5 0 0 1 16 2.914V14.5a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 14.5v-13A1.5 1.5 0 0 1 1.5 0M1 1.5v13a.5.5 0 0 0 .5.5H2v-4.5A1.5 1.5 0 0 1 3.5 9h9a1.5 1.5 0 0 1 1.5 1.5V15h.5a.5.5 0 0 0 .5-.5V2.914a.5.5 0 0 0-.146-.353l-1.415-1.415A.5.5 0 0 0 13.086 1H13v4.5A1.5 1.5 0 0 1 11.5 7h-7A1.5 1.5 0 0 1 3 5.5V1H1.5a.5.5 0 0 0-.5.5m3 4a.5.5 0 0 0 .5.5h7a.5.5 0 0 0 .5-.5V1H4zM3 15h10v-4.5a.5.5 0 0 0-.5-.5h-9a.5.5 0 0 0-.5.5z"/>
+                  </svg> Save
+                </span>} 
+
+                {buttonLoading && <span> <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...</span>}
+
+              </button>
+              <button type="button" className="border-0 bg-danger btn btn-primary ms-4" onClick={handleReset}>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-clockwise" viewBox="0 0 16 16">
+                  <path fillRule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2z"/>
+                  <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466"/>
+                </svg> Reset
+              </button>
+            </form>
+          </div>
+      </div>
+    );
+  }
 }
 export default AddStock;

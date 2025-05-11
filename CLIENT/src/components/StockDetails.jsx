@@ -15,6 +15,7 @@ const HOST = import.meta.env.VITE_HOST;
 const PORT = import.meta.env.VITE_PORT;
 
 function StockDetails() {
+  const [loading, setLoading] = useState(true)
   const [data, setData] = useState([]);
   const [editableTable, setEditableTable] = useState(false);
   const [filters, setFilters] = useState({sold_status: "UNSOLD"});
@@ -105,11 +106,13 @@ function StockDetails() {
     }
   }
 
-  const changeFilter = (value, type) => {
+  const changeFilter = async (value, type) => {
+    setLoading(true);
     if(type == "sold_status"){
       filters.sold_status = value;
-      getData();
+      await getData();
     }
+    setLoading(false);
   }
 
   // Define table columns with proper accessorKeys
@@ -414,7 +417,6 @@ function StockDetails() {
         row.capacity.toString().toLowerCase().includes(lowercasedFilter) ||
         row.height.toString().toLowerCase().includes(lowercasedFilter) ||
         row.power.toString().toLowerCase().includes(lowercasedFilter) ||
-        row.item_status.toString().toLowerCase().includes(lowercasedFilter) ||
         row.seller.toString().toLowerCase().includes(lowercasedFilter) ||
         row.sl_no.toString().toLowerCase().includes(lowercasedFilter) ||
         row.batch_id.toString().toLowerCase().includes(lowercasedFilter)
@@ -470,7 +472,6 @@ function StockDetails() {
     getSortedRowModel: getSortedRowModel(),
     manualPagination: true,
   });
-
   return (
     <div className="container my-2">
       <div className="row">
@@ -503,7 +504,14 @@ function StockDetails() {
           </button>}
         </div>}
       </div>
-      {data.length>0 && <div>
+      {loading && 
+        <div className="container my-2 d-flex justify-content-center align-items-center" style={{height: "100%"}}>
+          <div className="spinner-border text-secondary" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+        </div>
+      }
+      {(!loading && data && data.length>0) && <div>
         <div className="scroll-hidden">
           <table className="table table-striped shadow-sm p-3 bg-body-tertiary rounded" style={{ fontSize: "smaller", margin: "0" }}>
             <thead style={{textWrap: "nowrap"}}>
@@ -559,7 +567,7 @@ function StockDetails() {
               </div>
         </div>
       </div>}
-      {data.length<=0 && <div className="text-center mt-5">No stock available.</div>}
+      {(!loading && data && data.length<=0) && <div className="text-center mt-5">No stock available.</div>}
     </div>
   );
 }
