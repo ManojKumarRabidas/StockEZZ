@@ -17,6 +17,7 @@ const PORT = import.meta.env.VITE_PORT;
 
 function ManageBills() {
   const inputRef = useRef(null);
+  const [loading, setLoading] = useState(true)
   const [data, setData] = useState([]);
   const [userType, setUserType] = useState("");
   const [globalFilter, setGlobalFilter] = useState("");
@@ -68,11 +69,13 @@ function ManageBills() {
     changeFilter("FRESH-AND-RE-CREATED", "bill_type")
   }, []);
 
-  const changeFilter = (value, type) => {
+  const changeFilter = async (value, type) => {
+    setLoading(true);
     if(type == "bill_type"){
       filters.bill_type = value;
-      getData();
+      await getData();
     }
+     setLoading(false);
   }
 
   const details = async (id) => {
@@ -501,7 +504,7 @@ function ManageBills() {
         ),
       },
     ],
-    [ pageIndex, pageSize] // Include pageIndex and pageSize as dependencies
+    [ pageIndex, pageSize, userType] // Include pageIndex and pageSize as dependencies
   );
 
   // Apply global filtering before pagination
@@ -586,7 +589,14 @@ function ManageBills() {
             </select> 
           </div>
         </div>
-        {data.length>0 && <>   
+        {loading && 
+        <div className="container my-2 d-flex justify-content-center align-items-center" style={{height: "100%"}}>
+          <div className="spinner-border text-secondary" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+        </div>
+        }
+        {!loading && data && data.length>0 && <>   
           <div className="scroll-hidden">
             <table className="table table-striped shadow-sm p-3 bg-body-tertiary rounded" style={{ fontSize: "smaller", margin: "0" }}>
               <thead style={{textWrap: "nowrap"}}>
@@ -643,7 +653,7 @@ function ManageBills() {
           </div>
         </>}
       </div>}
-      {data.length<=0 && <div className="d-flex flex-column justify-content-center align-items-center text-center"  style={{minHeight: "87vh"}}> <div> No bills available. <br /> Generate bill from 'Billing Area' to see bills here.</div></div> }
+      {!loading && data.length<=0 && <div className="d-flex flex-column justify-content-center align-items-center text-center"  style={{minHeight: "87vh"}}> <div> No bills available. <br /> Generate bill from 'Billing Area' to see bills here.</div></div> }
       {detailsBillDiv &&<div>
             <div className="text-center bg-body-tertiary p-3">
                 {(detailsBill.items.length > 0) && <div className="mt-3">
