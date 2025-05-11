@@ -14,6 +14,7 @@ const HOST = import.meta.env.VITE_HOST;
 const PORT = import.meta.env.VITE_PORT;
 
 function List() {
+  const [loading, setLoading] = useState(true)
   const [data, setData] = useState([]);
   const [globalFilter, setGlobalFilter] = useState("");
   const [pageIndex, setPageIndex] = useState(0);
@@ -33,8 +34,10 @@ function List() {
       } else {
         toastr.error(result.msg);
       }
+      setLoading(false);
     } catch (err) {
       toastr.error("We are unable to process now. Please try again later.");
+      setLoading(false);
     }
   }
 
@@ -243,7 +246,18 @@ function List() {
             </tr>
           ))}
         </thead>
-        <tbody>
+        {loading && 
+            <tr>
+              <td colSpan="7" className="text-center">
+                <div className="container my-2 d-flex justify-content-center align-items-center" style={{height: "100%"}}>
+                  <div className="spinner-border text-secondary" role="status">
+                    <span className="visually-hidden">Loading...</span>
+                  </div>
+                </div>  
+              </td>
+            </tr>
+        }
+        {!loading && <tbody>
           {table.getRowModel().rows.map((row) => (
             <tr key={row.id}>
               {row.getVisibleCells().map((cell) => (
@@ -256,7 +270,7 @@ function List() {
               <td colSpan="7" className="text-center">No data available </td>
             </tr>
           )}
-        </tbody>
+        </tbody>}
       </table>
       <div className="d-flex justify-content-between mb-3">
         <select className="form-select mx-2" style={{maxWidth: "fit-content"}}  value={pageSize} onChange={(e) => setPageSize(Number(e.target.value))} >
