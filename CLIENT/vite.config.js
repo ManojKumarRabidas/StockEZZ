@@ -12,6 +12,10 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
+  build: {
+    modulePreload: true,
+    target: 'esnext'
+  },
   optimizeDeps: {
     include: ['date-fns'], // Ensure date-fns is pre-bundled
   },
