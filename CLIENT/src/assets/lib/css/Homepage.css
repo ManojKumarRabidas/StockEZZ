@@ -1,0 +1,106 @@
+/* Scope all styles to the HomePage component */
+.home-page-wrapper {
+  /* Set the font-family for the HomePage component */
+  font-family: 'Inter', sans-serif;
+}
+
+/* Style <a> tags only within HomePage */
+.home-page-wrapper a {
+  text-decoration: underline !important;
+  cursor: pointer;
+}
+
+/* Hero section background gradient */
+.home-page-wrapper .hero-bg {
+  background: linear-gradient(135deg, rgba(75, 85, 99, 0.52) 0%, #4b5563 100%);
+}
+
+/* Ensure the page takes at least the full viewport height */
+.home-page-wrapper .min-vh-100 {
+  min-height: 100vh;
+}
+
+/* Center content with max-width and padding */
+.home-page-wrapper .container-custom {
+  max-width: 1200px; /* Equivalent to Tailwind's max-w-7xl */
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+/* Custom hover effects for buttons */
+.home-page-wrapper .btn-custom-gray:hover {
+  background-color: #e5e7eb; /* Lighter gray for hover */
+}
+
+/* Adjust font sizes and weights */
+.home-page-wrapper .display-4-custom {
+  font-size: 2.5rem; /* Equivalent to Tailwind's text-4xl */
+  font-weight: 800; /* Equivalent to font-extrabold */
+}
+
+.home-page-wrapper .display-5-custom {
+  font-size: 3rem; /* Equivalent to Tailwind's text-5xl */
+  font-weight: 800;
+}
+
+@media (min-width: 768px) {
+  .home-page-wrapper .display-4-custom {
+    font-size: 3rem;
+  }
+  .home-page-wrapper .display-5-custom {
+    font-size: 3.75rem;
+  }
+}
+
+.home-page-wrapper .fs-5-custom {
+  font-size: 1.125rem; /* Equivalent to Tailwind's text-lg */
+}
+
+@media (min-width: 768px) {
+  .home-page-wrapper .fs-5-custom {
+    font-size: 1.25rem; /* Equivalent to Tailwind's text-xl */
+  }
+}
+
+.home-page-wrapper .fs-4-custom {
+  font-size: 1.5rem; /* Equivalent to Tailwind's text-3xl */
+  font-weight: 700; /* Equivalent to font-bold */
+}
+
+/* Custom card shadow and background */
+.home-page-wrapper .card-custom {
+  background-color: #f9fafb; /* Equivalent to Tailwind's bg-gray-50 */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06); /* Equivalent to Tailwind's shadow */
+}
+
+/* Custom button colors */
+.home-page-wrapper .btn-gray-600 {
+  background-color: #4b5563; /* Tailwind's gray-600 */
+  color: #fff;
+}
+
+.home-page-wrapper .btn-gray-600:hover {
+  background-color: #374151; /* Tailwind's gray-700 */
+}
+
+/* Workflow step circle */
+.home-page-wrapper .step-circle {
+  width: 3rem;
+  height: 3rem;
+  background-color: #4b5563; /* Tailwind's gray-600 */
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem;
+}
+
+/* Adjust spacing */
+.home-page-wrapper .mb-12-custom {
+  margin-bottom: 3rem; /* Equivalent to Tailwind's mb-12 */
+}
+
+.home-page-wrapper .gap-8-custom {
+  gap: 2rem; /* Equivalent to Tailwind's gap-8 */
+}
