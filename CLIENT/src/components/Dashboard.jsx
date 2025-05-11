@@ -131,11 +131,10 @@ const Dashboard = () => {
   useEffect(() => {
     if(userType == "ADMIN" || userType == "SUPPORTADMIN"){
       setDashboardContent(false)
-      setLoading(false)
+    setLoading(false)
     } else {
       setDashboardContent(true)
       fetchInitialData();
-      setLoading(false)
     }
   }, []);
 
