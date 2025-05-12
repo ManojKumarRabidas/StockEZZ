@@ -205,9 +205,14 @@ function Login() {
         </form>
       </div>}
       {stage == 1 && <div>
-          <img style={{maxWidth: "-webkit-fill-available"}} src="https://i.ytimg.com/vi/DYuXf0QeO78/hq720.jpg?sqp=-oaymwE7CK4FEIIDSFryq4qpAy0IARUAAAAAGAElAADIQj0AgKJD8AEB-AH-CYAC0AWKAgwIABABGGUgUyhXMA8=&rs=AOn4CLBpXZJ3tuFMEMwLXIvND9gbJZWHTg" alt="err" srcset="" />
+          {/* <img style={{maxWidth: "-webkit-fill-available"}} src="https://i.ytimg.com/vi/DYuXf0QeO78/hq720.jpg?sqp=-oaymwE7CK4FEIIDSFryq4qpAy0IARUAAAAAGAElAADIQj0AgKJD8AEB-AH-CYAC0AWKAgwIABABGGUgUyhXMA8=&rs=AOn4CLBpXZJ3tuFMEMwLXIvND9gbJZWHTg" alt="err" srcset="" />
           <h5 className="mt-3">Id vul geya to aa geya Id mangne, Bandwidth ka paisa tera bap varega !!</h5>
-          <a className="mx-2"  onClick={() =>setStage(0)}>Click kar k vag yeha se</a>
+          <a className="mx-2"  onClick={() =>setStage(0)}>Click kar k vag yeha se</a> */}
+
+          <h5 className="p-1 mb-5">In case you have forgot your Code/Login id please contact with Admin.</h5>  
+          <div className="d-flex justify-content-center align-items-center mt-2">
+              <a className="mx-2" onClick={() =>setStage(0)}>Back to Log In</a>
+          </div> 
       </div>}
       {stage == 2 && <div>
           <div className=" mb-3">
