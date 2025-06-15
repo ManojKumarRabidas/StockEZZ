@@ -339,7 +339,7 @@ function ManageBills() {
           toastr.error("We are unable to process now. Please try again later.");
         }
       } else{
-        toastr.error("We are unable to process now. Please try again later.");
+        toastr.error("Nothing to save!! Either select item to return or add new items to continue.");
       }
     }
   }
