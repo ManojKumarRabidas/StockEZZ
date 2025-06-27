@@ -9,7 +9,7 @@ import {
 } from "@tanstack/react-table";
 
 import toastr from 'toastr';
-const token = sessionStorage.getItem('token');
+const token = localStorage.getItem('token');
 const HOST = import.meta.env.VITE_HOST;
 const PORT = import.meta.env.VITE_PORT;
 

@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 const HOST = import.meta.env.VITE_HOST;
 const PORT = import.meta.env.VITE_PORT;
 import toastr from "toastr";
-const token = sessionStorage.getItem("token");
+const token = localStorage.getItem("token");
 function CustomizeAddStock() {
     const [loading, setLoading] = useState(true);
     const [formData, setFormData] = useState({
@@ -60,7 +60,6 @@ function CustomizeAddStock() {
       });
       
       const updateFormData = (key, value) => {
-        console.log(key, value)
         setFormData((prev) => ({
           ...prev,
           [key]: value,

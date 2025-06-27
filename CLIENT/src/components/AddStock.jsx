@@ -5,7 +5,7 @@ import "react-datepicker/dist/react-datepicker.css";
 const HOST = import.meta.env.VITE_HOST;
 const PORT = import.meta.env.VITE_PORT;
 import toastr from "toastr";
-const token = sessionStorage.getItem("token");
+const token = localStorage.getItem("token");
 function AddStock() {
   const [loading, setLoading] = useState(true)
   const [buttonLoading, setButtonLoading] = useState(false)
@@ -1408,7 +1408,7 @@ function AddStock() {
           </div>
       </div>
     );
-  } else if(!isStockStructure && !stockStructure && !loading) {
+  } else if(!isStockStructure && !loading) {
     return (
       <div>
           <h3>No form configuration found !!</h3>  <br />
@@ -1493,6 +1493,15 @@ function AddStock() {
               </button>
             </form>
           </div>
+      </div>
+    );
+  } else{
+    return (
+      <div className="container my-2">
+        <p>abcd {isStockStructure? "yes": "No"}</p>
+        <p>edff {stockStructure? "yes": "No"}</p>
+        <h3>Error loading stock structure configuration.</h3>
+        <p>Please try again later or contact support.</p>
       </div>
     );
   }

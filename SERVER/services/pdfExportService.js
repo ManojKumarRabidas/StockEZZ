@@ -170,7 +170,6 @@ module.exports = {
         const pdfDoc = printer.createPdfKitDocument(docDefinition);
         return { status: true, doc: pdfDoc };
     } catch (err) {
-      console.log(err)
         return { status: false, err: err.message };
     }
   },

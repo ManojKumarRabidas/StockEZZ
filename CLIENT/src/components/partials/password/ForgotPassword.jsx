@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import toastr from 'toastr';
 const HOST = import.meta.env.VITE_HOST;
 const PORT = import.meta.env.VITE_PORT;
-const token = sessionStorage.getItem('token');
+const token = localStorage.getItem('token');
 function ForgotPassword(){
     const [newOtp, setNewOtp] = useState("");
     const [new_password, setNewPassword] = useState("");
