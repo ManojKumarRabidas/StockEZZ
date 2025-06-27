@@ -37,10 +37,16 @@ function Login() {
       if (response){
         const result = await response.json();
         if (response.ok){
-          sessionStorage.setItem('token', result.token);
-          sessionStorage.setItem('seUserType', result.userType);
-          sessionStorage.setItem('seUserName', result.userName);
-          sessionStorage.setItem('seCode', result.code);
+          const expiry = Date.now() + 12 * 60 * 60 * 1000; // 12 hours
+          localStorage.setItem('token', result.token);
+          localStorage.setItem('tokenExpiry', expiry);
+          localStorage.setItem('seUserType', result.userType);
+          localStorage.setItem('seUserName', result.userName);
+          localStorage.setItem('seCode', result.code);
+          setTimeout(() => {
+            localStorage.clear();
+            window.location.href = '/login';
+          }, 12 * 60 * 60 * 1000); // or use (expiry - Date.now())
           window.dispatchEvent(new Event('storage'));
           // navigate("/home");
           location.reload()

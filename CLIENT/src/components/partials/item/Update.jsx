@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 const HOST = import.meta.env.VITE_HOST;
 const PORT = import.meta.env.VITE_PORT;
-const token = sessionStorage.getItem('token');
+const token = localStorage.getItem('token');
 import toastr from 'toastr';
 function Update() {
     const [name, setName] = useState("");

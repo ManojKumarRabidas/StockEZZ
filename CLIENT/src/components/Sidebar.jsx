@@ -22,7 +22,7 @@ function Sidebar() {
     }
   }
   useEffect(() => {
-    const token = sessionStorage.getItem('token');
+    const token = localStorage.getItem('token');
     getUserType(token)
   }, []);
   return (

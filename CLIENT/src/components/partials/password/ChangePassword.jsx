@@ -12,7 +12,7 @@ export default function ChangePassword(){
     const [confirm_password, setConfirmPassword] = useState("");
     const navigate = useNavigate();
     useEffect(() => {
-      token = sessionStorage.getItem('token');
+      token = localStorage.getItem('token');
     }, []);
     const handleSubmit = async (event) => {
         event.preventDefault();

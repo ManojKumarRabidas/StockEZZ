@@ -1248,7 +1248,7 @@ module.exports = {
             const activeStatus = req.headers.active;
             let matchStage = {};
             let projectionStage = {};
-            let company_ids;
+            let company_ids=[]
             if (userType === "COMPANY") {
                 company_ids = [userId, new ObjectId("67a826f87c2ba5493e1d7a1f")];
             } else if(userType === "OPERATOR"){
@@ -1263,7 +1263,7 @@ module.exports = {
                 projectionStage = {code: 1, name: 1, category: "$category.category", sub_category: 1, active: 1}
             } else{
                 projectionStage = {code: 1,name: 1, category: "$category.category", sub_category: 1, active: 1}
-                if (userType == ("ADMIN" || "SUPPORTADMIN")) {
+                if (userType == "ADMIN" || userType =="SUPPORTADMIN") {
                     matchStage = {}
                 } else {
                     matchStage = {company_id: {$in: company_ids}}

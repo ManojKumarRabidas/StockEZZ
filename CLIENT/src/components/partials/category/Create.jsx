@@ -4,7 +4,7 @@ import { WithContext as ReactTags } from 'react-tag-input';
 const HOST = import.meta.env.VITE_HOST
 const PORT = import.meta.env.VITE_PORT
 import toastr from 'toastr';
-const token = sessionStorage.getItem('token');
+const token = localStorage.getItem('token');
 
 function Create() {
     const [category, setCategory] = useState("");
@@ -55,41 +55,77 @@ function Create() {
   };
 
   return (
-    <div className="container my-2">
-      <form onSubmit={handleSubmit} className="shadow-sm p-3 my-4 bg-body-tertiary rounded"> 
-        <div className="row">
-          <div className="col mb-3">
-            <label className="form-label">Category <span className="ei-col-red">*</span></label>
-            <input name="name" type="text" maxLength={70} className="form-control" aria-describedby="emailHelp" value={category} onChange={(e) => setCategory(e.target.value)}/>
+    <>
+      <style>
+        {`
+        .react-tags-wrapper {
+          background-color: #fff;
+          width: 100%;
+          border-radius: 0.5rem;
+        }
+
+        .tags-container {
+          width: 100%;
+        }
+
+        .tag-input {
+          flex-grow: 1;
+          width: 100%;
+          padding: 0 !important;
+        }
+
+        .tag-input input {
+          width: 100% !important;
+        }
+
+        .ReactTags__selected {
+          width: 100%;
+        }
+          `}
+      </style>
+      <div className="container my-2">
+        <form onSubmit={handleSubmit} className="shadow-sm p-3 my-4 bg-body-tertiary rounded"> 
+          <div className="row">
+            <div className="col mb-3">
+              <label className="form-label">
+                Category <span className="text-danger">*</span>
+              </label>
+              <input name="name" type="text" maxLength={70} className="form-control" value={category} placeholder="Add new category" onChange={(e) => setCategory(e.target.value)}
+              />
+            </div>
+
+            <div className="col mb-3">
+              <label className="form-label">Sub Categories</label>
+              <div className="react-tags-wrapper w-100  border rounded">
+                <ReactTags
+                  tags={sub_categories}
+                  handleDelete={handleDelete}
+                  handleAddition={handleAddition}
+                  placeholder="Add new sub-category"
+                  classNames={{
+                    tags: "tags-container d-flex flex-wrap gap-1 w-100",
+                    tagInput: "tag-input w-100",
+                    tagInputField: "form-control w-100 border-0 shadow-none",
+                    tag: "badge bg-primary d-flex align-items-center",
+                    remove: "ms-1 text-white fw-bold cursor-pointer",
+                  }}
+                />
+              </div>
+            </div>
           </div>
-          <div className="col mb-3">
-            <label className="form-label">Sub Categories</label>
-            {/* <input name="phone" type="text" maxLength={10} className="form-control" aria-describedby="emailHelp" value={sub_category} onChange={(e) => setSubCategory(e.target.value)}/> */}
-            <ReactTags
-              tags={sub_categories}
-              handleDelete={handleDelete}
-              handleAddition={handleAddition}
-              placeholder="Add new sub-category"
-              classNames={{
-                tags: "form-control tag-container",
-                tagInput: "tag-input",
-                tag: "badge bg-primary me-1",
-                remove: "ms-1 text-danger cursor-pointer",
-              }}
-            />
+
+          <div className="mb-3 form-switch" style={{paddingLeft: "0"}}>
+            <label className="form-label">Active <span className="ei-col-red">*</span></label>
+            <div>
+              <input className="form-check-input cursor-pointer" style={{ marginLeft: "0" }} type="checkbox" role="switch" id="activeSwitch" checked={active} onChange={(e) => setActive(e.target.checked)}/>
+              <label className="form-check-label mx-3" htmlFor="activeSwitch">{active ? "On" : "Off"}</label>
+            </div>
           </div>
-        </div>
-        <div className="mb-3 form-switch" style={{paddingLeft: "0"}}>
-          <label className="form-label">Active <span className="ei-col-red">*</span></label>
-          <div>
-            <input className="form-check-input cursor-pointer" style={{ marginLeft: "0" }} type="checkbox" role="switch" id="activeSwitch" checked={active} onChange={(e) => setActive(e.target.checked)}/>
-            <label className="form-check-label mx-3" htmlFor="activeSwitch">{active ? "On" : "Off"}</label>
-          </div>
-        </div>
-        <button type="submit" className="btn btn-primary mx-2">Create</button>
-        <button onClick={handleClear} type="button" className="btn btn-primary mx-2">Clear</button>
-      </form>
-    </div>
+          <button type="submit" className="btn btn-primary mx-2">Create</button>
+          <button onClick={handleClear} type="button" className="btn btn-primary mx-2">Clear</button>
+        </form>
+      </div>
+    </>
   );
 }
 export default Create;

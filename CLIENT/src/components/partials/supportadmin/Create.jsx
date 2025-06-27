@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 const HOST = import.meta.env.VITE_HOST
 const PORT = import.meta.env.VITE_PORT
 import toastr from 'toastr';
-const token = sessionStorage.getItem('token');
+const token = localStorage.getItem('token');
 
 function Create() {
   const [name, setName] = useState("");

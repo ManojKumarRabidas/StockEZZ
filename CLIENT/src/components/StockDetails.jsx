@@ -9,8 +9,8 @@ import {
 } from "@tanstack/react-table";
 
 import toastr from 'toastr';
-const token = sessionStorage.getItem('token');
-const userType = sessionStorage.getItem('seUserType');
+const token = localStorage.getItem('token');
+const userType = localStorage.getItem('seUserType');
 const HOST = import.meta.env.VITE_HOST;
 const PORT = import.meta.env.VITE_PORT;
 

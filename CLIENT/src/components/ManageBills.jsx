@@ -11,7 +11,7 @@ import {
 } from "@tanstack/react-table";
 
 import toastr from 'toastr';
-const token = sessionStorage.getItem('token');
+const token = localStorage.getItem('token');
 const HOST = import.meta.env.VITE_HOST;
 const PORT = import.meta.env.VITE_PORT;
 
@@ -54,7 +54,6 @@ function ManageBills() {
 
       const result = await response.json();
       if (response.ok) {
-        console.log("result.doc", result.doc)
         setData(result.doc.bills);
         setUserType(result.doc.user_type);
       } else {
@@ -653,7 +652,7 @@ function ManageBills() {
           </div>
         </>}
       </div>}
-      {!loading && data.length<=0 && <div className="d-flex flex-column justify-content-center align-items-center text-center"  style={{minHeight: "87vh"}}> <div> No bills available. <br /> Generate bill from 'Billing Area' to see bills here.</div></div> }
+      {!loading && data.length<=0 && <div className="d-flex flex-column justify-content-center align-items-center text-center mt-5"> <div> No bills available. <br /> Generate bill from 'Billing Area' to see bills here.</div></div> }
       {detailsBillDiv &&<div>
             <div className="text-center bg-body-tertiary p-3">
                 {(detailsBill.items.length > 0) && <div className="mt-3">

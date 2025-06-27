@@ -7,10 +7,10 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import toastr from 'toastr';
 
-const token = sessionStorage.getItem('token');
+const token = localStorage.getItem('token');
 const HOST = import.meta.env.VITE_HOST;
 const PORT = import.meta.env.VITE_PORT;
-const userType = sessionStorage.getItem('seUserType');
+const userType = localStorage.getItem('seUserType');
 
 // Register ChartJS components
 ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend);
@@ -459,7 +459,7 @@ const Dashboard = () => {
                   </button>
                 </div>
               </div>
-              <div className="overflow-scroll" style={{maxHeight: "25rem", minHeight: "25rem", overflowY: "auto",scrollbarWidth: "none", "-ms-overflow-style": "none"}}>
+              <div className="overflow-scroll" style={{maxHeight: "25rem", minHeight: "25rem", overflowY: "auto",scrollbarWidth: "none", "msOverflowStyle": "none"}}>
                 <table className="table table-bordered">
                   <thead>
                     <tr>
@@ -504,7 +504,7 @@ const Dashboard = () => {
                   </CSVLink>
                 </button>
               </div>
-              <div className="overflow-scroll" style={{maxHeight: "25rem", minHeight: "25rem", overflowY: "auto",scrollbarWidth: "none", "-ms-overflow-style": "none"}}>
+              <div className="overflow-scroll" style={{maxHeight: "25rem", minHeight: "25rem", overflowY: "auto",scrollbarWidth: "none", "msOverflowStyle": "none"}}>
                 <table className="table table-bordered">
                   <thead>
                     <tr>

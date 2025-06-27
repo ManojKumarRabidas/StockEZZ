@@ -2,7 +2,7 @@ import "../App.css";
 import React, { useEffect, useState } from "react";
 const HOST = import.meta.env.VITE_HOST;
 const PORT = import.meta.env.VITE_PORT;
-const token = sessionStorage.getItem('token');
+const token = localStorage.getItem('token');
 
 export default function Profile(){
     const [data, setData] = useState({});

@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { WithContext as ReactTags } from 'react-tag-input';
 const HOST = import.meta.env.VITE_HOST;
 const PORT = import.meta.env.VITE_PORT;
-const token = sessionStorage.getItem('token');
+const token = localStorage.getItem('token');
 import toastr from 'toastr';
 function Update() {
     const [category, setCategory] = useState("");

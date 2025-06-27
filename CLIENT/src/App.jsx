@@ -78,7 +78,19 @@ export default function App() {
 
   const checkSession = async () => {
     setLoading(true);
-    const session = sessionStorage.getItem('token');
+    const expiry = parseInt(localStorage.getItem('tokenExpiry'), 10);
+    const now = Date.now();
+
+    if (expiry && now < expiry) {
+      setTimeout(() => {
+        localStorage.clear();
+        window.location.href = '/';
+      }, expiry - now);
+    } else if (expiry && now >= expiry) {
+      localStorage.clear();
+      window.location.href = '/';
+    }
+    const session = localStorage.getItem('token');
     if (session) {
       await getUserType(session);
       setIsAuthenticated(true);
