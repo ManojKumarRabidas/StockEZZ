@@ -181,7 +181,7 @@ function ManageStock() {
       } catch (error) {
         toastr.error(error.message || 'Failed to generate seller invoice PDF');
       }
-    }, [selectedData, token, HOST, PORT]);
+    }, [selectedData, token, VITE_API_BASE_URL]);
 
   return (
     <div className="container my-2">
