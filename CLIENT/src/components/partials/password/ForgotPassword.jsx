@@ -2,8 +2,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toastr from 'toastr';
-const HOST = import.meta.env.VITE_HOST;
-const PORT = import.meta.env.VITE_PORT;
+const VITE_API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const token = localStorage.getItem('token');
 function ForgotPassword(){
     const [newOtp, setNewOtp] = useState("");
@@ -15,7 +14,7 @@ function ForgotPassword(){
     const sendOtp = async()=>{
       try{
         setNewOtp("")
-        const response = await fetch(`${HOST}:${PORT}/server/forgot-password-send-otp`, {
+        const response = await fetch(`${VITE_API_BASE_URL}/server/forgot-password-send-otp`, {
           method: "POST",
           // body: JSON.stringify({}),
           headers: { 
@@ -48,7 +47,7 @@ function ForgotPassword(){
         return;
       }
       try{
-        const response = await fetch(`${HOST}:${PORT}/server/forgot-password-check-otp`, {
+        const response = await fetch(`${VITE_API_BASE_URL}/server/forgot-password-check-otp`, {
           method: "POST",
           body: JSON.stringify({otp: newOtp}),
           headers: { 
@@ -85,7 +84,7 @@ function ForgotPassword(){
         return;
       }
       try{
-        const response = await fetch(`${HOST}:${PORT}/server/forgot-password-change-password`, {
+        const response = await fetch(`${VITE_API_BASE_URL}/server/forgot-password-change-password`, {
           method: "POST",
           body: JSON.stringify({password: new_password}),
           headers: { 

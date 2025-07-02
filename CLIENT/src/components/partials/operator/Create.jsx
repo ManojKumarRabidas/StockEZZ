@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-const HOST = import.meta.env.VITE_HOST
-const PORT = import.meta.env.VITE_PORT
+const VITE_API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 import toastr from 'toastr';
 const token = localStorage.getItem('token');
 
@@ -18,7 +17,7 @@ function Create() {
 
   const fetchCompanies = async () => {
     try {
-      const response = await fetch(`${HOST}:${PORT}/server/company-list`, {
+      const response = await fetch(`${VITE_API_BASE_URL}/server/company-list`, {
         method: "GET",
         headers: { 'authorization': `Bearer ${token}`, 'active': true },
       });
@@ -58,7 +57,7 @@ function Create() {
       toastr.error("Please enter all the required values.");
       return;
     }
-    const response = await fetch(`${HOST}:${PORT}/server/operator-create`, {
+    const response = await fetch(`${VITE_API_BASE_URL}/server/operator-create`, {
       method: "POST",
       body: JSON.stringify(operatorData),
       headers: {

@@ -1,7 +1,6 @@
 import "../App.css";
 import React, { useEffect, useState } from "react";
-const HOST = import.meta.env.VITE_HOST;
-const PORT = import.meta.env.VITE_PORT;
+const VITE_API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const token = localStorage.getItem('token');
 
 export default function Profile(){
@@ -10,7 +9,7 @@ export default function Profile(){
     const [response, setResponse] = useState("");
     const getUserProfileData = async () => {
         try {
-            const response = await fetch(`${HOST}:${PORT}/server/get-profile-details`, {
+            const response = await fetch(`${VITE_API_BASE_URL}/server/get-profile-details`, {
                 method: "GET",
                 headers: {
                     'Content-Type': 'application/json',

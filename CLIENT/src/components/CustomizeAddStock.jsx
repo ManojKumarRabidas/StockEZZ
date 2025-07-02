@@ -1,7 +1,6 @@
 import "../App.css";
 import React, { useState, useEffect } from "react";
-const HOST = import.meta.env.VITE_HOST;
-const PORT = import.meta.env.VITE_PORT;
+const VITE_API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 import toastr from "toastr";
 const token = localStorage.getItem("token");
 function CustomizeAddStock() {
@@ -73,7 +72,7 @@ function CustomizeAddStock() {
   const fetchDetails = async () => {
     setLoading(true);
     try {
-        const response = await fetch(`${HOST}:${PORT}/server/customize-add-stock-details`, {
+        const response = await fetch(`${VITE_API_BASE_URL}/server/customize-add-stock-details`, {
             method: "PATCH",
             headers: { 'authorization': `Bearer ${token}` },
           });
@@ -132,7 +131,7 @@ function CustomizeAddStock() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    const response = await fetch(`${HOST}:${PORT}/server/save-customize-add-stock-details`, {
+    const response = await fetch(`${VITE_API_BASE_URL}/server/save-customize-add-stock-details`, {
       method: "POST",
       body: JSON.stringify(formData),
       headers: {

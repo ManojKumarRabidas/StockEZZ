@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-const HOST = import.meta.env.VITE_HOST;
-const PORT = import.meta.env.VITE_PORT;
+const VITE_API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const token = localStorage.getItem('token');
 import toastr from 'toastr';
 function Update() {
@@ -24,7 +23,7 @@ function Update() {
 
   const getSupportAdminData = async () => {
     try {
-      const response = await fetch(`${HOST}:${PORT}/server/support-admin-details/${id}`, {
+      const response = await fetch(`${VITE_API_BASE_URL}/server/support-admin-details/${id}`, {
         method: "GET",
         headers: { 'authorization': `Bearer ${token}` },
       });
@@ -59,7 +58,7 @@ function Update() {
       return;
     }
     try {
-      const response = await fetch(`${HOST}:${PORT}/server/support-admin-update/${id}`, {
+      const response = await fetch(`${VITE_API_BASE_URL}/server/support-admin-update/${id}`, {
         method: "PATCH",
         body: JSON.stringify(updateSupportAdmin),
         headers: {

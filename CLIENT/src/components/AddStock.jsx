@@ -2,8 +2,7 @@ import "../App.css";
 import React, { useState, useEffect } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-const HOST = import.meta.env.VITE_HOST;
-const PORT = import.meta.env.VITE_PORT;
+const VITE_API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 import toastr from "toastr";
 const token = localStorage.getItem("token");
 function AddStock() {
@@ -122,7 +121,7 @@ function AddStock() {
 
   const fetchCompanyDetails = async (value) => {
     try {
-        const response = await fetch(`${HOST}:${PORT}/server/get-company-details`, {
+        const response = await fetch(`${VITE_API_BASE_URL}/server/get-company-details`, {
             method: "GET",
             headers: { 'authorization': `Bearer ${token}` },
           });
@@ -150,7 +149,7 @@ function AddStock() {
   };
   const fetchStructureDetails = async (company_id) => {
     try {
-        const response = await fetch(`${HOST}:${PORT}/server/customize-add-stock-details`, {
+        const response = await fetch(`${VITE_API_BASE_URL}/server/customize-add-stock-details`, {
             method: "PATCH",
             body: JSON.stringify({company_id: company_id}),
             headers: {  "Content-Type": "application/json", 'authorization': `Bearer ${token}`}
@@ -183,7 +182,7 @@ function AddStock() {
   };
   const fetchSellers = async (value) => {
     try {
-        const response = await fetch(`${HOST}:${PORT}/server/seller-list`, {
+        const response = await fetch(`${VITE_API_BASE_URL}/server/seller-list`, {
             method: "GET",
             headers: { 'authorization': `Bearer ${token}`, 'value': value, 'active': true },
           });
@@ -205,7 +204,7 @@ function AddStock() {
   };
   const fetchItems = async (value) => {
     try {
-        const response = await fetch(`${HOST}:${PORT}/server/item-list`, {
+        const response = await fetch(`${VITE_API_BASE_URL}/server/item-list`, {
             method: "GET",
             headers: { 'authorization': `Bearer ${token}`, 'value': value, 'active': true },
           });
@@ -227,7 +226,7 @@ function AddStock() {
   };
   const fetchBrands = async (value) => {
     try {
-      const response = await fetch(`${HOST}:${PORT}/server/brand-list`, {
+      const response = await fetch(`${VITE_API_BASE_URL}/server/brand-list`, {
             method: "PATCH",
             body: JSON.stringify({value: value, company_id: company_details._id}),
             headers: {  'Content-Type': 'application/json','authorization': `Bearer ${token}`},
@@ -405,7 +404,7 @@ function AddStock() {
     const confirmed = window.confirm("Are you sure you want to submit?");
     if (!confirmed) {setButtonLoading(false); return;};
     const finalData = {data: data, additionalData: additionalData, company: company_details};
-    const response = await fetch(`${HOST}:${PORT}/server/save-stock-details`, {
+    const response = await fetch(`${VITE_API_BASE_URL}/server/save-stock-details`, {
       method: "POST",
       body: JSON.stringify(finalData),
       headers: {

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from "react-router-dom";
-const HOST = import.meta.env.VITE_HOST
-const PORT = import.meta.env.VITE_PORT
+const VITE_API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 function Navbar() {
   const [userName, setUserName] = useState('');
@@ -9,7 +8,7 @@ function Navbar() {
   const [userType, setUserType] = useState('');
   const navigate = useNavigate();
   const getUserType = async (token) => {
-    const response = await fetch(`${HOST}:${PORT}/server/auth/user`, {
+    const response = await fetch(`${VITE_API_BASE_URL}/server/auth/user`, {
       method: 'GET',
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -38,7 +37,7 @@ function Navbar() {
     localStorage.removeItem('seUserType');
     localStorage.removeItem('tokenExpiry');
     window.dispatchEvent(new Event('storage'));
-    await fetch(`${HOST}:${PORT}/server/logout`, {
+    await fetch(`${VITE_API_BASE_URL}/server/logout`, {
       method: 'POST'
     });
     location.reload()

@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-const HOST = import.meta.env.VITE_HOST;
-const PORT = import.meta.env.VITE_PORT;
+const VITE_API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const token = localStorage.getItem('token');
 import toastr from 'toastr';
 function Update() {
@@ -36,7 +35,7 @@ function Update() {
 
   const getItemData = async () => {
     try {
-      const response = await fetch(`${HOST}:${PORT}/server/item-details/${id}`, {
+      const response = await fetch(`${VITE_API_BASE_URL}/server/item-details/${id}`, {
         method: "GET",
         headers: { 'authorization': `Bearer ${token}` },
       });
@@ -60,7 +59,7 @@ function Update() {
 
   const getCategories = async ()=>{
     try {
-          const response = await fetch(`${HOST}:${PORT}/server/category-list`, {
+          const response = await fetch(`${VITE_API_BASE_URL}/server/category-list`, {
             method: "GET",
             headers: { 'authorization': `Bearer ${token}`, 'item': true, 'active': true },
           });
@@ -104,7 +103,7 @@ useEffect(() => {
       return;
     }
     try {
-      const response = await fetch(`${HOST}:${PORT}/server/item-update/${id}`, {
+      const response = await fetch(`${VITE_API_BASE_URL}/server/item-update/${id}`, {
         method: "PATCH",
         body: JSON.stringify(updateItem),
         headers: {

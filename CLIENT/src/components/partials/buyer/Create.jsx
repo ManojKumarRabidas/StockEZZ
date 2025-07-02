@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-const HOST = import.meta.env.VITE_HOST
-const PORT = import.meta.env.VITE_PORT
+const VITE_API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 import toastr from 'toastr';
 const token = localStorage.getItem('token');
 
@@ -33,7 +32,7 @@ function Create() {
       toastr.error("Please enter name and phone.");
       return;
     }
-    const response = await fetch(`${HOST}:${PORT}/server/buyer-create`, {
+    const response = await fetch(`${VITE_API_BASE_URL}/server/buyer-create`, {
       method: "POST",
       body: JSON.stringify(buyerData),
       headers: {

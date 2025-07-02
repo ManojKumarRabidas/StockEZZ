@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-const HOST = import.meta.env.VITE_HOST
-const PORT = import.meta.env.VITE_PORT
+const VITE_API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 import toastr from 'toastr';
 const token = localStorage.getItem('token');
 
@@ -16,7 +15,7 @@ function Create() {
 
     const getCategories = async ()=>{
       try {
-            const response = await fetch(`${HOST}:${PORT}/server/category-list`, {
+            const response = await fetch(`${VITE_API_BASE_URL}/server/category-list`, {
               method: "GET",
               headers: { 'authorization': `Bearer ${token}`, 'item': true, 'active': true },
             });
@@ -59,7 +58,7 @@ function Create() {
       toastr.error("Please enter item and category.");
       return;
     }
-    const response = await fetch(`${HOST}:${PORT}/server/item-create`, {
+    const response = await fetch(`${VITE_API_BASE_URL}/server/item-create`, {
       method: "POST",
       body: JSON.stringify(itemData),
       headers: {

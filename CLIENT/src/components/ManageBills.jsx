@@ -12,8 +12,7 @@ import {
 
 import toastr from 'toastr';
 const token = localStorage.getItem('token');
-const HOST = import.meta.env.VITE_HOST;
-const PORT = import.meta.env.VITE_PORT;
+const VITE_API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 function ManageBills() {
   const inputRef = useRef(null);
@@ -47,7 +46,7 @@ function ManageBills() {
 
   async function getData() {
     try {
-      const response = await fetch(`${HOST}:${PORT}/server/bill-list`, {
+      const response = await fetch(`${VITE_API_BASE_URL}/server/bill-list`, {
         method: "GET",
         headers: { 'authorization': `Bearer ${token}`, "bill_type": filters.bill_type },
       });
@@ -79,7 +78,7 @@ function ManageBills() {
 
   const details = async (id) => {
     try {
-      const response = await fetch(`${HOST}:${PORT}/server/bill-details/${id}`, {
+      const response = await fetch(`${VITE_API_BASE_URL}/server/bill-details/${id}`, {
         method: "GET",
         headers: { 'authorization': `Bearer ${token}`},
       });
@@ -104,7 +103,7 @@ function ManageBills() {
 
   const generateBillPdf = useCallback(async (id) => {
     try {
-      const response = await fetch(`${HOST}:${PORT}/server/generate-bill-pdf/${id}`, {
+      const response = await fetch(`${VITE_API_BASE_URL}/server/generate-bill-pdf/${id}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -177,7 +176,7 @@ function ManageBills() {
       return;
     }
     try {
-      const response = await fetch(`${HOST}:${PORT}/server/bill-update/${selectedData._id}`, {
+      const response = await fetch(`${VITE_API_BASE_URL}/server/bill-update/${selectedData._id}`, {
         method: "PATCH",
         body: JSON.stringify(newPaymentEntries),
         headers: {
@@ -246,7 +245,7 @@ function ManageBills() {
   const searchItemsForExchange = async (value) => {
       if(value){
           try {
-              const response = await fetch(`${HOST}:${PORT}/server/stock-list`, {
+              const response = await fetch(`${VITE_API_BASE_URL}/server/stock-list`, {
               method: "GET",
               headers: { 'authorization': `Bearer ${token}`, "value": value, "exchange": true, "filter": "description_key"},
               });
@@ -313,7 +312,7 @@ function ManageBills() {
           newAddedItems: newAddedItems,
         }
         try {
-          const response = await fetch(`${HOST}:${PORT}/server/bill-recreate`, {
+          const response = await fetch(`${VITE_API_BASE_URL}/server/bill-recreate`, {
             method: "POST",
             body: JSON.stringify(finalDoc),
             headers: {
@@ -348,7 +347,7 @@ function ManageBills() {
     setNewItemList([]);
     if(value && value.trim().length > 0){
         try {
-            const response = await fetch(`${HOST}:${PORT}/server/stock-list`, {
+            const response = await fetch(`${VITE_API_BASE_URL}/server/stock-list`, {
             method: "GET",
             headers: { 'authorization': `Bearer ${token}`, "value": value, "available": true },
             });
