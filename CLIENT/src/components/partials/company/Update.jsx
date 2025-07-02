@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-const HOST = import.meta.env.VITE_HOST;
-const PORT = import.meta.env.VITE_PORT;
+const VITE_API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const token = localStorage.getItem('token');
 import toastr from 'toastr';
 function Update() {
@@ -43,7 +42,7 @@ function Update() {
   }
   const getCompanyCategories = async ()=>{
     try {
-      const response = await fetch(`${HOST}:${PORT}/server/category-list`, {
+      const response = await fetch(`${VITE_API_BASE_URL}/server/category-list`, {
         method: "GET",
         headers: { 'authorization': `Bearer ${token}`, 'active': true },
       });
@@ -64,7 +63,7 @@ function Update() {
 
   const getCompanyData = async () => {
     try {
-      const response = await fetch(`${HOST}:${PORT}/server/company-details/${id}`, {
+      const response = await fetch(`${VITE_API_BASE_URL}/server/company-details/${id}`, {
         method: "GET",
         headers: { 'authorization': `Bearer ${token}` },
       });
@@ -116,7 +115,7 @@ function Update() {
       return;
     }
     try {
-      const response = await fetch(`${HOST}:${PORT}/server/company-update/${id}`, {
+      const response = await fetch(`${VITE_API_BASE_URL}/server/company-update/${id}`, {
         method: "PATCH",
         body: JSON.stringify(updateCompany),
         headers: {

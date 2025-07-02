@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-const HOST = import.meta.env.VITE_HOST;
-const PORT = import.meta.env.VITE_PORT;
+const VITE_API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 function Login() {
   const [stage, setStage] = useState(0);
@@ -40,11 +39,13 @@ function Login() {
     }
     setLoadingLogin(true);
     try {
-      const response = await fetch(`${HOST}:${PORT}/server/login`, {
+      console.log("VITE_API_BASE_URL",VITE_API_BASE_URL)
+      const response = await fetch(`${VITE_API_BASE_URL}/server/login`, {
         method: "POST",
         body: JSON.stringify({ login_id, password }),
         headers: { "Content-Type": "application/json" },
       });
+      console.log("response status:", response);
       const result = await response.json();
       if (response.ok) {
         const expiry = Date.now() + 12 * 60 * 60 * 1000;
@@ -62,7 +63,8 @@ function Login() {
       } else {
         setError(result.msg);
       }
-    } catch {
+    } catch (e){
+      console.error(e);
       setError("We are unable to process now. Please try again later.");
     } finally {
       setLoadingLogin(false);
@@ -77,7 +79,7 @@ function Login() {
     }
     setLoadingOtp(true);
     try {
-      const response = await fetch(`${HOST}:${PORT}/server/outer-forgot-password-send-otp`, {
+      const response = await fetch(`${VITE_API_BASE_URL}/server/outer-forgot-password-send-otp`, {
         method: "POST",
         body: JSON.stringify({ user_type, user_code, user_email }),
         headers: { "Content-Type": "application/json" },
@@ -108,7 +110,7 @@ function Login() {
     }
     setLoadingCheckOtp(true);
     try {
-      const response = await fetch(`${HOST}:${PORT}/server/outer-forgot-password-check-otp`, {
+      const response = await fetch(`${VITE_API_BASE_URL}/server/outer-forgot-password-check-otp`, {
         method: "POST",
         body: JSON.stringify({ otp, user_id }),
         headers: { "Content-Type": "application/json" },
@@ -138,7 +140,7 @@ function Login() {
     }
     setLoadingChangePassword(true);
     try {
-      const response = await fetch(`${HOST}:${PORT}/server/outer-forgot-password-change-password`, {
+      const response = await fetch(`${VITE_API_BASE_URL}/server/outer-forgot-password-change-password`, {
         method: "POST",
         body: JSON.stringify({ password: new_password, user_id }),
         headers: { "Content-Type": "application/json" },

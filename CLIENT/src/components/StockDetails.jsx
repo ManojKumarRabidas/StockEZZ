@@ -11,8 +11,7 @@ import {
 import toastr from 'toastr';
 const token = localStorage.getItem('token');
 const userType = localStorage.getItem('seUserType');
-const HOST = import.meta.env.VITE_HOST;
-const PORT = import.meta.env.VITE_PORT;
+const VITE_API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 function StockDetails() {
   const [loading, setLoading] = useState(true)
@@ -26,7 +25,7 @@ function StockDetails() {
 
    const getData = async()=>{
     try {
-      const response = await fetch(`${HOST}:${PORT}/server/stock-list`, {
+      const response = await fetch(`${VITE_API_BASE_URL}/server/stock-list`, {
         method: "GET",
         headers: { 'authorization': `Bearer ${token}`, "sold_status": filters.sold_status},
       });
@@ -81,7 +80,7 @@ function StockDetails() {
         return;
       }
       try {
-        const response = await fetch(`${HOST}:${PORT}/server/stock-bulk-update`, {
+        const response = await fetch(`${VITE_API_BASE_URL}/server/stock-bulk-update`, {
           method: "PATCH",
           body: JSON.stringify(newBody),
           headers: {

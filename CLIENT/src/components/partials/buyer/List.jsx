@@ -10,8 +10,7 @@ import {
 
 import toastr from 'toastr';
 const token = localStorage.getItem('token');
-const HOST = import.meta.env.VITE_HOST;
-const PORT = import.meta.env.VITE_PORT;
+const VITE_API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 function List() {
   const [loading, setLoading] = useState(true)
@@ -24,7 +23,7 @@ function List() {
 
   const fetchCompanyDetails = async () => {
     try {
-        const response = await fetch(`${HOST}:${PORT}/server/get-company-details`, {
+        const response = await fetch(`${VITE_API_BASE_URL}/server/get-company-details`, {
             method: "GET",
             headers: { 'authorization': `Bearer ${token}` },
           });
@@ -48,7 +47,7 @@ function List() {
 
   const getData = async (_id) => {
     try {
-      const response = await fetch(`${HOST}:${PORT}/server/buyer-list`, {
+      const response = await fetch(`${VITE_API_BASE_URL}/server/buyer-list`, {
         method: "GET",
         headers: { 'authorization': `Bearer ${token}`,"company_id": _id, },
       });
@@ -71,7 +70,7 @@ function List() {
 
   const handleDelete = async (id) => {
     try {
-      const response = await fetch(`${HOST}:${PORT}/server/buyer-delete/${id}`, {
+      const response = await fetch(`${VITE_API_BASE_URL}/server/buyer-delete/${id}`, {
         method: "DELETE",
         headers: { 'authorization': `Bearer ${token}` },
       });
@@ -90,7 +89,7 @@ function List() {
 
   const handleActiveChange = async (id, isActive) => {
     try {
-      const response = await fetch(`${HOST}:${PORT}/server/buyer-update-active/${id}`, {
+      const response = await fetch(`${VITE_API_BASE_URL}/server/buyer-update-active/${id}`, {
         method: "PUT",
         body: JSON.stringify({ active: isActive }),
         headers: {

@@ -3,8 +3,7 @@ import moment from 'moment';
 import { saveAs } from 'file-saver';
 import toastr from 'toastr';
 const token = localStorage.getItem('token');
-const HOST = import.meta.env.VITE_HOST;
-const PORT = import.meta.env.VITE_PORT;
+const VITE_API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 function ManageStock() {
     const [searchFilterType, setSearchFilterType] = useState("description");
@@ -20,7 +19,7 @@ function ManageStock() {
         setListData([]);
         if(value){
             try {
-                const response = await fetch(`${HOST}:${PORT}/server/stock-list`, {
+                const response = await fetch(`${VITE_API_BASE_URL}/server/stock-list`, {
                 method: "GET",
                 headers: { 'authorization': `Bearer ${token}`, "value": value, "manage": true, "filter": searchFilterType},
                 });
@@ -125,7 +124,7 @@ function ManageStock() {
             toastr.error("We are facing some problem in submission. Please try again with fresh entry.");
             return;
         }
-        const response = await fetch(`${HOST}:${PORT}/server/manage-stock`, {
+        const response = await fetch(`${VITE_API_BASE_URL}/server/manage-stock`, {
             method: "POST",
             body: JSON.stringify(finalData),
             headers: {
@@ -158,7 +157,7 @@ function ManageStock() {
             return;
         }
         // ids = JSON.stringify(ids);
-        const response = await fetch(`${HOST}:${PORT}/server/generate-seller-invoice-pdf`, {
+        const response = await fetch(`${VITE_API_BASE_URL}/server/generate-seller-invoice-pdf`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

@@ -13,7 +13,19 @@ const path = require('path');
 const app = express();
 
 app.use(cookieParser());
-app.use(cors());
+const allowedOrigins = process.env.NODE_ENV === 'production' 
+  ? [process.env.FRONTEND_URL] 
+  : ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:4173'];
+
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: '*', // Allow all headers
+  // OR use this instead of allowedHeaders: '*'
+  preflightContinue: false,
+  optionsSuccessStatus: 200
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 connectDB();
@@ -29,7 +41,8 @@ app.use(
     }),
     cookie: {
       maxAge: 1000 * 60 * 60 * 24,
-      secure: false,
+      secure: process.env.NODE_ENV === 'production', // true in production
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
       httpOnly: true,
     },
   })

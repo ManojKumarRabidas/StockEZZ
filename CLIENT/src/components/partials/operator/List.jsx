@@ -10,8 +10,7 @@ import {
 
 import toastr from 'toastr';
 const token = localStorage.getItem('token');
-const HOST = import.meta.env.VITE_HOST;
-const PORT = import.meta.env.VITE_PORT;
+const VITE_API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 function List() {
   const [loading, setLoading] = useState(true)
@@ -23,7 +22,7 @@ function List() {
 
   async function getData() {
     try {
-      const response = await fetch(`${HOST}:${PORT}/server/operator-list`, {
+      const response = await fetch(`${VITE_API_BASE_URL}/server/operator-list`, {
         method: "GET",
         headers: { 'authorization': `Bearer ${token}` },
       });
@@ -47,7 +46,7 @@ function List() {
 
   const handleDelete = async (id) => {
     try {
-      const response = await fetch(`${HOST}:${PORT}/server/operator-delete/${id}`, {
+      const response = await fetch(`${VITE_API_BASE_URL}/server/operator-delete/${id}`, {
         method: "DELETE",
         headers: { 'authorization': `Bearer ${token}` },
       });
@@ -66,7 +65,7 @@ function List() {
 
   const handleActiveChange = async (id, isActive) => {
     try {
-      const response = await fetch(`${HOST}:${PORT}/server/operator-update-active/${id}`, {
+      const response = await fetch(`${VITE_API_BASE_URL}/server/operator-update-active/${id}`, {
         method: "PUT",
         body: JSON.stringify({ active: isActive }),
         headers: {

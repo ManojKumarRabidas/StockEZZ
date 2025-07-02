@@ -3,8 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import toastr from 'toastr';
 
-const HOST = import.meta.env.VITE_HOST
-const PORT = import.meta.env.VITE_PORT
+const VITE_API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 let token;
 export default function ChangePassword(){
     const [old_password, setOldPassword] = useState("");
@@ -27,7 +26,7 @@ export default function ChangePassword(){
           toastr.error("Please enter old and new password.");
           return;
         }
-        const response = await fetch(`${HOST}:${PORT}/server/change-password`, {
+        const response = await fetch(`${VITE_API_BASE_URL}/server/change-password`, {
           method: "POST",
           body: JSON.stringify(passwordData),
           headers: {

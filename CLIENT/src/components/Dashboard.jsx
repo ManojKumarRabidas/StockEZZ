@@ -8,8 +8,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import toastr from 'toastr';
 
 const token = localStorage.getItem('token');
-const HOST = import.meta.env.VITE_HOST;
-const PORT = import.meta.env.VITE_PORT;
+const VITE_API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const userType = localStorage.getItem('seUserType');
 
 // Register ChartJS components
@@ -55,7 +54,7 @@ const Dashboard = () => {
   // Function to fetch financial data (Revenue, Profit, Stock Movement)
   const fetchFinancialData = async () => {
     try {
-      const response = await fetch(`${HOST}:${PORT}/server/financials?start=${dateRange.start.toISOString()}&end=${dateRange.end.toISOString()}`,
+      const response = await fetch(`${VITE_API_BASE_URL}/server/financials?start=${dateRange.start.toISOString()}&end=${dateRange.end.toISOString()}`,
         {headers: { 'Authorization': `Bearer ${token}`}}
       );
       const result = await response.json();
@@ -74,7 +73,7 @@ const Dashboard = () => {
   const fetchMetricsData = async () => {
     try {
       const response = await fetch(
-        `${HOST}:${PORT}/server/metrics`,
+        `${VITE_API_BASE_URL}/server/metrics`,
         {
           headers: { 'Authorization': `Bearer ${token}` }
         }
@@ -102,7 +101,7 @@ const Dashboard = () => {
         return;
       }
       const response = await fetch(
-        `${HOST}:${PORT}/server/stock/low?threshold=${stockFilter}`,
+        `${VITE_API_BASE_URL}/server/stock/low?threshold=${stockFilter}`,
         {
           headers: { 'Authorization': `Bearer ${token}` }
         }

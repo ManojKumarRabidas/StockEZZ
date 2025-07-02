@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-const HOST = import.meta.env.VITE_HOST;
-const PORT = import.meta.env.VITE_PORT;
+const VITE_API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const token = localStorage.getItem('token');
 import toastr from 'toastr';
 function Update() {
@@ -17,7 +16,7 @@ function Update() {
 
     const fetchCompanies = async () => {
       try {
-        const response = await fetch(`${HOST}:${PORT}/server/company-list`, {
+        const response = await fetch(`${VITE_API_BASE_URL}/server/company-list`, {
           method: "GET",
           headers: { 'authorization': `Bearer ${token}`, 'active': true },
         });
@@ -52,7 +51,7 @@ function Update() {
 
   const getOperatorData = async () => {
     try {
-      const response = await fetch(`${HOST}:${PORT}/server/operator-details/${id}`, {
+      const response = await fetch(`${VITE_API_BASE_URL}/server/operator-details/${id}`, {
         method: "GET",
         headers: { 'authorization': `Bearer ${token}` },
       });
@@ -88,7 +87,7 @@ function Update() {
       return;
     }
     try {
-      const response = await fetch(`${HOST}:${PORT}/server/operator-update/${id}`, {
+      const response = await fetch(`${VITE_API_BASE_URL}/server/operator-update/${id}`, {
         method: "PATCH",
         body: JSON.stringify(updateSupportAdmin),
         headers: {

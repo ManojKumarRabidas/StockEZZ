@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-const HOST = import.meta.env.VITE_HOST
-const PORT = import.meta.env.VITE_PORT
+const VITE_API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 import toastr from 'toastr';
 const token = localStorage.getItem('token');
 
@@ -30,7 +29,7 @@ function Create() {
       toastr.error("Please enter all the required values.");
       return;
     }
-    const response = await fetch(`${HOST}:${PORT}/server/support-admin-create`, {
+    const response = await fetch(`${VITE_API_BASE_URL}/server/support-admin-create`, {
       method: "POST",
       body: JSON.stringify(supportAdminData),
       headers: {

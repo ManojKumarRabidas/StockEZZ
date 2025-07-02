@@ -1,8 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { WithContext as ReactTags } from 'react-tag-input';
-const HOST = import.meta.env.VITE_HOST
-const PORT = import.meta.env.VITE_PORT
+const VITE_API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 import toastr from 'toastr';
 const token = localStorage.getItem('token');
 
@@ -33,7 +32,7 @@ function Create() {
       toastr.error("Please enter category.");
       return;
     }
-    const response = await fetch(`${HOST}:${PORT}/server/category-create`, {
+    const response = await fetch(`${VITE_API_BASE_URL}/server/category-create`, {
       method: "POST",
       body: JSON.stringify(categoryData),
       headers: {

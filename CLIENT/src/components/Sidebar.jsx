@@ -1,12 +1,11 @@
 import { React, useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
-const HOST = import.meta.env.VITE_HOST
-const PORT = import.meta.env.VITE_PORT
+const VITE_API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 function Sidebar() {
   const [userType, setUserType] = useState('');
   const getUserType = async (token) => {
-    const response = await fetch(`${HOST}:${PORT}/server/auth/user`, {
+    const response = await fetch(`${VITE_API_BASE_URL}/server/auth/user`, {
       method: 'GET',
       headers: { Authorization: `Bearer ${token}` },
     });

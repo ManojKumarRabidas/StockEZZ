@@ -2,8 +2,7 @@ import React, { useState, useEffect , useCallback} from "react";
 import moment from 'moment';
 import toastr from 'toastr';
 const token = localStorage.getItem('token');
-const HOST = import.meta.env.VITE_HOST;
-const PORT = import.meta.env.VITE_PORT;
+const VITE_API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 function billingArea() {
   const [billListDiv, setBillListDiv] = useState(true);
@@ -20,7 +19,7 @@ function billingArea() {
 
   const fetchCompanyDetails = async () => {
     try {
-        const response = await fetch(`${HOST}:${PORT}/server/get-company-details`, {
+        const response = await fetch(`${VITE_API_BASE_URL}/server/get-company-details`, {
             method: "GET",
             headers: { 'authorization': `Bearer ${token}` },
           });
@@ -48,7 +47,7 @@ function billingArea() {
     setListData([]);
     if(value){
         try {
-            const response = await fetch(`${HOST}:${PORT}/server/stock-list`, {
+            const response = await fetch(`${VITE_API_BASE_URL}/server/stock-list`, {
             method: "GET",
             headers: { 'authorization': `Bearer ${token}`, "value": value, "available": true },
             });
@@ -223,7 +222,7 @@ const changePaymentDetails = (value, type) => {
     setBuyers([]);
     if(value){
         try {
-            const response = await fetch(`${HOST}:${PORT}/server/buyer-list`, {
+            const response = await fetch(`${VITE_API_BASE_URL}/server/buyer-list`, {
             method: "GET",
             headers: { 'authorization': `Bearer ${token}`, "value": value, "company_id": company_details._id, active: true },
             });
@@ -258,7 +257,7 @@ const changePaymentDetails = (value, type) => {
       toastr.error("We are facing some problem in submission. Please try again with fresh entry.");
       return;
     }
-    const response = await fetch(`${HOST}:${PORT}/server/bill-create`, {
+    const response = await fetch(`${VITE_API_BASE_URL}/server/bill-create`, {
       method: "POST",
       body: JSON.stringify(billData),
       headers: {
@@ -292,7 +291,7 @@ const changePaymentDetails = (value, type) => {
 
   const generateBillPdf = useCallback(async (id) => {
       try {
-        const response = await fetch(`${HOST}:${PORT}/server/generate-bill-pdf/${id}`, {
+        const response = await fetch(`${VITE_API_BASE_URL}/server/generate-bill-pdf/${id}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
