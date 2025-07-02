@@ -35,6 +35,8 @@ function Navbar() {
     localStorage.removeItem('seUserName');
     localStorage.removeItem('seCode');
     localStorage.removeItem('token');
+    localStorage.removeItem('seUserType');
+    localStorage.removeItem('tokenExpiry');
     window.dispatchEvent(new Event('storage'));
     await fetch(`${HOST}:${PORT}/server/logout`, {
       method: 'POST'
