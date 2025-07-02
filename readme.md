@@ -7,11 +7,12 @@
     SESSION_SECRET=StockEZZSecretKey
     PORT=5001
     JWT_SECRET=StockEZZSecretKey
-    FRONTEND_PORT=*
+    # FRONTEND_PORT=*
+    FRONTEND_URL=http://localhost:5173
+    NODE_ENV=development
 
     # For .env in CLIENT
-    VITE_HOST=http://localhost
-    VITE_PORT=5001
+    VITE_API_BASE_URL=http://localhost:5001
 
 2. Open new terminal.
 3. Switch to cd SERVER.
