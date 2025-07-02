@@ -8,6 +8,7 @@ const cookieParser = require('cookie-parser');
 const MongoStore = require('connect-mongo');
 const route = require('./routes/index');
 const connectDB = require('./config/mongoDB');
+const path = require('path');
 
 const app = express();
 
@@ -35,6 +36,14 @@ app.use(
 );
 
 app.use('/server', route);
+
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, 'client/dist')));
+  
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'client/dist', 'index.html'));
+  });
+}
 
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
