@@ -81,6 +81,12 @@ function Create() {
         .ReactTags__selected {
           width: 100%;
         }
+
+        .tag-wrapper{
+        max-width: max-content;
+        margin-right: 2px;
+        margin-bottom: 5px
+        }
           `}
       </style>
       <div className="container my-2">
