@@ -1,70 +1,9 @@
-// import bcrypt from "bcrypt"
-// import fs from "fs"
-// import path from "path"
-// import { fileURLToPath } from "url"
-
-// const __dirname = path.dirname(fileURLToPath(import.meta.url))
-
-// export async function setupAdminUser(db) {
-//     try {
-//         const usersCollection = db.collection("users")
-//         const adminExists = await usersCollection.findOne({ role: "admin" })
-
-//         if (adminExists) {
-//             console.log("✓ Admin account already exists")
-//             return
-//         }
-
-//         const adminEmail = process.env.ADMIN_EMAIL || "admin@saktibyte.com"
-//         let adminPassword = process.env.ADMIN_PASSWORD
-
-//         if (!adminPassword) {
-//             adminPassword = generateSecurePassword()
-//         }
-
-//         const hashedPassword = await bcrypt.hash(adminPassword, 10)
-
-//         await usersCollection.insertOne({
-//             email: adminEmail,
-//             password: hashedPassword,
-//             role: "admin",
-//             createdAt: new Date(),
-//             status: "active",
-//         })
-
-//         const credentialsPath = path.join(__dirname, "../../admin-credentials.txt")
-//         const credentialsContent = `
-// === SAKTIBYTE SOLUTIONS - ADMIN CREDENTIALS ===
-// Generated on: ${new Date().toISOString()}
-// Email: ${adminEmail}
-// Password: ${adminPassword}
-// ==========================================
-// KEEP THIS FILE SECURE AND DELETE AFTER USE.
-// Change the admin password after first login.
-// ==========================================
-//     `
-
-//         fs.writeFileSync(credentialsPath, credentialsContent)
-
-//         console.log("✓ Admin account created")
-//         console.log("✓ Admin credentials saved to admin-credentials.txt")
-//         console.log("\n" + credentialsContent)
-//     } catch (error) {
-//         console.error("✗ Admin setup error:", error.message)
-//     }
-// }
-
-// function generateSecurePassword() {
-//     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%"
-//     let password = ""
-//     for (let i = 0; i < 16; i++) {
-//         password += chars.charAt(Math.floor(Math.random() * chars.length))
-//     }
-//     return password
-// }
 
 const User = require('../models/user');
 const bcrypt = require('bcryptjs');
+const fs = require("fs");
+const path = require("path")
+const { fileURLToPath } = require("url")
 
 const setupAdminUser = async () => {
     try {
@@ -106,6 +45,21 @@ const setupAdminUser = async () => {
         if (!authentication) {
             throw new Error('Failed to create admin user credencials');
         }
+
+        const credentialsPath = path.join(__dirname, "../../admin-credentials.txt")
+        const credentialsContent = `
+=== SAKTIBYTE SOLUTIONS - ADMIN CREDENTIALS ===
+Generated on: ${new Date().toISOString()}
+Email: ${adminEmail}
+Password: ${adminPassword}
+==========================================
+KEEP THIS FILE SECURE AND DELETE AFTER USE.
+Change the admin password after first login.
+==========================================
+    `
+
+        fs.writeFileSync(credentialsPath, credentialsContent)
+
         console.log('✓ Admin user created successfully');
     } catch (error) {
         console.error('Error creating admin user:', error.message);

@@ -39,13 +39,11 @@ function Login() {
     }
     setLoadingLogin(true);
     try {
-      console.log("VITE_API_BASE_URL",VITE_API_BASE_URL)
       const response = await fetch(`${VITE_API_BASE_URL}/server/login`, {
         method: "POST",
         body: JSON.stringify({ login_id, password }),
         headers: { "Content-Type": "application/json" },
       });
-      console.log("response status:", response);
       const result = await response.json();
       if (response.ok) {
         const expiry = Date.now() + 12 * 60 * 60 * 1000;
@@ -63,7 +61,7 @@ function Login() {
       } else {
         setError(result.msg);
       }
-    } catch (e){
+    } catch (e) {
       console.error(e);
       setError("We are unable to process now. Please try again later.");
     } finally {
