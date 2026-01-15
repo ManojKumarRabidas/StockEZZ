@@ -9,12 +9,13 @@ const MongoStore = require('connect-mongo');
 const route = require('./routes/index');
 const connectDB = require('./config/mongoDB');
 const path = require('path');
+const { setupAdminUser } = require("./utils/seed");
 
 const app = express();
 
 app.use(cookieParser());
-const allowedOrigins = process.env.NODE_ENV === 'production' 
-  ? [process.env.FRONTEND_URL] 
+const allowedOrigins = process.env.NODE_ENV === 'production'
+  ? [process.env.FRONTEND_URL]
   : ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:4173'];
 
 app.use(cors({
@@ -28,7 +29,14 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-connectDB();
+
+// Initialize DB and seed data
+const initializeApp = async () => {
+  await connectDB();
+  await setupAdminUser(); // Run seed after DB connection
+};
+
+initializeApp();
 
 app.use(
   session({
@@ -52,7 +60,7 @@ app.use('/server', route);
 
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, 'client/dist')));
-  
+
   app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'client/dist', 'index.html'));
   });
