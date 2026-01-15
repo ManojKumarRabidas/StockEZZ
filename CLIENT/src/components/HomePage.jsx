@@ -30,8 +30,11 @@ function HomePage() {
             <p className="fs-5-custom mx-auto mb-4" style={{ maxWidth: "48rem" }}>
               A modern, all-in-one inventory management solution designed to simplify stock tracking, billing, and analytics for businesses of all sizes.
             </p>
-            <a href="/login" className="btn btn-light text-secondary px-5 py-3 rounded-pill fw-semibold">
+            <a href="/login" className="btn btn-light text-secondary mx-2 px-5 py-3 rounded-pill fw-semibold">
               Get Started
+            </a>
+            <a target="_blank" href="https://youtube.com/playlist?list=PLpHN6SEszUDSf3pSZNC1I07FkewsEE641&si=FInWuxaMC0fWQuBk" className="btn btn-light text-secondary mx-2 px-5 py-3 rounded-pill fw-semibold">
+              See Demo
             </a>
           </div>
         </section>
@@ -145,7 +148,7 @@ function HomePage() {
         {/* Footer */}
         <footer className="bg-dark text-white py-3">
           <div className="container-custom mx-auto text-center">
-            <span>Designed & Developed by <a href="https://manojkumarrabidas.github.io/portfolio">Manoj Kumar Rabidas</a></span> <br />
+            <span>Designed & Developed by <a target="_blank" href="https://manojkr.netlify.app">Manoj Kumar Rabidas</a></span> <br />
             <span>© 2025 StockEZZ. All rights reserved.</span>
           </div>
         </footer>
