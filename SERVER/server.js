@@ -56,6 +56,10 @@ app.use(
   })
 );
 
+// app.get("/", (req, res) => {
+//   res.send("API is running");
+// });
+
 app.use('/server', route);
 
 if (process.env.NODE_ENV === 'production') {
